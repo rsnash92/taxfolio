@@ -105,7 +105,7 @@ export function Sidebar({ user, className }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "block rounded-full px-5 py-3 text-base font-medium transition-colors",
+                "block rounded-xl px-5 py-3 text-base font-medium transition-colors",
                 isActive
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
