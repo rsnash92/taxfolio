@@ -1,14 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardNav } from "@/components/dashboard-nav"
+import { Sidebar } from "@/components/sidebar"
 import { MobileNav } from "@/components/mobile-nav"
-import { UserNav } from "@/components/user-nav"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { TrialBanner } from "@/components/billing/trial-banner"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { getSubscription } from "@/lib/subscription"
-import Link from "next/link"
-import Image from "next/image"
 
 export default async function DashboardLayout({
   children,
@@ -39,36 +35,40 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Trial Banner */}
+      {/* Trial Banner - full width at top */}
       {subscription.isTrial && subscription.daysLeftInTrial !== null && (
         <TrialBanner daysLeft={subscription.daysLeftInTrial} />
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center px-4">
-          <MobileNav />
-          <Link href="/dashboard" className="mr-6 md:mr-6">
-            <Image
-              src="/logo.webp"
-              alt="TaxFolio"
-              width={120}
-              height={28}
-              className="h-7 w-auto"
-            />
-          </Link>
-          <DashboardNav />
-          <div className="ml-auto flex items-center space-x-2">
-            <ThemeToggle />
-            <UserNav user={user} />
-          </div>
+      <div className="flex">
+        {/* Desktop Sidebar - hidden on mobile */}
+        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64">
+          <Sidebar user={user} />
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto py-6 px-4 md:px-6">
-        {children}
-      </main>
+        {/* Mobile Header */}
+        <div className="fixed inset-x-0 top-0 z-50 lg:hidden">
+          {subscription.isTrial && subscription.daysLeftInTrial !== null && (
+            <div className="h-10" />
+          )}
+          <header className="flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+            <MobileNav user={user} />
+          </header>
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 lg:pl-64">
+          {/* Spacer for mobile header */}
+          <div className="h-14 lg:hidden" />
+          {subscription.isTrial && subscription.daysLeftInTrial !== null && (
+            <div className="h-10 lg:hidden" />
+          )}
+
+          <div className="container mx-auto py-6 px-4 md:px-6">
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />

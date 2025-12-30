@@ -2,14 +2,17 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Image from "next/image"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { createClient } from "@/lib/supabase/client"
+import { User } from "@supabase/supabase-js"
+import { useTheme } from "next-themes"
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import {
@@ -23,7 +26,9 @@ import {
   Laptop,
   Menu,
   Settings,
-  CreditCard,
+  LogOut,
+  Moon,
+  Sun,
 } from "lucide-react"
 
 const navItems = [
@@ -69,41 +74,56 @@ const navItems = [
   },
 ]
 
-const settingsItems = [
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
-  {
-    title: "Billing",
-    href: "/settings/billing",
-    icon: CreditCard,
-  },
-]
+interface MobileNavProps {
+  user: User
+}
 
-export function MobileNav() {
+export function MobileNav({ user }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
+  const { theme, setTheme } = useTheme()
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+    router.refresh()
+  }
+
+  const initials = user.user_metadata?.full_name
+    ?.split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase() || user.email?.[0].toUpperCase() || "U"
+
+  const userName = user.user_metadata?.full_name || "User"
+  const userEmail = user.email || ""
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0">
-        <SheetHeader className="border-b px-6 py-4">
-          <SheetTitle className="text-left">Menu</SheetTitle>
-        </SheetHeader>
-        <nav className="flex flex-col py-4">
-          <div className="px-3 py-2">
-            <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Main
-            </p>
-          </div>
+      <SheetContent side="left" className="w-72 p-0 flex flex-col">
+        {/* Logo */}
+        <div className="flex h-16 items-center border-b px-6">
+          <Link href="/dashboard" onClick={() => setOpen(false)}>
+            <Image
+              src="/logo.webp"
+              alt="TaxFolio"
+              width={120}
+              height={28}
+              className="h-7 w-auto"
+            />
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
@@ -112,43 +132,77 @@ export function MobileNav() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary border-r-2 border-primary"
+                    ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 {item.title}
               </Link>
             )
           })}
 
-          <div className="px-3 py-2 mt-4">
-            <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Account
-            </p>
+          {/* Settings */}
+          <div className="pt-4">
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                pathname.startsWith("/settings")
+                  ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
           </div>
-          {settingsItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary border-r-2 border-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.title}
-              </Link>
-            )
-          })}
         </nav>
+
+        {/* User Section */}
+        <div className="border-t p-4">
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-3 w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </Button>
+
+          {/* User Info */}
+          <div className="flex items-center gap-3 rounded-lg px-2 py-2">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="bg-[#15e49e]/20 text-[#15e49e]">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 overflow-hidden">
+              <p className="truncate text-sm font-medium">{userName}</p>
+              <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+            </div>
+          </div>
+
+          {/* Sign Out */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )
