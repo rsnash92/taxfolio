@@ -52,7 +52,7 @@ export function DashboardNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex items-center space-x-6 text-sm font-medium">
+    <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
       {navItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
         return (
@@ -65,7 +65,7 @@ export function DashboardNav() {
             )}
           >
             <item.icon className="h-4 w-4" />
-            <span className="hidden sm:inline-block">{item.title}</span>
+            <span>{item.title}</span>
           </Link>
         )
       })}

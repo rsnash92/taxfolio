@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { MobileNav } from "@/components/mobile-nav"
 import { UserNav } from "@/components/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { TrialBanner } from "@/components/billing/trial-banner"
@@ -45,8 +46,9 @@ export default async function DashboardLayout({
 
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center">
-          <Link href="/dashboard" className="mr-6">
+        <div className="container mx-auto flex h-14 items-center px-4">
+          <MobileNav />
+          <Link href="/dashboard" className="mr-6 md:mr-6">
             <Image
               src="/logo.webp"
               alt="TaxFolio"
@@ -64,7 +66,7 @@ export default async function DashboardLayout({
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto py-6">
+      <main className="container mx-auto py-6 px-4 md:px-6">
         {children}
       </main>
 
