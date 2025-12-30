@@ -73,6 +73,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Check MFA requirement for protected routes
+  if (isProtectedRoute && user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
+    // User has MFA enabled but hasn't completed the challenge yet
+    if (aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/mfa-challenge'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Redirect logged-in users away from auth pages
   const authRoutes = ['/login', '/signup']
   const isAuthRoute = authRoutes.some(route =>
@@ -80,6 +92,15 @@ export async function updateSession(request: NextRequest) {
   )
 
   if (isAuthRoute && user) {
+    // Check if user needs MFA verification first
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
+    if (aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/mfa-challenge'
+      return NextResponse.redirect(url)
+    }
+
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { User, Shield, Bell } from "lucide-react"
+import { User, Shield, Bell, ChevronRight } from "lucide-react"
+import Link from "next/link"
 
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
@@ -124,15 +125,15 @@ export default function SettingsPage() {
             </Button>
           </div>
           <Separator />
-          <div className="flex items-center justify-between">
+          <Link href="/settings/security" className="flex items-center justify-between hover:bg-muted/50 -mx-6 px-6 py-2 transition-colors">
             <div>
               <p className="font-medium">Two-factor authentication</p>
               <p className="text-sm text-muted-foreground">
                 Add an extra layer of security
               </p>
             </div>
-            <Badge variant="secondary">Coming soon</Badge>
-          </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
         </CardContent>
       </Card>
 
