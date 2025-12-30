@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { MobileNav } from "@/components/mobile-nav"
-import { TrialBanner } from "@/components/billing/trial-banner"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PageHeader } from "@/components/page-header"
 import { getSubscription } from "@/lib/subscription"
@@ -35,8 +34,6 @@ export default async function DashboardLayout({
   // Get subscription info for trial banner
   const subscription = await getSubscription(user.id)
 
-  const showTrialBanner = subscription.isTrial && subscription.daysLeftInTrial !== null
-
   // Determine if properties tab should show
   // Show if: user is landlord, user is both, or user has explicitly enabled it
   const userType = userData?.user_type || 'sole_trader'
@@ -44,22 +41,14 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Trial Banner - fixed full width at top */}
-      {showTrialBanner && (
-        <TrialBanner daysLeft={subscription.daysLeftInTrial!} />
-      )}
-
-      {/* Spacer for fixed trial banner */}
-      {showTrialBanner && <div className="h-8" />}
-
       <div className="flex">
         {/* Desktop Sidebar - hidden on mobile */}
-        <div className={`hidden lg:fixed lg:flex lg:w-72 ${showTrialBanner ? "lg:top-8" : "lg:top-0"} lg:bottom-0`}>
+        <div className="hidden lg:fixed lg:flex lg:w-72 lg:top-0 lg:bottom-0">
           <Sidebar user={user} isTrial={subscription.isTrial} showProperties={showProperties} />
         </div>
 
         {/* Mobile Header */}
-        <div className={`fixed inset-x-0 z-40 lg:hidden ${showTrialBanner ? "top-8" : "top-0"}`}>
+        <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
           <header className="flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
             <MobileNav user={user} isTrial={subscription.isTrial} showProperties={showProperties} />
           </header>
