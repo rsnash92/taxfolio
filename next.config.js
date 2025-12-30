@@ -1,15 +1,12 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Empty turbopack config to use Turbopack (Next.js 16 default)
+  turbopack: {},
 
-const nextConfig: NextConfig = {
   async redirects() {
-    const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://taxfolio.io'
+    const marketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://taxfolio.io';
 
     return [
-      // Redirect root to dashboard for authenticated users (handled in middleware)
-      // or to login for unauthenticated users
-
-      // Redirect marketing pages to the marketing site
-      // These pages will be served from taxfolio.io instead of app.taxfolio.io
       {
         source: '/pricing',
         destination: `${marketingUrl}/pricing`,
@@ -60,8 +57,8 @@ const nextConfig: NextConfig = {
         destination: `${marketingUrl}/help`,
         permanent: true,
       },
-    ]
+    ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

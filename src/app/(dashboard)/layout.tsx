@@ -4,6 +4,7 @@ import { DashboardNav } from "@/components/dashboard-nav"
 import { UserNav } from "@/components/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { TrialBanner } from "@/components/billing/trial-banner"
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { getSubscription } from "@/lib/subscription"
 import Link from "next/link"
 import Image from "next/image"
@@ -66,6 +67,9 @@ export default async function DashboardLayout({
       <main className="container mx-auto py-6">
         {children}
       </main>
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   )
 }
