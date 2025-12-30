@@ -42,7 +42,7 @@ export default async function DashboardLayout({
 
       <div className="flex">
         {/* Desktop Sidebar - hidden on mobile */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72">
           <Sidebar user={user} />
         </div>
 
@@ -57,7 +57,7 @@ export default async function DashboardLayout({
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 lg:pl-64">
+        <main className="flex-1 lg:pl-72">
           {/* Spacer for mobile header */}
           <div className="h-14 lg:hidden" />
           {subscription.isTrial && subscription.daysLeftInTrial !== null && (

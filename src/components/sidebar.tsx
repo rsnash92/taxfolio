@@ -79,7 +79,7 @@ export function Sidebar({ user, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-screen w-64 flex-col bg-background",
+        "flex h-screen w-72 flex-col bg-background",
         className
       )}
     >
