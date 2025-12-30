@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
+import Cookies from "js-cookie"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -26,6 +26,8 @@ interface TransactionStats {
   needs_review: number
 }
 
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
+
 function getCurrentTaxYear(): string {
   const now = new Date()
   const year = now.getFullYear()
@@ -39,15 +41,11 @@ function getCurrentTaxYear(): string {
   }
 }
 
-function getTaxYearOptions(): string[] {
-  const currentYear = new Date().getFullYear()
-  const years: string[] = []
-  // Show last 3 tax years plus current
-  for (let i = 0; i < 4; i++) {
-    const startYear = currentYear - i
-    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
   }
-  return years
+  return getCurrentTaxYear()
 }
 
 export default function TransactionsPage() {
@@ -63,14 +61,25 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [csvDialogOpen, setCsvDialogOpen] = useState(false)
-  const [taxYear, setTaxYear] = useState(getCurrentTaxYear())
+  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
   const [categoriseProgress, setCategoriseProgress] = useState(0)
   const [categoriseStatus, setCategoriseStatus] = useState("")
   const [bulkConfirming, setBulkConfirming] = useState(false)
   const [showPersonal, setShowPersonal] = useState(true)
   const [stats, setStats] = useState<TransactionStats | null>(null)
 
-  const taxYearOptions = getTaxYearOptions()
+  // Sync tax year from cookie when it changes
+  useEffect(() => {
+    const checkCookie = () => {
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && cookieYear !== taxYear) {
+        setTaxYear(cookieYear)
+      }
+    }
+    // Check on focus to catch changes from other tabs
+    window.addEventListener("focus", checkCookie)
+    return () => window.removeEventListener("focus", checkCookie)
+  }, [taxYear])
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
@@ -325,57 +334,42 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span>Tax Year</span>
-            <Select value={taxYear} onValueChange={setTaxYear}>
-              <SelectTrigger className="w-[120px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {taxYearOptions.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <span>• {pendingCount} pending review</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {uncategorisedCount > 0 && (
-            <Button onClick={handleCategorise} disabled={categorising}>
-              {categorising ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Brain className="mr-2 h-4 w-4" />
-              )}
-              {categorising ? "Categorising..." : `Categorise ${uncategorisedCount}`}
-            </Button>
-          )}
-          {confirmableCount > 0 && (
-            <Button onClick={handleBulkConfirm} disabled={bulkConfirming} variant="default">
-              {bulkConfirming ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCheck className="mr-2 h-4 w-4" />
-              )}
-              {bulkConfirming ? "Confirming..." : `Confirm All ${confirmableCount}`}
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload CSV
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        {pendingCount > 0 && (
+          <Badge variant="secondary" className="text-sm">
+            {pendingCount} pending review
+          </Badge>
+        )}
+        <div className="flex-1" />
+        {uncategorisedCount > 0 && (
+          <Button onClick={handleCategorise} disabled={categorising}>
+            {categorising ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Brain className="mr-2 h-4 w-4" />
+            )}
+            {categorising ? "Categorising..." : `Categorise ${uncategorisedCount}`}
           </Button>
-          <Button variant="outline" onClick={fetchTransactions}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+        )}
+        {confirmableCount > 0 && (
+          <Button onClick={handleBulkConfirm} disabled={bulkConfirming} variant="default">
+            {bulkConfirming ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCheck className="mr-2 h-4 w-4" />
+            )}
+            {bulkConfirming ? "Confirming..." : `Confirm All ${confirmableCount}`}
           </Button>
-        </div>
+        )}
+        <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload CSV
+        </Button>
+        <Button variant="outline" onClick={fetchTransactions}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Transaction Stats */}

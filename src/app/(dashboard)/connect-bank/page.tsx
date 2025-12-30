@@ -83,17 +83,9 @@ export default function ConnectBankPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Connect Your Bank</h1>
-        <p className="text-muted-foreground mt-2">
-          Securely connect your UK bank account to automatically import transactions for tax
-          calculations.
-        </p>
-      </div>
-
+    <div className="max-w-4xl space-y-6">
       {success && (
-        <Alert className="mb-6 border-green-200 bg-green-50 text-green-800">
+        <Alert className="border-green-200 bg-green-50 text-green-800">
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
             Bank connected successfully! Your accounts have been synced.
@@ -102,20 +94,20 @@ export default function ConnectBankPage() {
       )}
 
       {error && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
         </Alert>
       )}
 
       {syncError && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{syncError}</AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-6">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Open Banking</CardTitle>

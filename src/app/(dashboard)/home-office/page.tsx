@@ -1,17 +1,12 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Home } from "lucide-react"
+import Cookies from "js-cookie"
 import { UseOfHomeCalculator } from "@/components/home-office/use-of-home-calculator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { UseOfHome } from "@/types/database"
+
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
 function getCurrentTaxYear(): string {
   const now = new Date()
@@ -26,22 +21,29 @@ function getCurrentTaxYear(): string {
   }
 }
 
-function getTaxYearOptions(): string[] {
-  const currentYear = new Date().getFullYear()
-  const years: string[] = []
-  for (let i = 0; i < 4; i++) {
-    const startYear = currentYear - i
-    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
   }
-  return years
+  return getCurrentTaxYear()
 }
 
 export default function HomeOfficePage() {
-  const [taxYear, setTaxYear] = useState(getCurrentTaxYear())
+  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
   const [existingData, setExistingData] = useState<UseOfHome | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const taxYearOptions = getTaxYearOptions()
+  // Sync tax year from cookie when it changes
+  useEffect(() => {
+    const checkCookie = () => {
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && cookieYear !== taxYear) {
+        setTaxYear(cookieYear)
+      }
+    }
+    window.addEventListener("focus", checkCookie)
+    return () => window.removeEventListener("focus", checkCookie)
+  }, [taxYear])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -62,34 +64,6 @@ export default function HomeOfficePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Home className="h-8 w-8" />
-            Use of Home
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Calculate your working from home tax deduction
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Tax Year</span>
-          <Select value={taxYear} onValueChange={setTaxYear}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {taxYearOptions.map((year) => (
-                <SelectItem key={year} value={year}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {/* Calculator */}
       {loading ? (
         <div className="space-y-6">

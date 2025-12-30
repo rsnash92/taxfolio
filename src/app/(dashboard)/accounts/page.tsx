@@ -104,24 +104,16 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-          <p className="text-muted-foreground">
-            Connect and manage your bank accounts
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload CSV
-          </Button>
-          <Button onClick={handleConnectBank}>
-            <Plus className="mr-2 h-4 w-4" />
-            Connect Bank
-          </Button>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload CSV
+        </Button>
+        <Button onClick={handleConnectBank}>
+          <Plus className="mr-2 h-4 w-4" />
+          Connect Bank
+        </Button>
       </div>
 
       {/* Instructions */}

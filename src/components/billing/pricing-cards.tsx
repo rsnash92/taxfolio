@@ -9,9 +9,17 @@ interface PricingCardsProps {
   currentTier: string
   isLifetime: boolean
   showLifetimeDeal?: boolean
+  isTrial?: boolean
 }
 
-export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true }: PricingCardsProps) {
+// Calculate discounted prices (20% off)
+const EARLY_BIRD_DISCOUNT = 0.20
+const LITE_PRICE = 69.99
+const PRO_PRICE = 129.99
+const LITE_DISCOUNTED = Math.round(LITE_PRICE * (1 - EARLY_BIRD_DISCOUNT) * 100) / 100
+const PRO_DISCOUNTED = Math.round(PRO_PRICE * (1 - EARLY_BIRD_DISCOUNT) * 100) / 100
+
+export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true, isTrial = false }: PricingCardsProps) {
   const [lifetimeRemaining, setLifetimeRemaining] = useState<number | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
@@ -95,9 +103,26 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true 
       }`}>
         <h3 className="text-lg font-semibold">Lite</h3>
         <div className="mt-2">
-          <span className="text-3xl font-bold">£49.99</span>
-          <span className="text-muted-foreground">/year</span>
+          {isTrial ? (
+            <>
+              <span className="text-3xl font-bold text-[#15e49e]">£{LITE_DISCOUNTED}</span>
+              <span className="text-muted-foreground line-through ml-2">£{LITE_PRICE}</span>
+              <span className="text-muted-foreground">/year</span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-bold">£{LITE_PRICE}</span>
+              <span className="text-muted-foreground">/year</span>
+            </>
+          )}
         </div>
+        {isTrial && (
+          <div className="mt-1">
+            <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
+              20% off during trial
+            </span>
+          </div>
+        )}
         <p className="text-muted-foreground text-sm mt-2">Perfect for simple freelancers</p>
 
         <ul className="mt-6 space-y-3">
@@ -137,9 +162,26 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true 
         </div>
         <h3 className="text-lg font-semibold">Pro</h3>
         <div className="mt-2">
-          <span className="text-3xl font-bold">£89.99</span>
-          <span className="text-muted-foreground">/year</span>
+          {isTrial ? (
+            <>
+              <span className="text-3xl font-bold text-[#15e49e]">£{PRO_DISCOUNTED}</span>
+              <span className="text-muted-foreground line-through ml-2">£{PRO_PRICE}</span>
+              <span className="text-muted-foreground">/year</span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-bold">£{PRO_PRICE}</span>
+              <span className="text-muted-foreground">/year</span>
+            </>
+          )}
         </div>
+        {isTrial && (
+          <div className="mt-1">
+            <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
+              20% off during trial
+            </span>
+          </div>
+        )}
         <p className="text-muted-foreground text-sm mt-2">For landlords & serious freelancers</p>
 
         <ul className="mt-6 space-y-3">

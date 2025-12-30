@@ -13,9 +13,9 @@ export default function WelcomePage() {
       <Image
         src="/logo.webp"
         alt="TaxFolio"
-        width={180}
-        height={48}
-        className="h-12 w-auto"
+        width={90}
+        height={24}
+        className="h-6 w-auto"
       />
 
       {/* Welcome Text */}

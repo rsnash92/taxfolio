@@ -1,7 +1,9 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
+import Cookies from "js-cookie"
 import { Bell, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
 function getCurrentTaxYear(): string {
   const now = new Date()
@@ -45,23 +49,40 @@ const pageTitles: Record<string, string> = {
   "/mtd": "MTD Quarters",
   "/export": "Export",
   "/settings": "Settings",
+  "/settings/billing": "Billing",
+  "/settings/security": "Security",
+  "/settings/hmrc": "HMRC",
   "/connect-bank": "Connect Bank",
   "/partners": "Partners",
+  "/partners/apply": "Apply",
+  "/partners/settings": "Partner Settings",
 }
 
 export function PageHeader() {
   const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const { theme, setTheme } = useTheme()
-
-  const currentTaxYear = searchParams.get("tax_year") || getCurrentTaxYear()
   const taxYearOptions = getTaxYearOptions()
 
+  const [taxYear, setTaxYear] = useState<string>(() => {
+    // Initialize from cookie or default
+    if (typeof window !== "undefined") {
+      return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
+    }
+    return getCurrentTaxYear()
+  })
+
+  // Sync with cookie on mount
+  useEffect(() => {
+    const savedYear = Cookies.get(TAX_YEAR_COOKIE)
+    if (savedYear && taxYearOptions.includes(savedYear)) {
+      setTaxYear(savedYear)
+    }
+  }, [taxYearOptions])
+
   const handleTaxYearChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tax_year", value)
-    router.push(`${pathname}?${params.toString()}`)
+    setTaxYear(value)
+    // Save to cookie (expires in 1 year)
+    Cookies.set(TAX_YEAR_COOKIE, value, { expires: 365 })
   }
 
   // Get page title from pathname
@@ -72,19 +93,6 @@ export function PageHeader() {
       <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
 
       <div className="flex items-center gap-3">
-        <Select value={currentTaxYear} onValueChange={handleTaxYearChange}>
-          <SelectTrigger className="w-[140px] bg-card border-border">
-            <SelectValue placeholder="Tax Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {taxYearOptions.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <Button
           variant="outline"
           size="icon"
@@ -103,6 +111,19 @@ export function PageHeader() {
           <Bell className="h-4 w-4" />
           <span className="sr-only">Notifications</span>
         </Button>
+
+        <Select value={taxYear} onValueChange={handleTaxYearChange}>
+          <SelectTrigger className="w-[140px] bg-card border-border">
+            <SelectValue placeholder="Tax Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {taxYearOptions.map((year) => (
+              <SelectItem key={year} value={year}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </header>
   )

@@ -1,14 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import Cookies from "js-cookie"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Download, FileSpreadsheet, Calculator, ChevronDown, ChevronUp } from "lucide-react"
 import { SA103Summary } from "@/components/sa103-summary"
 import { PDFExportCard } from "@/components/export/pdf-export-card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
 function getCurrentTaxYear(): string {
   const now = new Date()
@@ -23,23 +25,29 @@ function getCurrentTaxYear(): string {
   }
 }
 
-function getTaxYears(): string[] {
-  const current = getCurrentTaxYear()
-  const years: string[] = []
-
-  // Current and previous 2 years
-  for (let i = 0; i < 3; i++) {
-    const startYear = parseInt(current.split("-")[0]) - i
-    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
   }
-
-  return years
+  return getCurrentTaxYear()
 }
 
 export default function ExportPage() {
-  const [selectedYear, setSelectedYear] = useState(getCurrentTaxYear())
+  const [selectedYear, setSelectedYear] = useState(getTaxYearFromCookie)
   const [downloading, setDownloading] = useState(false)
   const [sa103Open, setSa103Open] = useState(true)
+
+  // Sync tax year from cookie when it changes
+  useEffect(() => {
+    const checkCookie = () => {
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && cookieYear !== selectedYear) {
+        setSelectedYear(cookieYear)
+      }
+    }
+    window.addEventListener("focus", checkCookie)
+    return () => window.removeEventListener("focus", checkCookie)
+  }, [selectedYear])
 
   const handleExportCSV = async () => {
     setDownloading(true)
@@ -71,42 +79,8 @@ export default function ExportPage() {
     }
   }
 
-  const taxYears = getTaxYears()
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Export</h1>
-        <p className="text-muted-foreground">
-          Download your data for accountants or HMRC submission
-        </p>
-      </div>
-
-      {/* Tax Year Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Tax Year</CardTitle>
-          <CardDescription>
-            Choose the tax year you want to export
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select year" />
-            </SelectTrigger>
-            <SelectContent>
-              {taxYears.map((year) => (
-                <SelectItem key={year} value={year}>
-                  {year} {year === getCurrentTaxYear() && "(Current)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
       {/* Export Options */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* CSV Export */}

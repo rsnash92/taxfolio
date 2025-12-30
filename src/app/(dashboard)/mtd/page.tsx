@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Cookies from "js-cookie"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -52,6 +52,8 @@ interface MTDData {
   }
 }
 
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
+
 function getCurrentTaxYear(): string {
   const now = new Date()
   const year = now.getFullYear()
@@ -65,25 +67,30 @@ function getCurrentTaxYear(): string {
   }
 }
 
-function getTaxYears(): string[] {
-  const current = getCurrentTaxYear()
-  const years: string[] = []
-
-  for (let i = 0; i < 3; i++) {
-    const startYear = parseInt(current.split("-")[0]) - i
-    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
   }
-
-  return years
+  return getCurrentTaxYear()
 }
 
 export default function MTDPage() {
-  const [taxYear, setTaxYear] = useState(getCurrentTaxYear())
+  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
   const [data, setData] = useState<MTDData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const taxYears = getTaxYears()
+  // Sync tax year from cookie when it changes
+  useEffect(() => {
+    const checkCookie = () => {
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && cookieYear !== taxYear) {
+        setTaxYear(cookieYear)
+      }
+    }
+    window.addEventListener("focus", checkCookie)
+    return () => window.removeEventListener("focus", checkCookie)
+  }, [taxYear])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -114,28 +121,6 @@ export default function MTDPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">MTD Quarterly Updates</h1>
-          <p className="text-muted-foreground">
-            Making Tax Digital quarterly submissions for HMRC
-          </p>
-        </div>
-        <Select value={taxYear} onValueChange={setTaxYear}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Tax Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {taxYears.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Error State */}
       {error && (
         <Alert variant="destructive">

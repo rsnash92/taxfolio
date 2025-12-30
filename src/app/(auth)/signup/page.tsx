@@ -98,7 +98,7 @@ export default function SignUpPage() {
             </p>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-4 pt-2">
           <Button type="submit" className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create account

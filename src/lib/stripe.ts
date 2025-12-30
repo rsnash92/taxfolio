@@ -39,7 +39,7 @@ export const PLANS = {
   },
   lite: {
     name: 'Lite',
-    price: 49.99,
+    price: 69.99,
     period: 'year',
     priceId: process.env.STRIPE_PRICE_LITE_ANNUAL || '',
     limits: {
@@ -62,7 +62,7 @@ export const PLANS = {
   },
   pro: {
     name: 'Pro',
-    price: 89.99,
+    price: 129.99,
     period: 'year',
     priceId: process.env.STRIPE_PRICE_PRO_ANNUAL || '',
     limits: {

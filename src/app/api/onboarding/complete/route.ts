@@ -10,9 +10,19 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Calculate trial end date (30 days from now)
+    const trialEndsAt = new Date()
+    trialEndsAt.setDate(trialEndsAt.getDate() + 30)
+
+    // Mark onboarding complete and start free trial
     const { error } = await supabase
       .from('users')
-      .update({ onboarding_completed: true })
+      .update({
+        onboarding_completed: true,
+        subscription_tier: 'free',
+        subscription_status: 'trialing',
+        trial_ends_at: trialEndsAt.toISOString(),
+      })
       .eq('id', user.id)
 
     if (error) {

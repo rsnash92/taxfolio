@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Cookies from "js-cookie"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
@@ -23,6 +23,8 @@ import { MileageEmptyState } from "@/components/mileage/mileage-empty-state"
 import { MileageFormDialog } from "@/components/mileage/mileage-form-dialog"
 import type { MileageTrip, MileageSummary as MileageSummaryType, VehicleType } from "@/types/database"
 
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
+
 function getCurrentTaxYear(): string {
   const now = new Date()
   const year = now.getFullYear()
@@ -36,26 +38,33 @@ function getCurrentTaxYear(): string {
   }
 }
 
-function getTaxYearOptions(): string[] {
-  const currentYear = new Date().getFullYear()
-  const years: string[] = []
-  for (let i = 0; i < 4; i++) {
-    const startYear = currentYear - i
-    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
   }
-  return years
+  return getCurrentTaxYear()
 }
 
 export default function MileagePage() {
   const [trips, setTrips] = useState<MileageTrip[]>([])
   const [summary, setSummary] = useState<MileageSummaryType | null>(null)
   const [loading, setLoading] = useState(true)
-  const [taxYear, setTaxYear] = useState(getCurrentTaxYear())
+  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTrip, setEditingTrip] = useState<MileageTrip | null>(null)
   const [deleteTrip, setDeleteTrip] = useState<MileageTrip | null>(null)
 
-  const taxYearOptions = getTaxYearOptions()
+  // Sync tax year from cookie when it changes
+  useEffect(() => {
+    const checkCookie = () => {
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && cookieYear !== taxYear) {
+        setTaxYear(cookieYear)
+      }
+    }
+    window.addEventListener("focus", checkCookie)
+    return () => window.removeEventListener("focus", checkCookie)
+  }, [taxYear])
 
   const fetchMileage = useCallback(async () => {
     setLoading(true)
@@ -145,36 +154,16 @@ export default function MileagePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mileage Tracker</h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span>Tax Year</span>
-            <Select value={taxYear} onValueChange={setTaxYear}>
-              <SelectTrigger className="w-[120px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {taxYearOptions.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleAddTrip} className="bg-[#15e49e] hover:bg-[#12c98a] text-black">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Trip
-          </Button>
-          <Button variant="outline" onClick={fetchMileage}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Button onClick={handleAddTrip} className="bg-[#15e49e] hover:bg-[#12c98a] text-black">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Trip
+        </Button>
+        <Button variant="outline" onClick={fetchMileage}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Content */}

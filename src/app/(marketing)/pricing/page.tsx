@@ -119,7 +119,7 @@ export default async function PricingPage() {
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-8">
             <h3 className="text-xl font-semibold text-white">Lite</h3>
             <div className="mt-4">
-              <span className="text-4xl font-bold text-white">£49.99</span>
+              <span className="text-4xl font-bold text-white">£69.99</span>
               <span className="text-zinc-400">/year</span>
             </div>
             <p className="text-zinc-400 text-sm mt-2">Perfect for simple freelancers</p>
@@ -155,7 +155,7 @@ export default async function PricingPage() {
             </div>
             <h3 className="text-xl font-semibold text-white">Pro</h3>
             <div className="mt-4">
-              <span className="text-4xl font-bold text-white">£89.99</span>
+              <span className="text-4xl font-bold text-white">£129.99</span>
               <span className="text-zinc-400">/year</span>
             </div>
             <p className="text-zinc-400 text-sm mt-2">For landlords & serious freelancers</p>

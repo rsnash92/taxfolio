@@ -118,6 +118,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
           currentTier={subscription.tier}
           isLifetime={subscription.isLifetime}
           showLifetimeDeal={!subscription.isLifetime}
+          isTrial={subscription.isTrial}
         />
       </div>
     </div>
