@@ -16,16 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import {
-  LayoutDashboard,
-  ArrowRightLeft,
-  Building2,
-  Download,
-  CalendarDays,
-  Car,
-  Home,
-  Laptop,
   Menu,
-  Settings,
   LogOut,
   Moon,
   Sun,
@@ -35,42 +26,34 @@ const navItems = [
   {
     title: "Dashboard",
     href: "/dashboard",
-    icon: LayoutDashboard,
   },
   {
     title: "Transactions",
     href: "/transactions",
-    icon: ArrowRightLeft,
   },
   {
     title: "Properties",
     href: "/properties",
-    icon: Home,
   },
   {
     title: "Mileage",
     href: "/mileage",
-    icon: Car,
   },
   {
     title: "Home Office",
     href: "/home-office",
-    icon: Laptop,
   },
   {
     title: "Accounts",
     href: "/accounts",
-    icon: Building2,
   },
   {
     title: "MTD Quarters",
     href: "/mtd",
-    icon: CalendarDays,
   },
   {
     title: "Export",
     href: "/export",
-    icon: Download,
   },
 ]
 
@@ -123,7 +106,7 @@ export function MobileNav({ user }: MobileNavProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+        <nav className="flex-1 space-y-2 px-6 py-8 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
@@ -132,34 +115,16 @@ export function MobileNav({ user }: MobileNavProps) {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "block rounded-full px-5 py-3 text-base font-medium transition-colors",
                   isActive
-                    ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
+                    ? "bg-foreground text-background"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <item.icon className="h-4 w-4" />
                 {item.title}
               </Link>
             )
           })}
-
-          {/* Settings */}
-          <div className="pt-4">
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                pathname.startsWith("/settings")
-                  ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-          </div>
         </nav>
 
         {/* User Section */}
