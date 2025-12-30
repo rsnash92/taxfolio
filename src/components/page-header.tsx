@@ -1,7 +1,8 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Bell } from "lucide-react"
+import { useTheme } from "next-themes"
+import { Bell, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -52,6 +53,7 @@ export function PageHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { theme, setTheme } = useTheme()
 
   const currentTaxYear = searchParams.get("tax_year") || getCurrentTaxYear()
   const taxYearOptions = getTaxYearOptions()
@@ -82,6 +84,20 @@ export function PageHeader() {
             ))}
           </SelectContent>
         </Select>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-card border-border"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
 
         <Button variant="outline" size="icon" className="bg-card border-border">
           <Bell className="h-4 w-4" />

@@ -8,12 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { useTheme } from "next-themes"
-import {
-  LogOut,
-  Moon,
-  Sun,
-} from "lucide-react"
+import { LogOut } from "lucide-react"
 
 const navItems = [
   {
@@ -59,7 +54,6 @@ export function Sidebar({ user, className }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const { theme, setTheme } = useTheme()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -119,21 +113,6 @@ export function Sidebar({ user, className }: SidebarProps) {
 
       {/* User Section */}
       <div className="p-4">
-        {/* Theme Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-3 w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-          {theme === "dark" ? "Light mode" : "Dark mode"}
-        </Button>
-
         {/* User Info */}
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <Avatar className="h-9 w-9">
