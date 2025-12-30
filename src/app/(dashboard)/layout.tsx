@@ -35,24 +35,26 @@ export default async function DashboardLayout({
   // Get subscription info for trial banner
   const subscription = await getSubscription(user.id)
 
+  const showTrialBanner = subscription.isTrial && subscription.daysLeftInTrial !== null
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Trial Banner - full width at top */}
-      {subscription.isTrial && subscription.daysLeftInTrial !== null && (
-        <TrialBanner daysLeft={subscription.daysLeftInTrial} />
+      {/* Trial Banner - fixed full width at top */}
+      {showTrialBanner && (
+        <TrialBanner daysLeft={subscription.daysLeftInTrial!} />
       )}
+
+      {/* Spacer for fixed trial banner */}
+      {showTrialBanner && <div className="h-8" />}
 
       <div className="flex">
         {/* Desktop Sidebar - hidden on mobile */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72">
+        <div className={`hidden lg:fixed lg:flex lg:w-72 ${showTrialBanner ? "lg:top-8" : "lg:top-0"} lg:bottom-0`}>
           <Sidebar user={user} isTrial={subscription.isTrial} />
         </div>
 
         {/* Mobile Header */}
-        <div className="fixed inset-x-0 top-0 z-50 lg:hidden">
-          {subscription.isTrial && subscription.daysLeftInTrial !== null && (
-            <div className="h-10" />
-          )}
+        <div className={`fixed inset-x-0 z-40 lg:hidden ${showTrialBanner ? "top-8" : "top-0"}`}>
           <header className="flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
             <MobileNav user={user} isTrial={subscription.isTrial} />
           </header>
@@ -62,9 +64,6 @@ export default async function DashboardLayout({
         <main className="flex-1 lg:pl-72">
           {/* Spacer for mobile header */}
           <div className="h-14 lg:hidden" />
-          {subscription.isTrial && subscription.daysLeftInTrial !== null && (
-            <div className="h-10 lg:hidden" />
-          )}
 
           <div className="min-h-screen lg:p-4">
             <div className="bg-muted/40 lg:rounded-2xl lg:min-h-[calc(100vh-2rem)]">

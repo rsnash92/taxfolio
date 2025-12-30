@@ -9,15 +9,15 @@ interface TrialBannerProps {
 
 export function TrialBanner({ daysLeft }: TrialBannerProps) {
   return (
-    <div className="bg-[#15e49e] px-4 py-2 flex items-center justify-center gap-2">
-      <Sparkles className="h-4 w-4 text-black" />
-      <span className="text-sm font-medium text-black">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[#15e49e] px-4 py-1.5 flex items-center justify-center gap-2">
+      <Sparkles className="h-3.5 w-3.5 text-black" />
+      <span className="text-xs font-medium text-black">
         {daysLeft} day{daysLeft === 1 ? "" : "s"} left in trial
       </span>
       <span className="text-black/60">•</span>
       <Link
         href="/settings/billing"
-        className="text-sm font-semibold text-black underline hover:no-underline"
+        className="text-xs font-semibold text-black underline hover:no-underline"
       >
         Upgrade early for 20% off
       </Link>
