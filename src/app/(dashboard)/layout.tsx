@@ -20,10 +20,10 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Check if user has completed onboarding
+  // Check if user has completed onboarding and get user type
   const { data: userData } = await supabase
     .from("users")
-    .select("onboarding_completed")
+    .select("onboarding_completed, user_type, show_properties")
     .eq("id", user.id)
     .single()
 
@@ -36,6 +36,11 @@ export default async function DashboardLayout({
   const subscription = await getSubscription(user.id)
 
   const showTrialBanner = subscription.isTrial && subscription.daysLeftInTrial !== null
+
+  // Determine if properties tab should show
+  // Show if: user is landlord, user is both, or user has explicitly enabled it
+  const userType = userData?.user_type || 'sole_trader'
+  const showProperties = userData?.show_properties ?? (userType === 'landlord' || userType === 'both')
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,13 +55,13 @@ export default async function DashboardLayout({
       <div className="flex">
         {/* Desktop Sidebar - hidden on mobile */}
         <div className={`hidden lg:fixed lg:flex lg:w-72 ${showTrialBanner ? "lg:top-8" : "lg:top-0"} lg:bottom-0`}>
-          <Sidebar user={user} isTrial={subscription.isTrial} />
+          <Sidebar user={user} isTrial={subscription.isTrial} showProperties={showProperties} />
         </div>
 
         {/* Mobile Header */}
         <div className={`fixed inset-x-0 z-40 lg:hidden ${showTrialBanner ? "top-8" : "top-0"}`}>
           <header className="flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-            <MobileNav user={user} isTrial={subscription.isTrial} />
+            <MobileNav user={user} isTrial={subscription.isTrial} showProperties={showProperties} />
           </header>
         </div>
 

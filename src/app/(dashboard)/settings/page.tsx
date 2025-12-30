@@ -7,16 +7,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { User, Shield, Bell, ChevronRight, FileText, Building2 } from "lucide-react"
+import { User, Shield, Bell, ChevronRight, FileText, Building2, LayoutGrid } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showProperties, setShowProperties] = useState<boolean | null>(null)
+  const [userType, setUserType] = useState<string>("")
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     async function loadUser() {
@@ -24,10 +29,24 @@ export default function SettingsPage() {
       if (user) {
         setEmail(user.email || "")
         setFullName(user.user_metadata?.full_name || "")
+
+        // Load user settings from database
+        const { data: userData } = await supabase
+          .from("users")
+          .select("user_type, show_properties")
+          .eq("id", user.id)
+          .single()
+
+        if (userData) {
+          setUserType(userData.user_type || "sole_trader")
+          // If show_properties is null, default based on user type
+          const defaultShow = userData.user_type === "landlord" || userData.user_type === "both"
+          setShowProperties(userData.show_properties ?? defaultShow)
+        }
       }
     }
     loadUser()
-  }, [supabase.auth])
+  }, [supabase])
 
   const handleUpdateProfile = async () => {
     setLoading(true)
@@ -45,6 +64,30 @@ export default function SettingsPage() {
       toast.error("Failed to update profile")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleProperties = async (checked: boolean) => {
+    setShowProperties(checked)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from("users")
+        .update({ show_properties: checked })
+        .eq("id", user.id)
+
+      if (error) {
+        toast.error("Failed to update setting")
+        setShowProperties(!checked) // Revert on error
+      } else {
+        toast.success(checked ? "Property tracking enabled" : "Property tracking disabled")
+        router.refresh() // Refresh to update sidebar
+      }
+    } catch {
+      toast.error("Failed to update setting")
+      setShowProperties(!checked)
     }
   }
 
@@ -88,6 +131,36 @@ export default function SettingsPage() {
           <Button onClick={handleUpdateProfile} disabled={loading}>
             {loading ? "Saving..." : "Save changes"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Features */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <LayoutGrid className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Features</CardTitle>
+              <CardDescription>Customise which features are visible</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Property tracking</p>
+              <p className="text-sm text-muted-foreground">
+                Track rental income and expenses for landlords
+              </p>
+            </div>
+            <Switch
+              checked={showProperties ?? false}
+              onCheckedChange={handleToggleProperties}
+              disabled={showProperties === null}
+            />
+          </div>
         </CardContent>
       </Card>
 

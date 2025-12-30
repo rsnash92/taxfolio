@@ -76,13 +76,20 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
 interface MobileNavProps {
   user: User
   isTrial?: boolean
+  showProperties?: boolean
 }
 
-export function MobileNav({ user, isTrial }: MobileNavProps) {
+export function MobileNav({ user, isTrial, showProperties = true }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  // Filter nav items based on user settings
+  const filteredNavItems = navItems.filter(item => {
+    if (item.href === '/properties' && !showProperties) return false
+    return true
+  })
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -123,7 +130,7 @@ export function MobileNav({ user, isTrial }: MobileNavProps) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-2 px-6 py-8 overflow-y-auto">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             const Icon = item.icon
             return (

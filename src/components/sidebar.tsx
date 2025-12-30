@@ -77,12 +77,19 @@ interface SidebarProps {
   user: User
   className?: string
   isTrial?: boolean
+  showProperties?: boolean
 }
 
-export function Sidebar({ user, className, isTrial }: SidebarProps) {
+export function Sidebar({ user, className, isTrial, showProperties = true }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  // Filter nav items based on user settings
+  const filteredNavItems = navItems.filter(item => {
+    if (item.href === '/properties' && !showProperties) return false
+    return true
+  })
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -121,7 +128,7 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 px-6 py-8">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
           return (
