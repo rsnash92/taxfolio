@@ -3,6 +3,8 @@ import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import { createCommission, handleCommissionRefund } from '@/lib/partners/commissions'
+import { attributeSubscription } from '@/lib/partners/tracking'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,6 +55,18 @@ export async function POST(request: Request) {
         await handlePaymentFailed(invoice)
         break
       }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice
+        await handleInvoicePaid(invoice)
+        break
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge
+        await handleRefund(charge)
+        break
+      }
     }
 
     // Log event
@@ -92,6 +106,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           trial_ends_at: null,
         })
         .eq('id', userId)
+
+      // Handle partner commission for lifetime deal
+      await handlePartnerCommission(userId, paymentIntent, (session.amount_total || 0) / 100, 'lifetime', false)
 
       console.log(`Lifetime deal purchased by user ${userId}`)
     }
@@ -188,6 +205,85 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       .eq('stripe_customer_id', invoice.customer as string)
   }
   console.log(`Payment failed for invoice ${invoice.id}`)
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  // Only process subscription invoices
+  const invoiceAny = invoice as unknown as {
+    subscription?: string
+    billing_reason?: string
+  }
+
+  if (!invoiceAny.subscription) return
+
+  // Get user from customer ID
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('id, referred_by_partner_id')
+    .eq('stripe_customer_id', invoice.customer as string)
+    .single()
+
+  if (!user) return
+
+  // Determine plan from price
+  const lineItem = invoice.lines?.data?.[0] as unknown as { price?: { id?: string } }
+  const priceId = lineItem?.price?.id
+  let planName = 'lite'
+  if (priceId === process.env.STRIPE_PRICE_PRO_ANNUAL) {
+    planName = 'pro'
+  }
+
+  // Check if this is initial or recurring payment
+  const isRecurring = invoiceAny.billing_reason === 'subscription_cycle'
+
+  // If first payment, attribute subscription to partner
+  if (!isRecurring && user.referred_by_partner_id) {
+    await attributeSubscription(user.id)
+  }
+
+  // Handle partner commission
+  const invoicePayment = invoice as unknown as { payment_intent?: string; amount_paid?: number }
+  const paymentIntentId = invoicePayment.payment_intent as string
+  const amount = (invoicePayment.amount_paid || 0) / 100
+
+  await handlePartnerCommission(user.id, paymentIntentId, amount, planName, isRecurring)
+
+  console.log(`Invoice paid: ${invoice.id} - ${planName} - ${isRecurring ? 'recurring' : 'initial'}`)
+}
+
+async function handleRefund(charge: Stripe.Charge) {
+  if (charge.payment_intent) {
+    await handleCommissionRefund(charge.payment_intent as string)
+    console.log(`Refund processed for payment intent: ${charge.payment_intent}`)
+  }
+}
+
+async function handlePartnerCommission(
+  userId: string,
+  paymentIntentId: string,
+  amount: number,
+  planName: string,
+  isRecurring: boolean
+) {
+  // Get user's partner reference
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('referred_by_partner_id')
+    .eq('id', userId)
+    .single()
+
+  if (!user?.referred_by_partner_id) return
+
+  // Create commission
+  await createCommission(
+    user.referred_by_partner_id,
+    null, // referralId - could look up
+    paymentIntentId,
+    amount,
+    planName,
+    isRecurring,
+    userId
+  )
 }
 
 function mapSubscriptionStatus(stripeStatus: Stripe.Subscription.Status): string {

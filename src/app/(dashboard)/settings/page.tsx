@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { User, Shield, Bell, ChevronRight, FileText } from "lucide-react"
+import { User, Shield, Bell, ChevronRight, FileText, Building2 } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -96,6 +96,32 @@ export default function SettingsPage() {
           <Button onClick={handleUpdateProfile} disabled={loading}>
             {loading ? "Saving..." : "Save changes"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* HMRC Connection */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>HMRC Connection</CardTitle>
+              <CardDescription>Connect to Making Tax Digital</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Link href="/settings/hmrc" className="flex items-center justify-between hover:bg-muted/50 -mx-6 px-6 py-2 transition-colors">
+            <div>
+              <p className="font-medium">Government Gateway</p>
+              <p className="text-sm text-muted-foreground">
+                Submit Self Assessment returns directly to HMRC
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
         </CardContent>
       </Card>
 
