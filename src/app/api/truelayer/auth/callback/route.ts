@@ -47,13 +47,18 @@ export async function GET(request: NextRequest) {
 
   try {
     // Exchange code for tokens
+    console.log('Exchanging code for tokens...')
     const tokens = await exchangeCodeForTokens(code)
+    console.log('Tokens received, storing connection...')
 
     // Store connection
     const connectionId = await storeConnection(user.id, tokens)
+    console.log('Connection stored:', connectionId)
 
     // Sync accounts
+    console.log('Syncing accounts...')
     await syncAccounts(user.id, connectionId)
+    console.log('Accounts synced successfully')
 
     // Clear state cookie and redirect
     const response = NextResponse.redirect(`${APP_URL}/connect-bank?success=true`)
@@ -61,7 +66,8 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (err) {
-    console.error('Token exchange error:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    console.error('TrueLayer callback error:', errorMessage, err)
     return NextResponse.redirect(
       `${APP_URL}/connect-bank?error=${encodeURIComponent('Failed to connect bank - please try again')}`
     )
