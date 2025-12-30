@@ -96,12 +96,12 @@ export function Sidebar({ user, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-screen w-64 flex-col border-r bg-background",
+        "flex h-screen w-64 flex-col bg-background",
         className
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
+      <div className="flex h-16 items-center px-6">
         <Link href="/dashboard">
           <Image
             src="/logo.webp"
@@ -152,7 +152,7 @@ export function Sidebar({ user, className }: SidebarProps) {
       </nav>
 
       {/* User Section */}
-      <div className="border-t p-4">
+      <div className="p-4">
         {/* Theme Toggle */}
         <Button
           variant="ghost"

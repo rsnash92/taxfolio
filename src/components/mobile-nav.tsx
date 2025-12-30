@@ -110,7 +110,7 @@ export function MobileNav({ user }: MobileNavProps) {
       </SheetTrigger>
       <SheetContent side="left" className="w-72 p-0 flex flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center border-b px-6">
+        <div className="flex h-16 items-center px-6">
           <Link href="/dashboard" onClick={() => setOpen(false)}>
             <Image
               src="/logo.webp"
@@ -163,7 +163,7 @@ export function MobileNav({ user }: MobileNavProps) {
         </nav>
 
         {/* User Section */}
-        <div className="border-t p-4">
+        <div className="p-4">
           {/* Theme Toggle */}
           <Button
             variant="ghost"

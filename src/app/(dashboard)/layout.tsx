@@ -64,8 +64,12 @@ export default async function DashboardLayout({
             <div className="h-10 lg:hidden" />
           )}
 
-          <div className="container mx-auto py-6 px-4 md:px-6">
-            {children}
+          <div className="min-h-screen lg:p-4">
+            <div className="bg-muted/40 lg:rounded-2xl lg:min-h-[calc(100vh-2rem)]">
+              <div className="container mx-auto py-6 px-4 md:px-6">
+                {children}
+              </div>
+            </div>
           </div>
         </main>
       </div>
