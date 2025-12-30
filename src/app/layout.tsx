@@ -44,11 +44,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 };
@@ -64,7 +67,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TaxFolio" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} antialiased`}
