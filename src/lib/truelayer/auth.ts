@@ -16,10 +16,11 @@ export function getAuthorizationUrl(state: string, providerId?: string): string 
   // If specific provider requested (e.g., from bank selection)
   if (providerId) {
     params.set('providers', providerId)
-  }
-
-  // Enable all UK providers in sandbox
-  if (TRUELAYER_CONFIG.isSandbox) {
+  } else if (TRUELAYER_CONFIG.isSandbox) {
+    // Sandbox only supports mock provider
+    params.set('providers', 'mock')
+  } else {
+    // Production: enable all UK providers
     params.set('providers', 'uk-ob-all uk-oauth-all')
   }
 
