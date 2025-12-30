@@ -1,9 +1,11 @@
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { MobileNav } from "@/components/mobile-nav"
 import { TrialBanner } from "@/components/billing/trial-banner"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
+import { PageHeader } from "@/components/page-header"
 import { getSubscription } from "@/lib/subscription"
 
 export default async function DashboardLayout({
@@ -67,6 +69,9 @@ export default async function DashboardLayout({
           <div className="min-h-screen lg:p-4">
             <div className="bg-muted/40 lg:rounded-2xl lg:min-h-[calc(100vh-2rem)]">
               <div className="container mx-auto py-6 px-4 md:px-6">
+                <Suspense fallback={null}>
+                  <PageHeader />
+                </Suspense>
                 {children}
               </div>
             </div>

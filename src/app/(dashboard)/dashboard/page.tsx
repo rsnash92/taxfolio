@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,8 +8,6 @@ import { ArrowRight, Building2, TrendingUp, TrendingDown, Clock, CheckCircle2, A
 import Link from "next/link"
 import { TaxSummaryCard } from "@/components/tax-summary-card"
 import { PropertyTaxCard } from "@/components/property-tax-card"
-import { TaxYearSelector } from "@/components/tax-year-selector"
-import { Skeleton } from "@/components/ui/skeleton"
 
 interface TransactionData {
   amount: number
@@ -136,25 +133,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-muted-foreground">Tax Year</span>
-            <Suspense fallback={<Skeleton className="h-9 w-[140px]" />}>
-              <TaxYearSelector defaultValue={taxYear} />
-            </Suspense>
-          </div>
-        </div>
-        <Link href="/accounts">
-          <Button>
-            <Building2 className="mr-2 h-4 w-4" />
-            Connect Bank
-          </Button>
-        </Link>
-      </div>
-
       {/* Other Tax Years Alert */}
       {otherYearsPending.length > 0 && (
         <Alert>
