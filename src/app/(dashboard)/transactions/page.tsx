@@ -1,0 +1,560 @@
+"use client"
+
+import { useEffect, useState, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
+import { Brain, Search, RefreshCw, Upload, Loader2, CheckCheck, User, Briefcase, AlertCircle } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { TransactionRow } from "@/components/transaction-row"
+import { CategoryDialog } from "@/components/category-dialog"
+import { CSVUploadDialog } from "@/components/csv-upload-dialog"
+import type { TransactionWithCategory, Category } from "@/types/database"
+
+interface TransactionStats {
+  total: number
+  personal: number
+  ai_suggested_personal: number
+  business: number
+  needs_review: number
+}
+
+function getCurrentTaxYear(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+
+  if (month > 4 || (month === 4 && day >= 6)) {
+    return `${year}-${(year + 1).toString().slice(-2)}`
+  } else {
+    return `${year - 1}-${year.toString().slice(-2)}`
+  }
+}
+
+function getTaxYearOptions(): string[] {
+  const currentYear = new Date().getFullYear()
+  const years: string[] = []
+  // Show last 3 tax years plus current
+  for (let i = 0; i < 4; i++) {
+    const startYear = currentYear - i
+    years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
+  }
+  return years
+}
+
+export default function TransactionsPage() {
+  const searchParams = useSearchParams()
+  const initialStatus = searchParams.get("status") || "all"
+
+  const [transactions, setTransactions] = useState<TransactionWithCategory[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [categorising, setCategorising] = useState(false)
+  const [status, setStatus] = useState(initialStatus)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false)
+  const [taxYear, setTaxYear] = useState(getCurrentTaxYear())
+  const [categoriseProgress, setCategoriseProgress] = useState(0)
+  const [categoriseStatus, setCategoriseStatus] = useState("")
+  const [bulkConfirming, setBulkConfirming] = useState(false)
+  const [showPersonal, setShowPersonal] = useState(true)
+  const [stats, setStats] = useState<TransactionStats | null>(null)
+
+  const taxYearOptions = getTaxYearOptions()
+
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true)
+    try {
+      const statusParam = status === "all" ? "" : `&status=${status}`
+      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}`)
+      const data = await res.json()
+      setTransactions(data.transactions || [])
+    } catch {
+      toast.error("Failed to fetch transactions")
+    } finally {
+      setLoading(false)
+    }
+  }, [status, taxYear])
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/categories")
+      const data = await res.json()
+      setCategories(data.categories || [])
+    } catch {
+      console.error("Failed to fetch categories")
+    }
+  }, [])
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/transactions/stats?tax_year=${taxYear}`)
+      const data = await res.json()
+      setStats(data)
+    } catch {
+      console.error("Failed to fetch transaction stats")
+    }
+  }, [taxYear])
+
+  useEffect(() => {
+    fetchTransactions()
+    fetchCategories()
+    fetchStats()
+  }, [fetchTransactions, fetchCategories, fetchStats])
+
+  const handleCategorise = async () => {
+    const uncategorised = transactions.filter(
+      (tx) => !tx.ai_suggested_category_id && tx.review_status === "pending"
+    )
+
+    if (uncategorised.length === 0) {
+      toast.info("No transactions to categorise")
+      return
+    }
+
+    setCategorising(true)
+    setCategoriseProgress(0)
+    const batchCount = Math.ceil(uncategorised.length / 20)
+    setCategoriseStatus(`Preparing ${uncategorised.length} transactions (${batchCount} batches)...`)
+
+    try {
+      setCategoriseProgress(5)
+      setCategoriseStatus(`Analysing ${uncategorised.length} transactions with AI (this may take a minute)...`)
+
+      const res = await fetch("/api/transactions/bulk-categorise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transaction_ids: uncategorised.map((tx) => tx.id),
+        }),
+      })
+
+      setCategoriseProgress(85)
+      setCategoriseStatus("Processing results...")
+
+      const data = await res.json()
+
+      setCategoriseProgress(95)
+      setCategoriseStatus("Saving categories...")
+
+      if (data.success) {
+        setCategoriseProgress(100)
+        setCategoriseStatus("Complete!")
+        toast.success(`Categorised ${data.updated} of ${data.total} transactions`)
+        await fetchTransactions()
+        await fetchStats()
+      } else {
+        toast.error(data.error || "Failed to categorise")
+      }
+    } catch {
+      toast.error("Failed to categorise transactions")
+    } finally {
+      // Small delay to show 100% before hiding
+      setTimeout(() => {
+        setCategorising(false)
+        setCategoriseProgress(0)
+        setCategoriseStatus("")
+      }, 500)
+    }
+  }
+
+  const handleConfirm = async (transaction: TransactionWithCategory) => {
+    const categoryId = transaction.ai_suggested_category_id || transaction.category_id
+    if (!categoryId) {
+      setSelectedTransaction(transaction)
+      setDialogOpen(true)
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/transactions/${transaction.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category_id: categoryId,
+          review_status: "confirmed",
+        }),
+      })
+
+      if (res.ok) {
+        toast.success("Transaction confirmed")
+        setTransactions((prev) =>
+          prev.map((tx) =>
+            tx.id === transaction.id
+              ? { ...tx, category_id: categoryId, review_status: "confirmed" }
+              : tx
+          )
+        )
+      }
+    } catch {
+      toast.error("Failed to confirm transaction")
+    }
+  }
+
+  const handleIgnore = async (transaction: TransactionWithCategory) => {
+    try {
+      const res = await fetch(`/api/transactions/${transaction.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          review_status: "ignored",
+        }),
+      })
+
+      if (res.ok) {
+        toast.success("Transaction ignored")
+        setTransactions((prev) =>
+          prev.map((tx) =>
+            tx.id === transaction.id ? { ...tx, review_status: "ignored" } : tx
+          )
+        )
+      }
+    } catch {
+      toast.error("Failed to ignore transaction")
+    }
+  }
+
+  const handleChangeCategory = (transaction: TransactionWithCategory) => {
+    setSelectedTransaction(transaction)
+    setDialogOpen(true)
+  }
+
+  const handleBulkConfirm = async () => {
+    const toConfirm = transactions.filter(
+      (tx) => tx.ai_suggested_category_id && tx.review_status === "pending"
+    )
+
+    if (toConfirm.length === 0) {
+      toast.info("No transactions with AI suggestions to confirm")
+      return
+    }
+
+    setBulkConfirming(true)
+    try {
+      const res = await fetch("/api/transactions/bulk-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transaction_ids: toConfirm.map((tx) => tx.id),
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Confirmed ${data.updated} transactions`)
+        await fetchTransactions()
+        await fetchStats()
+      } else {
+        toast.error(data.error || "Failed to confirm transactions")
+      }
+    } catch {
+      toast.error("Failed to confirm transactions")
+    } finally {
+      setBulkConfirming(false)
+    }
+  }
+
+  const handleCategorySelect = async (categoryId: string, propertyId?: string | null) => {
+    if (!selectedTransaction) return
+
+    try {
+      const updateBody: Record<string, unknown> = {
+        category_id: categoryId,
+        review_status: "confirmed",
+      }
+      // Include property_id if provided (for SA105 property transactions)
+      if (propertyId !== undefined) {
+        updateBody.property_id = propertyId
+      }
+
+      const res = await fetch(`/api/transactions/${selectedTransaction.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateBody),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success("Category updated")
+        setTransactions((prev) =>
+          prev.map((tx) =>
+            tx.id === selectedTransaction.id ? data.transaction : tx
+          )
+        )
+      }
+    } catch {
+      toast.error("Failed to update category")
+    } finally {
+      setDialogOpen(false)
+      setSelectedTransaction(null)
+    }
+  }
+
+  const filteredTransactions = transactions.filter((tx) => {
+    // Filter out personal transactions if toggle is off
+    if (!showPersonal) {
+      const category = tx.category || tx.ai_suggested_category
+      if (category?.code === 'personal') return false
+    }
+
+    if (!searchQuery) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      tx.description.toLowerCase().includes(query) ||
+      tx.merchant_name?.toLowerCase().includes(query)
+    )
+  })
+
+  const pendingCount = transactions.filter((tx) => tx.review_status === "pending").length
+  const uncategorisedCount = transactions.filter(
+    (tx) => !tx.ai_suggested_category_id && tx.review_status === "pending"
+  ).length
+  const confirmableCount = transactions.filter(
+    (tx) => tx.ai_suggested_category_id && tx.review_status === "pending"
+  ).length
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span>Tax Year</span>
+            <Select value={taxYear} onValueChange={setTaxYear}>
+              <SelectTrigger className="w-[120px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {taxYearOptions.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>• {pendingCount} pending review</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {uncategorisedCount > 0 && (
+            <Button onClick={handleCategorise} disabled={categorising}>
+              {categorising ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Brain className="mr-2 h-4 w-4" />
+              )}
+              {categorising ? "Categorising..." : `Categorise ${uncategorisedCount}`}
+            </Button>
+          )}
+          {confirmableCount > 0 && (
+            <Button onClick={handleBulkConfirm} disabled={bulkConfirming} variant="default">
+              {bulkConfirming ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCheck className="mr-2 h-4 w-4" />
+              )}
+              {bulkConfirming ? "Confirming..." : `Confirm All ${confirmableCount}`}
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Upload CSV
+          </Button>
+          <Button variant="outline" onClick={fetchTransactions}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Transaction Stats */}
+      {stats && stats.total > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-zinc-800">
+                  <Briefcase className="h-4 w-4 text-[#15e49e]" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.business}</p>
+                  <p className="text-xs text-muted-foreground">Business</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-zinc-800">
+                  <User className="h-4 w-4 text-zinc-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-zinc-500">{stats.personal}</p>
+                  <p className="text-xs text-muted-foreground">Personal (excluded)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-zinc-800">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-500">{stats.needs_review}</p>
+                  <p className="text-xs text-muted-foreground">Needs review</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div>
+                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total transactions</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Categorisation Progress */}
+      {categorising && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="font-medium">AI Categorisation in Progress</span>
+                </div>
+                <span className="text-sm text-muted-foreground">{categoriseProgress}%</span>
+              </div>
+              <Progress value={categoriseProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground">{categoriseStatus}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Tabs value={status} onValueChange={setStatus}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="pending">
+                  Pending
+                  {pendingCount > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
+                <TabsTrigger value="ignored">Ignored</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          {/* Personal transactions toggle */}
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+            <Checkbox
+              id="show-personal"
+              checked={showPersonal}
+              onCheckedChange={(checked) => setShowPersonal(checked === true)}
+            />
+            <label
+              htmlFor="show-personal"
+              className="text-sm text-muted-foreground cursor-pointer"
+            >
+              Show personal transactions (excluded from tax calculations)
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {filteredTransactions.length} transactions
+          </CardTitle>
+          <CardDescription>
+            Click confirm to accept AI suggestion, or change to select a different category
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No transactions found</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredTransactions.map((transaction) => (
+                <TransactionRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  onConfirm={() => handleConfirm(transaction)}
+                  onIgnore={() => handleIgnore(transaction)}
+                  onChange={() => handleChangeCategory(transaction)}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Category Dialog */}
+      <CategoryDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        categories={categories}
+        onSelect={handleCategorySelect}
+        transaction={selectedTransaction}
+      />
+
+      {/* CSV Upload Dialog */}
+      <CSVUploadDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        onSuccess={fetchTransactions}
+      />
+    </div>
+  )
+}
