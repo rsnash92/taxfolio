@@ -1,16 +1,19 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { OnboardingProgress } from "@/components/onboarding/onboarding-progress"
-import { PlaidLink } from "@/components/plaid-link"
-import { Shield, Lock, Settings, Upload } from "lucide-react"
+import { Shield, Lock, Settings, Upload, Loader2, Building2 } from "lucide-react"
 
 export default function ConnectPage() {
   const router = useRouter()
+  const [isConnecting, setIsConnecting] = useState(false)
 
-  const handlePlaidSuccess = () => {
-    router.push("/onboarding/accounts")
+  const handleConnectBank = () => {
+    setIsConnecting(true)
+    // Redirect to TrueLayer OAuth flow
+    window.location.href = "/api/truelayer/auth"
   }
 
   return (
@@ -29,11 +32,24 @@ export default function ConnectPage() {
       </div>
 
       {/* Connect Button */}
-      <PlaidLink onSuccess={handlePlaidSuccess}>
-        <Button size="lg" className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold">
-          Connect Bank
-        </Button>
-      </PlaidLink>
+      <Button
+        size="lg"
+        className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+        onClick={handleConnectBank}
+        disabled={isConnecting}
+      >
+        {isConnecting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Connecting...
+          </>
+        ) : (
+          <>
+            <Building2 className="mr-2 h-4 w-4" />
+            Connect Bank
+          </>
+        )}
+      </Button>
 
       {/* Trust badges */}
       <div className="space-y-3 text-sm text-muted-foreground">

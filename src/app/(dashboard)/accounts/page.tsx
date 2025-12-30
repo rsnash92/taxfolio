@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { Building2, RefreshCw, Plus, Loader2, Upload } from "lucide-react"
-import { PlaidLink } from "@/components/plaid-link"
 import { CSVUploadDialog } from "@/components/csv-upload-dialog"
 
 interface Account {
@@ -95,9 +94,9 @@ export default function AccountsPage() {
     }
   }
 
-  const handlePlaidSuccess = () => {
-    toast.success("Bank connected successfully!")
-    fetchAccounts()
+  const handleConnectBank = () => {
+    // Redirect to TrueLayer OAuth flow
+    window.location.href = "/api/truelayer/auth"
   }
 
   const businessAccounts = accounts.filter((a) => a.is_business_account)
@@ -118,12 +117,10 @@ export default function AccountsPage() {
             <Upload className="mr-2 h-4 w-4" />
             Upload CSV
           </Button>
-          <PlaidLink onSuccess={handlePlaidSuccess}>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Connect Bank
-            </Button>
-          </PlaidLink>
+          <Button onClick={handleConnectBank}>
+            <Plus className="mr-2 h-4 w-4" />
+            Connect Bank
+          </Button>
         </div>
       </div>
 
@@ -169,12 +166,10 @@ export default function AccountsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Connect your bank account to start tracking transactions
               </p>
-              <PlaidLink onSuccess={handlePlaidSuccess}>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Connect Bank
-                </Button>
-              </PlaidLink>
+              <Button onClick={handleConnectBank}>
+                <Plus className="mr-2 h-4 w-4" />
+                Connect Bank
+              </Button>
             </div>
           </CardContent>
         </Card>
