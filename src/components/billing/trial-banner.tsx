@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import Link from "next/link"
 
 interface TrialBannerProps {
@@ -8,28 +8,18 @@ interface TrialBannerProps {
 }
 
 export function TrialBanner({ daysLeft }: TrialBannerProps) {
-  const urgency = daysLeft <= 3
-    ? "bg-red-500/10 border-red-500/20 text-red-400"
-    : daysLeft <= 7
-      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-      : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-
   return (
-    <div className={`border rounded-lg px-4 py-3 flex items-center justify-between ${urgency}`}>
-      <div className="flex items-center gap-2">
-        <Clock className="h-4 w-4" />
-        <span className="text-sm font-medium">
-          {daysLeft === 0
-            ? "Your trial ends today!"
-            : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in your free trial`
-          }
-        </span>
-      </div>
+    <div className="bg-[#15e49e] px-4 py-2 flex items-center justify-center gap-2">
+      <Sparkles className="h-4 w-4 text-black" />
+      <span className="text-sm font-medium text-black">
+        {daysLeft} day{daysLeft === 1 ? "" : "s"} left in trial
+      </span>
+      <span className="text-black/60">•</span>
       <Link
         href="/settings/billing"
-        className="text-sm font-medium underline hover:no-underline"
+        className="text-sm font-semibold text-black underline hover:no-underline"
       >
-        Subscribe now
+        Upgrade now for 20% off
       </Link>
     </div>
   )
