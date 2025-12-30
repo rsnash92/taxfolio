@@ -114,8 +114,8 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center px-6">
-        <Link href="/dashboard">
+      <div className="px-6 pt-8 pb-6">
+        <Link href="/dashboard" className="px-5">
           <Image
             src="/logo.webp"
             alt="TaxFolio"
@@ -127,7 +127,7 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 px-6 py-8">
+      <nav className="flex-1 space-y-2 px-6">
         {filteredNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
