@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { User, Shield, Bell, ChevronRight } from "lucide-react"
+import { User, Shield, Bell, ChevronRight, FileText } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -160,6 +160,52 @@ export default function SettingsPage() {
             </div>
             <Badge variant="secondary">Coming soon</Badge>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Legal */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Legal</CardTitle>
+              <CardDescription>Privacy and terms</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <a
+            href="https://taxfolio.io/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between hover:bg-muted/50 -mx-6 px-6 py-2 transition-colors"
+          >
+            <div>
+              <p className="font-medium">Privacy Policy</p>
+              <p className="text-sm text-muted-foreground">
+                How we handle your data
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </a>
+          <Separator />
+          <a
+            href="https://taxfolio.io/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between hover:bg-muted/50 -mx-6 px-6 py-2 transition-colors"
+          >
+            <div>
+              <p className="font-medium">Terms of Service</p>
+              <p className="text-sm text-muted-foreground">
+                Terms and conditions of use
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </a>
         </CardContent>
       </Card>
 
