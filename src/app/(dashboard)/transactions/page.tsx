@@ -134,9 +134,10 @@ export default function TransactionsPage() {
     try {
       const statusParam = status === "all" ? "" : `&status=${status}`
       const monthParam = selectedMonth === "all" ? "" : `&month=${selectedMonth}`
-      // When filtering by month, load all transactions (up to 2000)
-      const limit = selectedMonth === "all" ? 100 : 2000
-      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}${monthParam}&limit=${limit}`)
+      const filterParam = categoryFilter === "all" ? "" : `&filter=${categoryFilter}`
+      // When filtering by month or category, load all transactions (up to 2000)
+      const limit = (selectedMonth === "all" && categoryFilter === "all") ? 100 : 2000
+      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}${monthParam}${filterParam}&limit=${limit}`)
       const data = await res.json()
       setTransactions(data.transactions || [])
     } catch {
@@ -144,7 +145,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [status, taxYear, selectedMonth])
+  }, [status, taxYear, selectedMonth, categoryFilter])
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -402,25 +403,6 @@ export default function TransactionsPage() {
   }
 
   const filteredTransactions = transactions.filter((tx) => {
-    // Apply category filter (from stat cards)
-    if (categoryFilter !== "all") {
-      const category = tx.category || tx.ai_suggested_category
-      const isPersonal = category?.code === 'personal'
-      const isConfirmed = tx.review_status === 'confirmed'
-      const isPending = tx.review_status === 'pending'
-
-      if (categoryFilter === "business") {
-        // Business = confirmed AND not personal
-        if (!isConfirmed || isPersonal) return false
-      } else if (categoryFilter === "personal") {
-        // Personal = confirmed as personal
-        if (!isConfirmed || !isPersonal) return false
-      } else if (categoryFilter === "needs_review") {
-        // Needs review = pending
-        if (!isPending) return false
-      }
-    }
-
     // Filter out personal transactions if toggle is off (only when not specifically viewing personal)
     if (!showPersonal && categoryFilter !== "personal") {
       const category = tx.category || tx.ai_suggested_category

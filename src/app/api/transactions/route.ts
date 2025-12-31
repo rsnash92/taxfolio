@@ -15,10 +15,11 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const categoryId = searchParams.get('category_id')
     const month = searchParams.get('month') // Format: YYYY-MM
+    const filter = searchParams.get('filter') // business | personal | needs_review
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    console.log('[transactions] Query params:', { taxYear, status, categoryId, month, limit, offset, userId: user.id })
+    console.log('[transactions] Query params:', { taxYear, status, categoryId, month, filter, limit, offset, userId: user.id })
 
     // First, check how many transactions exist for this user without tax year filter
     const { count: totalCount } = await supabase
@@ -70,6 +71,33 @@ export async function GET(request: NextRequest) {
       const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate()
       const endDate = `${year}-${monthNum}-${lastDay.toString().padStart(2, '0')}`
       query = query.gte('date', startDate).lte('date', endDate)
+    }
+
+    // Filter by category type (business/personal/needs_review)
+    if (filter) {
+      // Get personal category ID for filtering
+      const { data: personalCategory } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('code', 'personal')
+        .single()
+
+      if (filter === 'business') {
+        // Business = confirmed AND not personal
+        query = query.eq('review_status', 'confirmed')
+        if (personalCategory?.id) {
+          query = query.neq('category_id', personalCategory.id)
+        }
+      } else if (filter === 'personal') {
+        // Personal = confirmed as personal
+        query = query.eq('review_status', 'confirmed')
+        if (personalCategory?.id) {
+          query = query.eq('category_id', personalCategory.id)
+        }
+      } else if (filter === 'needs_review') {
+        // Needs review = pending
+        query = query.eq('review_status', 'pending')
+      }
     }
 
     const { data: transactions, error, count } = await query
