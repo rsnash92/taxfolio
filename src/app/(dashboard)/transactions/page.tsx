@@ -208,7 +208,7 @@ export default function TransactionsPage() {
         throw new Error("No response stream")
       }
 
-      let finalData: { success?: boolean; updated?: number; total?: number } = {}
+      let finalData: { success?: boolean; updated?: number; total?: number; remaining?: number } = {}
 
       while (true) {
         const { done, value } = await reader.read()
@@ -238,7 +238,16 @@ export default function TransactionsPage() {
       if (finalData.success) {
         setCategoriseProgress(100)
         setCategoriseStatus("Complete!")
-        toast.success(`Categorised ${finalData.updated} of ${finalData.total} transactions`)
+
+        if (finalData.remaining && finalData.remaining > 0) {
+          toast.success(
+            `Categorised ${finalData.updated} transactions. ${finalData.remaining} remaining - click Categorise again to continue.`,
+            { duration: 6000 }
+          )
+        } else {
+          toast.success(`Categorised ${finalData.updated} of ${finalData.total} transactions`)
+        }
+
         await fetchTransactions()
         await fetchStats()
       } else {

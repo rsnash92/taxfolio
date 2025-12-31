@@ -241,15 +241,24 @@ export async function POST(request: NextRequest) {
       console.log('[bulk-categorise] No transaction IDs or tax_year provided')
       return NextResponse.json({ error: 'No transaction IDs or tax_year provided' }, { status: 400 })
     }
-    console.log('[bulk-categorise] Uncategorised transactions:', uncategorisedTransactions.length)
+    const totalUncategorised = uncategorisedTransactions.length
+    console.log('[bulk-categorise] Uncategorised transactions:', totalUncategorised)
 
-    if (uncategorisedTransactions.length === 0) {
+    if (totalUncategorised === 0) {
       console.log('[bulk-categorise] All transactions already categorised')
-      return NextResponse.json({ message: 'All transactions already categorised', updated: 0 })
+      return NextResponse.json({ message: 'All transactions already categorised', updated: 0, remaining: 0 })
     }
 
+    // Limit to 200 transactions per request to stay under Vercel's 5-minute timeout
+    // 200 transactions = 10 batches × 20 = ~4 minutes of processing
+    const MAX_PER_REQUEST = 200
+    const transactionsToProcess = uncategorisedTransactions.slice(0, MAX_PER_REQUEST)
+    const remaining = Math.max(0, totalUncategorised - MAX_PER_REQUEST)
+
+    console.log('[bulk-categorise] Processing', transactionsToProcess.length, 'of', totalUncategorised, '- remaining after:', remaining)
+
     // Format transactions for AI
-    const transactionList = uncategorisedTransactions.map((tx: TransactionInput) => ({
+    const transactionList = transactionsToProcess.map((tx: TransactionInput) => ({
       id: tx.id,
       description: tx.description,
       amount: tx.amount,
@@ -345,7 +354,8 @@ export async function POST(request: NextRequest) {
             type: 'complete',
             success: true,
             updated: totalUpdated,
-            total: uncategorisedTransactions.length,
+            total: transactionsToProcess.length,
+            remaining: remaining,
           })
 
           controller.close()
@@ -424,11 +434,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[bulk-categorise] Successfully updated', updatedCount, 'of', uncategorisedTransactions.length, 'transactions')
+    console.log('[bulk-categorise] Successfully updated', updatedCount, 'of', transactionsToProcess.length, 'transactions')
     return NextResponse.json({
       success: true,
       updated: updatedCount,
-      total: uncategorisedTransactions.length,
+      total: transactionsToProcess.length,
+      remaining: remaining,
     })
   } catch (error) {
     console.error('Error in bulk categorisation:', error)
