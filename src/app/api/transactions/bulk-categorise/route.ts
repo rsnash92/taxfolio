@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
 
             try {
               const message = await anthropic.messages.create({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-3-5-haiku-20241022',
                 max_tokens: 4096,
                 messages: [
                   {
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
 
       try {
         const message = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-3-5-haiku-20241022',
           max_tokens: 4096,
           messages: [
             {
