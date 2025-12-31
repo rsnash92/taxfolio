@@ -18,6 +18,9 @@ interface Account {
   subtype: string | null
   mask: string | null
   is_business_account: boolean
+  current_balance: number | null
+  available_balance: number | null
+  currency: string
   bank_connections: {
     institution_name: string
     status: string
@@ -235,6 +238,16 @@ export default function AccountsPage() {
   )
 }
 
+function formatCurrency(amount: number | null, currency: string = 'GBP'): string {
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return '—'
+  }
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount)
+}
+
 function AccountRow({
   account,
   onToggle,
@@ -257,11 +270,20 @@ function AccountRow({
           <Badge variant="outline">{account.type}</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          {account.bank_connections.institution_name} •••• {account.mask}
+          {account.bank_connections.institution_name}
+          {account.mask && <> •••• {account.mask}</>}
         </p>
         {account.bank_connections.last_synced_at && (
           <p className="text-xs text-muted-foreground">
             Last synced: {new Date(account.bank_connections.last_synced_at).toLocaleString()}
+          </p>
+        )}
+      </div>
+      <div className="text-right mr-4">
+        <p className="font-medium">{formatCurrency(account.current_balance, account.currency)}</p>
+        {account.available_balance !== null && account.available_balance !== account.current_balance && (
+          <p className="text-xs text-muted-foreground">
+            Available: {formatCurrency(account.available_balance, account.currency)}
           </p>
         )}
       </div>
