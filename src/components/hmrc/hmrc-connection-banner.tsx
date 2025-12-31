@@ -115,12 +115,12 @@ export function HMRCConnectionBanner({
     )
   }
 
-  // Standard not connected banner
+  // Standard not connected banner - light green style
   return (
-    <div className="mb-6 p-5 bg-muted/50 border rounded-xl">
+    <div className="mb-6 p-5 bg-[#15e49e]/10 border border-[#15e49e]/20 rounded-xl">
       <div className="flex items-start gap-4">
-        <div className="p-3 bg-amber-500/20 rounded-xl">
-          <AlertTriangle className="h-6 w-6 text-amber-500" />
+        <div className="p-3 bg-[#15e49e]/20 rounded-xl">
+          <ExternalLink className="h-6 w-6 text-[#15e49e]" />
         </div>
         <div className="flex-1">
           <h3 className="text-base font-semibold">
@@ -133,22 +133,22 @@ export function HMRCConnectionBanner({
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[#15e49e]" />
               Submit self-employment income (SA103)
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[#15e49e]" />
               Submit property income (SA105)
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[#15e49e]" />
               View tax calculations
             </span>
           </div>
 
           <div className="flex items-center gap-3 mt-4">
             <Link href="/settings/hmrc">
-              <Button>
+              <Button className="bg-[#15e49e] hover:bg-[#12c98a] text-black">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Connect Government Gateway
               </Button>

@@ -11,6 +11,7 @@ import { PropertyTaxCard } from "@/components/property-tax-card"
 import { HomeOfficeCard } from "@/components/home-office-card"
 import { SuggestionsWidget } from "@/components/suggestions/suggestions-widget"
 import { HMRCWidgetWrapper } from "@/components/hmrc"
+import { PDFExportButton, YearComparisonWidget, ActionItemsWidget } from "@/components/dashboard"
 
 interface TransactionData {
   amount: number
@@ -107,6 +108,87 @@ async function getAccounts(supabase: Awaited<ReturnType<typeof createClient>>): 
   return (data as AccountData[] | null) || []
 }
 
+interface PrevTransactionData {
+  amount: number
+  review_status: string
+  category: { type: string } | null
+}
+
+async function getYearComparison(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  currentYear: string,
+  currentIncome: number,
+  currentExpenses: number
+) {
+  const [startYear] = currentYear.split('-').map(Number)
+  const previousYear = `${startYear - 1}-${startYear.toString().slice(-2)}`
+
+  const { data: prevTransactions } = await supabase
+    .from('transactions')
+    .select(`
+      amount,
+      review_status,
+      category:categories!transactions_category_id_fkey(type)
+    `)
+    .eq('tax_year', previousYear)
+
+  const prevTxs = prevTransactions as PrevTransactionData[] | null
+
+  if (!prevTxs || prevTxs.length === 0) return null
+
+  let prevIncome = 0
+  let prevExpenses = 0
+
+  for (const tx of prevTxs) {
+    if (tx.review_status !== 'confirmed') continue
+    const category = tx.category
+    if (!category) continue
+
+    if (category.type === 'income') {
+      prevIncome += Math.abs(tx.amount)
+    } else if (category.type === 'expense') {
+      prevExpenses += Math.abs(tx.amount)
+    }
+  }
+
+  if (prevIncome === 0 && prevExpenses === 0) return null
+
+  const currentProfit = currentIncome - currentExpenses
+  const prevProfit = prevIncome - prevExpenses
+
+  return {
+    previousYear,
+    income: {
+      current: currentIncome,
+      previous: prevIncome,
+      change: currentIncome - prevIncome,
+      changePercent: prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0,
+    },
+    expenses: {
+      current: currentExpenses,
+      previous: prevExpenses,
+      change: currentExpenses - prevExpenses,
+      changePercent: prevExpenses > 0 ? ((currentExpenses - prevExpenses) / prevExpenses) * 100 : 0,
+    },
+    profit: {
+      current: currentProfit,
+      previous: prevProfit,
+      change: currentProfit - prevProfit,
+      changePercent: Math.abs(prevProfit) > 0 ? ((currentProfit - prevProfit) / Math.abs(prevProfit)) * 100 : 0,
+    },
+  }
+}
+
+async function getUncategorisedCount(supabase: Awaited<ReturnType<typeof createClient>>, taxYear: string): Promise<number> {
+  const { count } = await supabase
+    .from('transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('tax_year', taxYear)
+    .is('category_id', null)
+
+  return count || 0
+}
+
 function getCurrentTaxYear(): string {
   const now = new Date()
   const year = now.getFullYear()
@@ -128,14 +210,60 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const params = await searchParams
   const taxYear = params.tax_year || getCurrentTaxYear()
-  const [summary, accounts, otherYearsPending] = await Promise.all([
+  const [summary, accounts, otherYearsPending, uncategorisedCount] = await Promise.all([
     getTaxSummary(supabase, taxYear),
     getAccounts(supabase),
     getOtherYearsPending(supabase, taxYear),
+    getUncategorisedCount(supabase, taxYear),
   ])
+
+  // Get year comparison after we have summary data
+  const yearComparison = await getYearComparison(
+    supabase,
+    taxYear,
+    summary.totalIncome,
+    summary.totalExpenses
+  )
+
+  // Build action items
+  const actionItems = [
+    ...(uncategorisedCount > 0
+      ? [
+          {
+            id: 'categorise',
+            title: `Categorise ${uncategorisedCount} transaction${uncategorisedCount > 1 ? 's' : ''}`,
+            href: '/transactions?category=uncategorised',
+          },
+        ]
+      : []),
+    {
+      id: 'mileage',
+      title: 'Review mileage log',
+      href: '/mileage',
+    },
+    {
+      id: 'home-office',
+      title: 'Confirm home office deduction',
+      href: '/home-office',
+    },
+    {
+      id: 'file',
+      title: 'File self-assessment',
+      deadline: '31 January',
+    },
+  ]
 
   return (
     <div className="space-y-6">
+      {/* Header with PDF Export */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Tax Year {taxYear}</p>
+        </div>
+        <PDFExportButton taxYear={taxYear} />
+      </div>
+
       {/* Other Tax Years Alert */}
       {otherYearsPending.length > 0 && (
         <Alert>
@@ -255,6 +383,20 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <PropertyTaxCard taxYear={taxYear} />
         <HomeOfficeCard taxYear={taxYear} />
+      </div>
+
+      {/* Year Comparison & Action Items */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {yearComparison && (
+          <YearComparisonWidget
+            currentYear={taxYear}
+            previousYear={yearComparison.previousYear}
+            income={yearComparison.income}
+            expenses={yearComparison.expenses}
+            profit={yearComparison.profit}
+          />
+        )}
+        <ActionItemsWidget items={actionItems} />
       </div>
 
       {/* MTD Status & Suggestions */}

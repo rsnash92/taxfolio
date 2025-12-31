@@ -31,7 +31,6 @@ import {
   Sparkles,
   MessageCircle,
   Lightbulb,
-  FileText,
 } from "lucide-react"
 import { HMRCStatusBadge } from "@/components/hmrc/hmrc-status-badge"
 import { hasApproachingDeadline, getCurrentTaxYear } from "@/lib/hmrc/deadlines"
@@ -76,11 +75,6 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Export",
     href: "/export",
     icon: Download,
-  },
-  {
-    title: "Year-End",
-    href: "/year-end",
-    icon: FileText,
   },
   {
     title: "Suggestions",
