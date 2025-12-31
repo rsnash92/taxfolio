@@ -5,7 +5,18 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Download, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertCircle, CalendarClock } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Download, ChevronDown, ChevronUp, CheckCircle2, Clock, AlertCircle, CalendarClock, Send } from "lucide-react"
 import { toast } from "sonner"
 import { QuarterDetails } from "./quarter-details"
 import type { QuarterStatus } from "@/lib/mtd-utils"
@@ -72,6 +83,7 @@ const statusConfig: Record<QuarterStatus, { label: string; variant: "default" | 
 export function QuarterCard({ data, taxYear }: QuarterCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const config = statusConfig[data.status]
   const StatusIcon = config.icon
@@ -118,6 +130,38 @@ export function QuarterCard({ data, taxYear }: QuarterCardProps) {
       setExporting(false)
     }
   }
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/hmrc/submit-period", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessId: "default",
+          taxYear: taxYear,
+          periodFrom: data.startDate,
+          periodTo: data.endDate,
+          income: data.income,
+          expenses: data.expenses,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        toast.error(error.error || "Failed to submit to HMRC")
+        return
+      }
+
+      toast.success(`Q${data.quarter} submitted to HMRC successfully`)
+    } catch {
+      toast.error("Failed to submit to HMRC")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const canSubmit = data.status === "ready" && data.transactionCounts.pending === 0
 
   return (
     <Card className="flex flex-col">
@@ -195,16 +239,67 @@ export function QuarterCard({ data, taxYear }: QuarterCardProps) {
               </>
             )}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={handleExport}
-            disabled={exporting || data.transactionCounts.confirmed === 0}
-          >
-            <Download className="h-4 w-4 mr-1" />
-            {exporting ? "..." : "Export"}
-          </Button>
+          {canSubmit ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  disabled={submitting}
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  {submitting ? "Submitting..." : "Submit"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Submit {data.label} to HMRC?</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <p>
+                      You are about to submit your quarterly update to HMRC for the period{" "}
+                      {new Date(data.startDate).toLocaleDateString("en-GB")} to{" "}
+                      {new Date(data.endDate).toLocaleDateString("en-GB")}.
+                    </p>
+                    <div className="bg-muted p-3 rounded-md space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Income:</span>
+                        <span className="font-medium">{formatCurrency(data.income)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Expenses:</span>
+                        <span className="font-medium">{formatCurrency(data.expenses)}</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between">
+                        <span>Net Profit:</span>
+                        <span className="font-medium">{formatCurrency(data.netProfit)}</span>
+                      </div>
+                    </div>
+                    <p className="text-amber-600">
+                      Please ensure all transactions have been reviewed before submitting.
+                    </p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSubmit}>
+                    Submit to HMRC
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleExport}
+              disabled={exporting || data.transactionCounts.confirmed === 0}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              {exporting ? "..." : "Export"}
+            </Button>
+          )}
         </div>
 
         {/* Expanded Details */}
