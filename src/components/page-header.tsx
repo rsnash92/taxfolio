@@ -48,6 +48,7 @@ const pageTitles: Record<string, string> = {
   "/accounts": "Accounts",
   "/mtd": "MTD Quarters",
   "/export": "Export",
+  "/ask": "Ask TaxFolio",
   "/settings": "Settings",
   "/settings/billing": "Billing",
   "/settings/security": "Security",

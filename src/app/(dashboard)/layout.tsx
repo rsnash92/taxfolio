@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar"
 import { MobileNav } from "@/components/mobile-nav"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PageHeader } from "@/components/page-header"
+import { AskButton } from "@/components/ask-taxfolio"
 import { getSubscription } from "@/lib/subscription"
 
 export default async function DashboardLayout({
@@ -74,6 +75,9 @@ export default async function DashboardLayout({
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+
+      {/* Ask TaxFolio Floating Button */}
+      <AskButton />
     </div>
   )
 }
