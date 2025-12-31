@@ -5,6 +5,7 @@ import { HMRCTokens, StoredHMRCTokens, HMRCError } from './types'
 const HMRC_BASE_URL = process.env.HMRC_API_BASE_URL || 'https://test-api.service.hmrc.gov.uk'
 const HMRC_CLIENT_ID = process.env.HMRC_CLIENT_ID!
 const HMRC_CLIENT_SECRET = process.env.HMRC_CLIENT_SECRET!
+const IS_SANDBOX = HMRC_BASE_URL.includes('test-api')
 
 /**
  * Get stored HMRC tokens for a user
@@ -129,19 +130,28 @@ export async function hmrcRequest<T>(
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
     body?: object
     clientInfo?: ClientInfo
+    govTestScenario?: string
   } = {}
 ): Promise<T> {
   const accessToken = await getValidAccessToken(userId)
   const fraudHeaders = generateFraudHeaders(userId, options.clientInfo)
 
+  // Build headers with optional Gov-Test-Scenario for sandbox
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: 'application/vnd.hmrc.2.0+json',
+    'Content-Type': 'application/json',
+    ...fraudHeaders,
+  }
+
+  // Add Gov-Test-Scenario header for sandbox testing
+  if (IS_SANDBOX && options.govTestScenario) {
+    headers['Gov-Test-Scenario'] = options.govTestScenario
+  }
+
   const response = await fetch(`${HMRC_BASE_URL}${endpoint}`, {
     method: options.method || 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/vnd.hmrc.2.0+json',
-      'Content-Type': 'application/json',
-      ...fraudHeaders,
-    },
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   })
 

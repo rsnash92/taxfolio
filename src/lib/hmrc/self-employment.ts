@@ -19,7 +19,9 @@ export async function listAllBusinesses(
   userId: string,
   nino: string
 ): Promise<ListBusinessesResponse> {
-  return hmrcRequest(userId, `/individuals/business/details/${nino}/list`)
+  return hmrcRequest(userId, `/individuals/business/details/${nino}/list`, {
+    govTestScenario: 'STATEFUL',
+  })
 }
 
 /**
@@ -63,6 +65,7 @@ export async function createSelfEmploymentBusiness(
   return hmrcRequest(userId, `/individuals/business/self-employment/${nino}`, {
     method: 'POST',
     body: data,
+    govTestScenario: 'STATEFUL',
   })
 }
 
@@ -129,6 +132,7 @@ export async function submitSelfEmploymentPeriod(
     {
       method: 'PUT',
       body: cumulativeSummary,
+      govTestScenario: 'STATEFUL',
     }
   )
 }

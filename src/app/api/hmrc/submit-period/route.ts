@@ -6,9 +6,6 @@ import {
   submitSelfEmploymentPeriod,
 } from '@/lib/hmrc/self-employment'
 
-const HMRC_BASE_URL = process.env.HMRC_API_BASE_URL || 'https://test-api.service.hmrc.gov.uk'
-const IS_SANDBOX = HMRC_BASE_URL.includes('test-api')
-
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const {
@@ -44,24 +41,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // In sandbox mode, simulate success since HMRC sandbox requires pre-configured test data
-    if (IS_SANDBOX) {
-      console.log('Sandbox mode: Simulating HMRC submission', {
-        nino: profile.hmrc_nino,
-        taxYear,
-        periodFrom,
-        periodTo,
-        income,
-        expenses,
-      })
-      return NextResponse.json({
-        success: true,
-        sandbox: true,
-        message: 'Submission simulated in sandbox mode',
-      })
-    }
-
-    // Production flow: Get or create business and submit
+    // Get or create business and submit (uses Gov-Test-Scenario: STATEFUL in sandbox)
     let businessId: string
 
     try {
