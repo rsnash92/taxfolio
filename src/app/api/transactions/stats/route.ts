@@ -75,6 +75,15 @@ export async function GET(request: NextRequest) {
       .eq('review_status', 'pending')
       .is('ai_suggested_category_id', null)
 
+    // Get confirmable count (pending WITH AI suggestion - ready to confirm)
+    const { count: confirmable } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('tax_year', taxYear)
+      .eq('review_status', 'pending')
+      .not('ai_suggested_category_id', 'is', null)
+
     return NextResponse.json({
       total: total || 0,
       personal: personal || 0,
@@ -82,6 +91,7 @@ export async function GET(request: NextRequest) {
       business: confirmedBusiness || 0,
       needs_review: needsReview || 0,
       uncategorised: uncategorised || 0,
+      confirmable: confirmable || 0,
     })
   } catch (error) {
     console.error('[transactions/stats] Error:', error)

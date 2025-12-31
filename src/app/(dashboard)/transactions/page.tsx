@@ -32,6 +32,7 @@ interface TransactionStats {
   business: number
   needs_review: number
   uncategorised: number
+  confirmable: number
 }
 
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
@@ -327,22 +328,21 @@ export default function TransactionsPage() {
   }
 
   const handleBulkConfirm = async () => {
-    const toConfirm = transactions.filter(
-      (tx) => tx.ai_suggested_category_id && tx.review_status === "pending"
-    )
+    const confirmableTotal = stats?.confirmable || 0
 
-    if (toConfirm.length === 0) {
+    if (confirmableTotal === 0) {
       toast.info("No transactions with AI suggestions to confirm")
       return
     }
 
     setBulkConfirming(true)
     try {
+      // Pass tax_year to confirm ALL confirmable transactions for the year
       const res = await fetch("/api/transactions/bulk-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transaction_ids: toConfirm.map((tx) => tx.id),
+          tax_year: taxYear,
         }),
       })
 
@@ -415,10 +415,6 @@ export default function TransactionsPage() {
   // Use stats for total counts (from API)
   const totalPendingCount = stats?.needs_review || 0
   const totalUncategorisedCount = stats?.uncategorised || 0
-  // Local counts for loaded transactions (used for Confirm All button)
-  const confirmableCount = transactions.filter(
-    (tx) => tx.ai_suggested_category_id && tx.review_status === "pending"
-  ).length
 
   return (
     <div className="space-y-6">
@@ -440,14 +436,14 @@ export default function TransactionsPage() {
             {categorising ? "Categorising..." : `Categorise ${totalUncategorisedCount}`}
           </Button>
         )}
-        {confirmableCount > 0 && (
+        {(stats?.confirmable || 0) > 0 && (
           <Button onClick={handleBulkConfirm} disabled={bulkConfirming} variant="default">
             {bulkConfirming ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <CheckCheck className="mr-2 h-4 w-4" />
             )}
-            {bulkConfirming ? "Confirming..." : `Confirm All ${confirmableCount}`}
+            {bulkConfirming ? "Confirming..." : `Confirm All ${stats?.confirmable || 0}`}
           </Button>
         )}
         <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
