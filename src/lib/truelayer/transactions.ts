@@ -49,7 +49,7 @@ export async function getPendingTransactions(
 }
 
 /**
- * Import transactions into TaxFolio database
+ * Import transactions into TaxFolio database (optimized batch insert)
  */
 export async function importTransactions(
   userId: string,
@@ -74,8 +74,9 @@ export async function importTransactions(
 
   console.log(`[importTransactions] Got ${transactions.length} transactions from TrueLayer`)
 
-  let imported = 0
-  let skipped = 0
+  if (transactions.length === 0) {
+    return { imported: 0, skipped: 0 }
+  }
 
   // Get bank account details
   const { data: bankAccount } = await supabase
@@ -85,51 +86,60 @@ export async function importTransactions(
     .eq('user_id', userId)
     .single()
 
-  for (const tx of transactions) {
-    // Check if already imported
-    const { data: existing } = await supabase
-      .from('transactions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('external_id', tx.transaction_id)
-      .single()
+  // Get all existing external_ids in one query
+  const externalIds = transactions.map(tx => tx.transaction_id)
+  const { data: existingTxs } = await supabase
+    .from('transactions')
+    .select('external_id')
+    .eq('user_id', userId)
+    .in('external_id', externalIds)
 
-    if (existing) {
-      skipped++
-      continue
-    }
+  const existingIds = new Set((existingTxs || []).map(t => t.external_id))
+  console.log(`[importTransactions] Found ${existingIds.size} existing transactions`)
 
-    // Determine if income or expense
-    const isIncome = tx.transaction_type === 'CREDIT'
-
-    // Map TrueLayer category to TaxFolio category
-    const category = mapTrueLayerCategory(
-      tx.transaction_category,
-      tx.transaction_classification
-    )
-
-    // Insert transaction
-    const { error } = await supabase.from('transactions').insert({
-      user_id: userId,
-      external_id: tx.transaction_id,
-      date: tx.timestamp.split('T')[0],
-      description: tx.description,
-      amount: Math.abs(tx.amount),
-      type: isIncome ? 'income' : 'expense',
-      category: category,
-      merchant_name: tx.merchant_name,
-      source: 'truelayer',
-      source_account: bankAccount?.display_name,
-      bank_account_id: bankAccount?.id,
-      raw_data: tx,
-      tax_year: options?.taxYear || getCurrentTaxYear(),
-      needs_review: true,
+  // Filter out duplicates and prepare batch
+  const taxYear = options?.taxYear || getCurrentTaxYear()
+  const newTransactions = transactions
+    .filter(tx => !existingIds.has(tx.transaction_id))
+    .map(tx => {
+      const isIncome = tx.transaction_type === 'CREDIT'
+      return {
+        user_id: userId,
+        external_id: tx.transaction_id,
+        date: tx.timestamp.split('T')[0],
+        description: tx.description,
+        amount: Math.abs(tx.amount),
+        type: isIncome ? 'income' : 'expense',
+        category: mapTrueLayerCategory(tx.transaction_category, tx.transaction_classification),
+        merchant_name: tx.merchant_name,
+        source: 'truelayer',
+        source_account: bankAccount?.display_name,
+        bank_account_id: bankAccount?.id,
+        raw_data: tx,
+        tax_year: taxYear,
+        needs_review: true,
+      }
     })
 
-    if (!error) {
-      imported++
+  console.log(`[importTransactions] Inserting ${newTransactions.length} new transactions`)
+
+  let imported = 0
+  const skipped = existingIds.size
+
+  // Batch insert (chunks of 100 to avoid payload limits)
+  const BATCH_SIZE = 100
+  for (let i = 0; i < newTransactions.length; i += BATCH_SIZE) {
+    const batch = newTransactions.slice(i, i + BATCH_SIZE)
+    const { error } = await supabase.from('transactions').insert(batch)
+
+    if (error) {
+      console.error(`[importTransactions] Batch insert error:`, error.message)
+    } else {
+      imported += batch.length
     }
   }
+
+  console.log(`[importTransactions] Inserted ${imported} transactions`)
 
   // Update last sync date on bank account
   await supabase
