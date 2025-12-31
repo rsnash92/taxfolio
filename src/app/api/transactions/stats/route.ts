@@ -66,12 +66,22 @@ export async function GET(request: NextRequest) {
       .eq('review_status', 'confirmed')
       .neq('category_id', personalCategory?.id || '')
 
+    // Get uncategorised count (pending with no AI suggestion)
+    const { count: uncategorised } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('tax_year', taxYear)
+      .eq('review_status', 'pending')
+      .is('ai_suggested_category_id', null)
+
     return NextResponse.json({
       total: total || 0,
       personal: personal || 0,
       ai_suggested_personal: aiSuggestedPersonal || 0,
       business: confirmedBusiness || 0,
       needs_review: needsReview || 0,
+      uncategorised: uncategorised || 0,
     })
   } catch (error) {
     console.error('[transactions/stats] Error:', error)

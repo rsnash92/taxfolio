@@ -191,30 +191,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { transaction_ids, stream } = await request.json()
-    console.log('[bulk-categorise] Received transaction_ids:', transaction_ids?.length || 0, 'stream:', stream)
+    const { transaction_ids, stream, tax_year, categorise_all } = await request.json()
+    console.log('[bulk-categorise] Received:', {
+      transaction_ids_count: transaction_ids?.length || 0,
+      stream,
+      tax_year,
+      categorise_all
+    })
 
-    if (!transaction_ids || !Array.isArray(transaction_ids) || transaction_ids.length === 0) {
-      console.log('[bulk-categorise] No transaction IDs provided')
-      return NextResponse.json({ error: 'No transaction IDs provided' }, { status: 400 })
+    let uncategorisedTransactions: TransactionInput[] = []
+
+    if (categorise_all && tax_year) {
+      // Fetch ALL uncategorised transactions for the tax year directly from DB
+      console.log('[bulk-categorise] Fetching all uncategorised for tax year:', tax_year)
+      const { data: transactions, error: fetchError } = await supabase
+        .from('transactions')
+        .select('id, description, amount, merchant_name, date, ai_suggested_category_id')
+        .eq('user_id', user.id)
+        .eq('tax_year', tax_year)
+        .eq('review_status', 'pending')
+        .is('ai_suggested_category_id', null)
+        .order('date', { ascending: false })
+
+      if (fetchError) {
+        console.log('[bulk-categorise] Fetch error:', fetchError.message)
+        return NextResponse.json({ error: fetchError.message }, { status: 500 })
+      }
+
+      uncategorisedTransactions = transactions || []
+      console.log('[bulk-categorise] Found', uncategorisedTransactions.length, 'uncategorised transactions')
+    } else if (transaction_ids && Array.isArray(transaction_ids) && transaction_ids.length > 0) {
+      // Original behavior: use provided transaction IDs
+      const { data: transactions, error: fetchError } = await supabase
+        .from('transactions')
+        .select('id, description, amount, merchant_name, date, ai_suggested_category_id')
+        .eq('user_id', user.id)
+        .in('id', transaction_ids)
+
+      if (fetchError) {
+        console.log('[bulk-categorise] Fetch error:', fetchError.message)
+        return NextResponse.json({ error: fetchError.message }, { status: 500 })
+      }
+
+      console.log('[bulk-categorise] Fetched transactions:', transactions?.length || 0)
+
+      // Filter to only those not yet categorised by AI
+      uncategorisedTransactions = transactions?.filter(tx => !tx.ai_suggested_category_id) || []
+    } else {
+      console.log('[bulk-categorise] No transaction IDs or tax_year provided')
+      return NextResponse.json({ error: 'No transaction IDs or tax_year provided' }, { status: 400 })
     }
-
-    // Fetch transactions to categorise
-    const { data: transactions, error: fetchError } = await supabase
-      .from('transactions')
-      .select('id, description, amount, merchant_name, date, ai_suggested_category_id')
-      .eq('user_id', user.id)
-      .in('id', transaction_ids)
-
-    if (fetchError) {
-      console.log('[bulk-categorise] Fetch error:', fetchError.message)
-      return NextResponse.json({ error: fetchError.message }, { status: 500 })
-    }
-
-    console.log('[bulk-categorise] Fetched transactions:', transactions?.length || 0)
-
-    // Filter to only those not yet categorised by AI
-    const uncategorisedTransactions = transactions?.filter(tx => !tx.ai_suggested_category_id) || []
     console.log('[bulk-categorise] Uncategorised transactions:', uncategorisedTransactions.length)
 
     if (uncategorisedTransactions.length === 0) {

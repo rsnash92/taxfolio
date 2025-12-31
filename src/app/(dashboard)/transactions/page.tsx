@@ -24,6 +24,7 @@ interface TransactionStats {
   ai_suggested_personal: number
   business: number
   needs_review: number
+  uncategorised: number
 }
 
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
@@ -157,30 +158,30 @@ export default function TransactionsPage() {
   }, [fetchTransactions, fetchCategories, fetchStats])
 
   const handleCategorise = async () => {
-    const uncategorised = transactions.filter(
-      (tx) => !tx.ai_suggested_category_id && tx.review_status === "pending"
-    )
+    // Use stats count for total uncategorised (not just loaded transactions)
+    const totalUncategorised = stats?.uncategorised || 0
 
-    if (uncategorised.length === 0) {
+    if (totalUncategorised === 0) {
       toast.info("No transactions to categorise")
       return
     }
 
     setCategorising(true)
     setCategoriseProgress(0)
-    const batchCount = Math.ceil(uncategorised.length / 20)
-    setCategoriseStatus(`Preparing ${uncategorised.length} transactions (${batchCount} batches)...`)
+    const batchCount = Math.ceil(totalUncategorised / 20)
+    setCategoriseStatus(`Preparing ${totalUncategorised} transactions (${batchCount} batches)...`)
 
     try {
       setCategoriseProgress(5)
       setCategoriseStatus(`Starting AI categorisation...`)
 
-      // Use streaming endpoint for real-time progress
+      // Use categorise_all to process ALL uncategorised transactions in the database
       const res = await fetch("/api/transactions/bulk-categorise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transaction_ids: uncategorised.map((tx) => tx.id),
+          categorise_all: true,
+          tax_year: taxYear,
           stream: true,
         }),
       })
@@ -392,12 +393,10 @@ export default function TransactionsPage() {
     )
   })
 
-  // Use stats for total counts (from API), local counts for loaded transactions
+  // Use stats for total counts (from API)
   const totalPendingCount = stats?.needs_review || 0
-  const loadedPendingCount = transactions.filter((tx) => tx.review_status === "pending").length
-  const uncategorisedCount = transactions.filter(
-    (tx) => !tx.ai_suggested_category_id && tx.review_status === "pending"
-  ).length
+  const totalUncategorisedCount = stats?.uncategorised || 0
+  // Local counts for loaded transactions (used for Confirm All button)
   const confirmableCount = transactions.filter(
     (tx) => tx.ai_suggested_category_id && tx.review_status === "pending"
   ).length
@@ -412,14 +411,14 @@ export default function TransactionsPage() {
           </Badge>
         )}
         <div className="flex-1" />
-        {uncategorisedCount > 0 && (
+        {totalUncategorisedCount > 0 && (
           <Button onClick={handleCategorise} disabled={categorising}>
             {categorising ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Brain className="mr-2 h-4 w-4" />
             )}
-            {categorising ? "Categorising..." : `Categorise ${uncategorisedCount}`}
+            {categorising ? "Categorising..." : `Categorise ${totalUncategorisedCount}`}
           </Button>
         )}
         {confirmableCount > 0 && (
