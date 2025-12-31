@@ -64,9 +64,25 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { account_id, is_business_account } = await request.json()
+    const { account_id, is_business_account, delete_transactions } = await request.json()
 
     console.log('[accounts PATCH] Updating account:', account_id, 'is_business_account:', is_business_account)
+
+    // If toggling OFF business account and delete_transactions is true, delete the transactions
+    if (is_business_account === false && delete_transactions === true) {
+      const { error: deleteError, count } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('bank_account_id', account_id)
+        .eq('user_id', user.id)
+
+      if (deleteError) {
+        console.error('[accounts PATCH] Error deleting transactions:', deleteError.message)
+        return NextResponse.json({ error: deleteError.message }, { status: 500 })
+      }
+
+      console.log('[accounts PATCH] Deleted', count, 'transactions for account:', account_id)
+    }
 
     const { data, error } = await supabase
       .from('bank_accounts')

@@ -6,8 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Building2, RefreshCw, Plus, Loader2, Upload, CheckCircle } from "lucide-react"
+import { Building2, RefreshCw, Plus, Loader2, Upload, CheckCircle, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { CSVUploadDialog } from "@/components/csv-upload-dialog"
 
@@ -36,6 +46,7 @@ export default function AccountsPage() {
   const [syncProgress, setSyncProgress] = useState(0)
   const [syncStatus, setSyncStatus] = useState("")
   const [csvDialogOpen, setCsvDialogOpen] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; accountId: string; accountName: string } | null>(null)
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -53,7 +64,7 @@ export default function AccountsPage() {
     fetchAccounts()
   }, [fetchAccounts])
 
-  const handleToggleBusiness = async (accountId: string, isBusiness: boolean) => {
+  const handleToggleBusiness = async (accountId: string, isBusiness: boolean, deleteTransactions: boolean = false) => {
     try {
       const res = await fetch("/api/accounts", {
         method: "PATCH",
@@ -61,6 +72,7 @@ export default function AccountsPage() {
         body: JSON.stringify({
           account_id: accountId,
           is_business_account: isBusiness,
+          delete_transactions: deleteTransactions,
         }),
       })
 
@@ -70,10 +82,36 @@ export default function AccountsPage() {
             acc.id === accountId ? { ...acc, is_business_account: isBusiness } : acc
           )
         )
-        toast.success(isBusiness ? "Marked as business account" : "Marked as personal account")
+        if (deleteTransactions) {
+          toast.success("Account updated and transactions deleted")
+        } else {
+          toast.success(isBusiness ? "Marked as business account" : "Marked as personal account")
+        }
       }
     } catch {
       toast.error("Failed to update account")
+    }
+  }
+
+  const handleToggleWithConfirmation = (accountId: string, isBusiness: boolean) => {
+    // If turning OFF business account, show confirmation dialog
+    if (!isBusiness) {
+      const account = accounts.find(a => a.id === accountId)
+      setConfirmDialog({
+        open: true,
+        accountId,
+        accountName: account?.name || 'this account',
+      })
+    } else {
+      // Turning ON - no confirmation needed
+      handleToggleBusiness(accountId, true)
+    }
+  }
+
+  const handleConfirmRemoveBusinessAccount = () => {
+    if (confirmDialog) {
+      handleToggleBusiness(confirmDialog.accountId, false, true)
+      setConfirmDialog(null)
     }
   }
 
@@ -246,7 +284,7 @@ export default function AccountsPage() {
                     <AccountRow
                       key={account.id}
                       account={account}
-                      onToggle={handleToggleBusiness}
+                      onToggle={handleToggleWithConfirmation}
                     />
                   ))}
                 </div>
@@ -272,7 +310,7 @@ export default function AccountsPage() {
                     <AccountRow
                       key={account.id}
                       account={account}
-                      onToggle={handleToggleBusiness}
+                      onToggle={handleToggleWithConfirmation}
                     />
                   ))}
                 </div>
@@ -288,6 +326,35 @@ export default function AccountsPage() {
         onOpenChange={setCsvDialogOpen}
         onSuccess={fetchAccounts}
       />
+
+      {/* Confirmation Dialog for removing business account */}
+      <AlertDialog open={confirmDialog?.open ?? false} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Remove business account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Removing <strong>{confirmDialog?.accountName}</strong> as a business account will <strong>permanently delete all transactions</strong> imported from this account.
+              </p>
+              <p className="text-destructive font-medium">
+                This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRemoveBusinessAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete transactions
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

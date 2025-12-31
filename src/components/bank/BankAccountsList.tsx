@@ -148,16 +148,26 @@ export function BankAccountsList({
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Disconnect {connection.bank_name}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will remove the connection to your bank. Your existing transaction
-                          data will be preserved, but no new transactions will be imported.
+                        <AlertDialogTitle className="flex items-center gap-2">
+                          <AlertCircle className="h-5 w-5 text-destructive" />
+                          Disconnect {connection.bank_name}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p>
+                            This will remove the connection to your bank and <strong>permanently delete all transactions</strong> imported from this account.
+                          </p>
+                          <p className="text-destructive font-medium">
+                            This action cannot be undone.
+                          </p>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDisconnect(connection.id)}>
-                          Disconnect
+                        <AlertDialogAction
+                          onClick={() => handleDisconnect(connection.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete and disconnect
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
