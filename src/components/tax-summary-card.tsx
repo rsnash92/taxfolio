@@ -133,7 +133,7 @@ export function TaxSummaryCard({ taxYear }: { taxYear: string }) {
                 {transactionCounts.personal_excluded} personal transaction{transactionCounts.personal_excluded === 1 ? '' : 's'}
               </span>{' '}
               excluded from calculations.{' '}
-              <Link href="/transactions" className="text-[#15e49e] hover:underline">
+              <Link href="/transactions?filter=personal" className="text-[#15e49e] hover:underline">
                 Review →
               </Link>
             </div>

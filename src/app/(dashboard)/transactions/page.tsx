@@ -81,9 +81,12 @@ function getMonthsForTaxYear(taxYear: string): { value: string; label: string }[
   }))
 }
 
+type CategoryFilter = "all" | "business" | "personal" | "needs_review"
+
 export default function TransactionsPage() {
   const searchParams = useSearchParams()
   const initialStatus = searchParams.get("status") || "all"
+  const initialFilter = (searchParams.get("filter") as CategoryFilter) || "all"
 
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -101,6 +104,7 @@ export default function TransactionsPage() {
   const [showPersonal, setShowPersonal] = useState(true)
   const [stats, setStats] = useState<TransactionStats | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(initialFilter)
 
   // Sync tax year when it changes (via custom event from PageHeader)
   useEffect(() => {
@@ -398,8 +402,27 @@ export default function TransactionsPage() {
   }
 
   const filteredTransactions = transactions.filter((tx) => {
-    // Filter out personal transactions if toggle is off
-    if (!showPersonal) {
+    // Apply category filter (from stat cards)
+    if (categoryFilter !== "all") {
+      const category = tx.category || tx.ai_suggested_category
+      const isPersonal = category?.code === 'personal'
+      const isConfirmed = tx.review_status === 'confirmed'
+      const isPending = tx.review_status === 'pending'
+
+      if (categoryFilter === "business") {
+        // Business = confirmed AND not personal
+        if (!isConfirmed || isPersonal) return false
+      } else if (categoryFilter === "personal") {
+        // Personal = confirmed as personal
+        if (!isConfirmed || !isPersonal) return false
+      } else if (categoryFilter === "needs_review") {
+        // Needs review = pending
+        if (!isPending) return false
+      }
+    }
+
+    // Filter out personal transactions if toggle is off (only when not specifically viewing personal)
+    if (!showPersonal && categoryFilter !== "personal") {
       const category = tx.category || tx.ai_suggested_category
       if (category?.code === 'personal') return false
     }
@@ -456,13 +479,18 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      {/* Transaction Stats */}
+      {/* Transaction Stats - Clickable Filters */}
       {stats && stats.total > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:border-[#15e49e]/50 ${
+              categoryFilter === "business" ? "border-[#15e49e] ring-1 ring-[#15e49e]/30" : ""
+            }`}
+            onClick={() => setCategoryFilter(categoryFilter === "business" ? "all" : "business")}
+          >
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-zinc-800">
+                <div className={`p-2 rounded-lg ${categoryFilter === "business" ? "bg-[#15e49e]/20" : "bg-zinc-800"}`}>
                   <Briefcase className="h-4 w-4 text-[#15e49e]" />
                 </div>
                 <div>
@@ -472,10 +500,15 @@ export default function TransactionsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:border-zinc-500/50 ${
+              categoryFilter === "personal" ? "border-zinc-500 ring-1 ring-zinc-500/30" : ""
+            }`}
+            onClick={() => setCategoryFilter(categoryFilter === "personal" ? "all" : "personal")}
+          >
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-zinc-800">
+                <div className={`p-2 rounded-lg ${categoryFilter === "personal" ? "bg-zinc-500/20" : "bg-zinc-800"}`}>
                   <User className="h-4 w-4 text-zinc-500" />
                 </div>
                 <div>
@@ -485,10 +518,15 @@ export default function TransactionsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:border-amber-500/50 ${
+              categoryFilter === "needs_review" ? "border-amber-500 ring-1 ring-amber-500/30" : ""
+            }`}
+            onClick={() => setCategoryFilter(categoryFilter === "needs_review" ? "all" : "needs_review")}
+          >
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-zinc-800">
+                <div className={`p-2 rounded-lg ${categoryFilter === "needs_review" ? "bg-amber-500/20" : "bg-zinc-800"}`}>
                   <AlertCircle className="h-4 w-4 text-amber-500" />
                 </div>
                 <div>
@@ -498,7 +536,12 @@ export default function TransactionsPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={`cursor-pointer transition-all hover:border-zinc-600 ${
+              categoryFilter === "all" ? "border-zinc-600 ring-1 ring-zinc-600/30" : ""
+            }`}
+            onClick={() => setCategoryFilter("all")}
+          >
             <CardContent className="pt-4 pb-4">
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
