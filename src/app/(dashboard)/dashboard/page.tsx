@@ -10,6 +10,7 @@ import { TaxSummaryCard } from "@/components/tax-summary-card"
 import { PropertyTaxCard } from "@/components/property-tax-card"
 import { HomeOfficeCard } from "@/components/home-office-card"
 import { SuggestionsWidget } from "@/components/suggestions/suggestions-widget"
+import { HMRCWidgetWrapper } from "@/components/hmrc"
 
 interface TransactionData {
   amount: number
@@ -256,8 +257,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <HomeOfficeCard taxYear={taxYear} />
       </div>
 
-      {/* Tax Saving Suggestions */}
-      <SuggestionsWidget taxYear={taxYear} />
+      {/* MTD Status & Suggestions */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <HMRCWidgetWrapper taxYear={taxYear} />
+        <div className="lg:col-span-2">
+          <SuggestionsWidget taxYear={taxYear} />
+        </div>
+      </div>
 
       {/* Connected Accounts */}
       <Card>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -32,6 +33,8 @@ import {
   Lightbulb,
   FileText,
 } from "lucide-react"
+import { HMRCStatusBadge } from "@/components/hmrc/hmrc-status-badge"
+import { hasApproachingDeadline, getCurrentTaxYear } from "@/lib/hmrc/deadlines"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
   {
@@ -103,6 +106,49 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
   const router = useRouter()
   const supabase = createClient()
 
+  // MTD status for badge
+  const [mtdStatus, setMtdStatus] = useState<{
+    isConnected: boolean
+    readyCount: number
+    hasUrgentDeadline: boolean
+  } | null>(null)
+
+  useEffect(() => {
+    async function fetchMTDStatus() {
+      try {
+        const taxYear = getCurrentTaxYear()
+        const [statusRes, mtdRes] = await Promise.all([
+          fetch('/api/hmrc/status'),
+          fetch(`/api/mtd/quarters?tax_year=${taxYear}`),
+        ])
+
+        const deadlineCheck = hasApproachingDeadline(taxYear)
+        let isConnected = false
+        let readyCount = 0
+
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          isConnected = statusData.connected
+        }
+
+        if (mtdRes.ok) {
+          const mtdData = await mtdRes.json()
+          readyCount = mtdData?.summary?.readyQuarters || 0
+        }
+
+        setMtdStatus({
+          isConnected,
+          readyCount,
+          hasUrgentDeadline: deadlineCheck.hasApproaching,
+        })
+      } catch (error) {
+        console.error('Failed to fetch MTD status:', error)
+      }
+    }
+
+    fetchMTDStatus()
+  }, [])
+
   // Filter nav items based on user settings
   const filteredNavItems = navItems.filter(item => {
     if (item.href === '/properties' && !showProperties) return false
@@ -149,19 +195,29 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
         {filteredNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
+          const showMTDBadge = item.href === '/mtd' && mtdStatus
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
+                "flex items-center justify-between rounded-xl px-5 py-3 text-base font-medium transition-colors",
                 isActive
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
-              {item.title}
+              <div className="flex items-center gap-3">
+                <Icon className="h-5 w-5" />
+                {item.title}
+              </div>
+              {showMTDBadge && (
+                <HMRCStatusBadge
+                  isConnected={mtdStatus.isConnected}
+                  readyCount={mtdStatus.readyCount}
+                  hasUrgentDeadline={mtdStatus.hasUrgentDeadline}
+                />
+              )}
             </Link>
           )
         })}

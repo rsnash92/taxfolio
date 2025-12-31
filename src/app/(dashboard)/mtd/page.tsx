@@ -10,6 +10,7 @@ import { CalendarDays, AlertCircle, CheckCircle2 } from "lucide-react"
 import { QuarterCard } from "@/components/mtd/quarter-card"
 import { FeatureGate } from "@/components/feature-gate"
 import { useSubscription } from "@/hooks/use-subscription"
+import { HMRCBannerWrapper } from "@/components/hmrc"
 import type { QuarterStatus } from "@/lib/mtd-utils"
 
 interface CategoryBreakdown {
@@ -148,6 +149,9 @@ export default function MTDPage() {
       hasAccess={hasAccess}
     >
       <div className="space-y-6">
+        {/* HMRC Connection Banner */}
+        <HMRCBannerWrapper taxYear={taxYear} />
+
         {/* Error State */}
         {error && (
         <Alert variant="destructive">
