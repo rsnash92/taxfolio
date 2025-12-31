@@ -191,8 +191,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { transaction_ids } = await request.json()
-    console.log('[bulk-categorise] Received transaction_ids:', transaction_ids?.length || 0)
+    const { transaction_ids, stream } = await request.json()
+    console.log('[bulk-categorise] Received transaction_ids:', transaction_ids?.length || 0, 'stream:', stream)
 
     if (!transaction_ids || !Array.isArray(transaction_ids) || transaction_ids.length === 0) {
       console.log('[bulk-categorise] No transaction IDs provided')
@@ -240,6 +240,102 @@ export async function POST(request: NextRequest) {
 
     console.log('[bulk-categorise] Processing', transactionList.length, 'transactions in', batches.length, 'batches')
 
+    // Get category IDs from codes upfront
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, code')
+      .in('code', CATEGORY_CODES)
+
+    const categoryMap = new Map(categories?.map((c: { id: string; code: string }) => [c.code, c.id]) || [])
+
+    // If streaming requested, use SSE
+    if (stream) {
+      const encoder = new TextEncoder()
+      const readable = new ReadableStream({
+        async start(controller) {
+          const sendEvent = (data: Record<string, unknown>) => {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+          }
+
+          let totalUpdated = 0
+
+          for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex]
+            const progress = Math.round(((batchIndex + 1) / batches.length) * 100)
+
+            sendEvent({
+              type: 'progress',
+              batch: batchIndex + 1,
+              totalBatches: batches.length,
+              progress,
+              status: `Processing batch ${batchIndex + 1} of ${batches.length}...`,
+            })
+
+            try {
+              const message = await anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                messages: [
+                  {
+                    role: 'user',
+                    content: `Categorise these ${batch.length} transactions:\n\n${JSON.stringify(batch, null, 2)}`,
+                  },
+                ],
+                system: SYSTEM_PROMPT,
+              })
+
+              const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+
+              try {
+                const batchResults: CategoryResult[] = JSON.parse(responseText)
+
+                // Update transactions with AI suggestions
+                for (const result of batchResults) {
+                  const categoryId = categoryMap.get(result.category_code)
+                  if (!categoryId) continue
+
+                  const { error: updateError } = await supabase
+                    .from('transactions')
+                    .update({
+                      ai_suggested_category_id: categoryId,
+                      ai_confidence: result.confidence,
+                    })
+                    .eq('id', result.id)
+                    .eq('user_id', user.id)
+
+                  if (!updateError) {
+                    totalUpdated++
+                  }
+                }
+              } catch {
+                console.error('[bulk-categorise] Failed to parse batch', batchIndex + 1)
+              }
+            } catch (batchError) {
+              console.error('[bulk-categorise] Error processing batch', batchIndex + 1, ':', batchError)
+            }
+          }
+
+          sendEvent({
+            type: 'complete',
+            success: true,
+            updated: totalUpdated,
+            total: uncategorisedTransactions.length,
+          })
+
+          controller.close()
+        },
+      })
+
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
+    }
+
+    // Non-streaming fallback (original behavior)
     let results: CategoryResult[] = []
 
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
@@ -266,25 +362,15 @@ export async function POST(request: NextRequest) {
           const batchResults = JSON.parse(responseText)
           results = results.concat(batchResults)
           console.log('[bulk-categorise] Batch', batchIndex + 1, 'parsed', batchResults.length, 'results')
-        } catch (parseError) {
+        } catch {
           console.error('[bulk-categorise] Failed to parse batch', batchIndex + 1, 'response:', responseText.substring(0, 200))
-          // Continue with other batches even if one fails
         }
       } catch (batchError) {
         console.error('[bulk-categorise] Error processing batch', batchIndex + 1, ':', batchError)
-        // Continue with other batches
       }
     }
 
     console.log('[bulk-categorise] Total results from all batches:', results.length)
-
-    // Get category IDs from codes
-    const { data: categories } = await supabase
-      .from('categories')
-      .select('id, code')
-      .in('code', CATEGORY_CODES)
-
-    const categoryMap = new Map(categories?.map((c: { id: string; code: string }) => [c.code, c.id]) || [])
 
     // Update transactions with AI suggestions
     let updatedCount = 0

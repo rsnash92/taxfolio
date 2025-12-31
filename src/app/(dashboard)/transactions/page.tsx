@@ -146,35 +146,68 @@ export default function TransactionsPage() {
 
     try {
       setCategoriseProgress(5)
-      setCategoriseStatus(`Analysing ${uncategorised.length} transactions with AI (this may take a minute)...`)
+      setCategoriseStatus(`Starting AI categorisation...`)
 
+      // Use streaming endpoint for real-time progress
       const res = await fetch("/api/transactions/bulk-categorise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transaction_ids: uncategorised.map((tx) => tx.id),
+          stream: true,
         }),
       })
 
-      setCategoriseProgress(85)
-      setCategoriseStatus("Processing results...")
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || "Failed to categorise")
+      }
 
-      const data = await res.json()
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
 
-      setCategoriseProgress(95)
-      setCategoriseStatus("Saving categories...")
+      if (!reader) {
+        throw new Error("No response stream")
+      }
 
-      if (data.success) {
+      let finalData: { success?: boolean; updated?: number; total?: number } = {}
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split("\n\n")
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6))
+
+              if (data.type === "progress") {
+                setCategoriseProgress(data.progress)
+                setCategoriseStatus(data.status)
+              } else if (data.type === "complete") {
+                finalData = data
+              }
+            } catch {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+
+      if (finalData.success) {
         setCategoriseProgress(100)
         setCategoriseStatus("Complete!")
-        toast.success(`Categorised ${data.updated} of ${data.total} transactions`)
+        toast.success(`Categorised ${finalData.updated} of ${finalData.total} transactions`)
         await fetchTransactions()
         await fetchStats()
       } else {
-        toast.error(data.error || "Failed to categorise")
+        toast.error("Failed to categorise")
       }
-    } catch {
-      toast.error("Failed to categorise transactions")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to categorise transactions")
     } finally {
       // Small delay to show 100% before hiding
       setTimeout(() => {
