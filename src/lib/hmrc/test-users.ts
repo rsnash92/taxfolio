@@ -2,6 +2,16 @@ import { TestUser } from './types'
 
 const HMRC_BASE_URL = process.env.HMRC_API_BASE_URL || 'https://test-api.service.hmrc.gov.uk'
 
+interface HMRCTestUserResponse {
+  userId: string
+  password: string
+  userFullName: string
+  emailAddress: string
+  nino?: string
+  nationalInsuranceNumber?: string
+  mtdItId: string
+}
+
 /**
  * Create a test individual for sandbox testing
  */
@@ -22,5 +32,17 @@ export async function createTestUser(): Promise<TestUser> {
     throw new Error(`Failed to create test user: ${JSON.stringify(error)}`)
   }
 
-  return response.json()
+  const data: HMRCTestUserResponse = await response.json()
+
+  // HMRC API may return NINO as 'nino' or 'nationalInsuranceNumber'
+  const nino = data.nino || data.nationalInsuranceNumber || ''
+
+  return {
+    userId: data.userId,
+    password: data.password,
+    userFullName: data.userFullName,
+    emailAddress: data.emailAddress,
+    nino,
+    mtdItId: data.mtdItId,
+  }
 }

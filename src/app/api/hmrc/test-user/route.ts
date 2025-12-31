@@ -25,10 +25,16 @@ export async function POST() {
     const testUser = await createTestUser()
 
     // Save the NINO to user profile so it can be used for submissions
-    await supabase
-      .from('users')
-      .update({ hmrc_nino: testUser.nino })
-      .eq('id', user.id)
+    if (testUser.nino) {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ hmrc_nino: testUser.nino })
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('Failed to save NINO:', updateError)
+      }
+    }
 
     return NextResponse.json(testUser)
   } catch (error) {
