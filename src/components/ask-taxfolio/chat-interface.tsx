@@ -5,13 +5,15 @@ import { ChatMessage } from "./chat-message"
 import { ChatInput } from "./chat-input"
 import { SuggestedQuestions } from "./suggested-questions"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bot } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Bot, Trash2 } from "lucide-react"
 import Cookies from "js-cookie"
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
+  timestamp: number
 }
 
 interface ChatInterfaceProps {
@@ -20,6 +22,8 @@ interface ChatInterfaceProps {
 }
 
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
+const CHAT_STORAGE_KEY = "taxfolio_chat_history"
+const CHAT_EXPIRY_HOURS = 24 // Messages expire after 24 hours
 
 function getCurrentTaxYear(): string {
   const now = new Date()
@@ -34,8 +38,36 @@ function getCurrentTaxYear(): string {
   }
 }
 
+// Load messages from localStorage
+function loadMessages(): Message[] {
+  if (typeof window === "undefined") return []
+  try {
+    const stored = localStorage.getItem(CHAT_STORAGE_KEY)
+    if (!stored) return []
+
+    const messages: Message[] = JSON.parse(stored)
+    const now = Date.now()
+    const expiryMs = CHAT_EXPIRY_HOURS * 60 * 60 * 1000
+
+    // Filter out expired messages
+    return messages.filter((m) => now - m.timestamp < expiryMs)
+  } catch {
+    return []
+  }
+}
+
+// Save messages to localStorage
+function saveMessages(messages: Message[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
+  } catch {
+    // localStorage might be full or disabled
+  }
+}
+
 export function ChatInterface({ transactionId, className }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(() => loadMessages())
   const [isLoading, setIsLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(true)
@@ -89,11 +121,26 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
     }
   }, [messages])
 
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveMessages(messages)
+    }
+  }, [messages])
+
+  // Clear chat history
+  const clearChat = () => {
+    setMessages([])
+    localStorage.removeItem(CHAT_STORAGE_KEY)
+    fetchSuggestions(taxYear) // Reload suggestions
+  }
+
   const sendMessage = async (content: string) => {
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content,
+      timestamp: Date.now(),
     }
 
     setMessages((prev) => [...prev, userMessage])
@@ -121,6 +168,7 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.message,
+        timestamp: Date.now(),
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -141,6 +189,7 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
           error instanceof Error
             ? error.message
             : "Sorry, I encountered an error. Please try again.",
+        timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
@@ -185,6 +234,20 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
             ))}
             {isLoading && (
               <ChatMessage role="assistant" content="" isLoading />
+            )}
+            {/* Clear chat button */}
+            {messages.length > 0 && !isLoading && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearChat}
+                  className="text-muted-foreground text-xs"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Clear chat
+                </Button>
+              </div>
             )}
           </div>
         )}
