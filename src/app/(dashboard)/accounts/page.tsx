@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
-import { Building2, RefreshCw, Plus, Loader2, Upload } from "lucide-react"
+import { Building2, RefreshCw, Plus, Loader2, Upload, CheckCircle } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import { CSVUploadDialog } from "@/components/csv-upload-dialog"
 
 interface Account {
@@ -32,6 +33,8 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState<string | null>(null)
+  const [syncProgress, setSyncProgress] = useState(0)
+  const [syncStatus, setSyncStatus] = useState("")
   const [csvDialogOpen, setCsvDialogOpen] = useState(false)
 
   const fetchAccounts = useCallback(async () => {
@@ -76,24 +79,54 @@ export default function AccountsPage() {
 
   const handleSync = async () => {
     setSyncing("all")
+    setSyncProgress(0)
+    setSyncStatus("Connecting to bank...")
+
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setSyncProgress(prev => {
+        if (prev >= 90) return prev
+        return prev + Math.random() * 15
+      })
+    }, 500)
+
     try {
+      setSyncStatus("Fetching transactions...")
+      setSyncProgress(30)
+
       const res = await fetch("/api/truelayer/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       })
 
+      setSyncProgress(80)
+      setSyncStatus("Processing transactions...")
+
       const data = await res.json()
+
+      clearInterval(progressInterval)
+      setSyncProgress(100)
+
       if (res.ok) {
+        setSyncStatus(`Done! ${data.imported} new, ${data.skipped} already imported`)
         toast.success(`Synced ${data.imported} new transactions (${data.skipped} already imported)`)
         fetchAccounts()
       } else {
+        setSyncStatus("")
         toast.error(data.error || "Failed to sync")
       }
     } catch {
+      clearInterval(progressInterval)
+      setSyncStatus("")
       toast.error("Failed to sync transactions")
     } finally {
-      setSyncing(null)
+      // Keep progress visible briefly before hiding
+      setTimeout(() => {
+        setSyncing(null)
+        setSyncProgress(0)
+        setSyncStatus("")
+      }, 2000)
     }
   }
 
@@ -129,23 +162,32 @@ export default function AccountsPage() {
         </Button>
       </div>
 
-      {/* Instructions */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-medium">Mark your business accounts</h3>
-              <p className="text-sm text-muted-foreground">
-                Toggle the switch next to each account to mark it as a business account.
-                Only transactions from business accounts will be included in your tax calculations.
-              </p>
-            </div>
+      {/* Sync Progress */}
+      {syncing && (
+        <div className="p-4 bg-[#15e49e]/10 border border-[#15e49e]/30 rounded-xl">
+          <div className="flex items-center gap-3 mb-3">
+            <Loader2 className="h-5 w-5 text-[#15e49e] animate-spin" />
+            <span className="font-medium text-[#15e49e]">{syncStatus}</span>
           </div>
-        </CardContent>
-      </Card>
+          <Progress value={syncProgress} className="h-2" />
+        </div>
+      )}
+
+      {/* Instructions */}
+      <div className="p-5 bg-[#15e49e]/10 border border-[#15e49e]/30 rounded-xl">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 bg-[#15e49e]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <CheckCircle className="h-5 w-5 text-[#15e49e]" />
+          </div>
+          <div>
+            <h3 className="font-medium text-[#15e49e]">Mark your business accounts</h3>
+            <p className="text-sm text-muted-foreground">
+              Toggle the switch next to each account to mark it as a business account.
+              Only transactions from business accounts will be included in your tax calculations.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {loading ? (
         <Card>
