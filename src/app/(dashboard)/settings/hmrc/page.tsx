@@ -109,7 +109,7 @@ export default function HMRCSettingsPage() {
       if (res.ok) {
         const data = await res.json()
         setTestUser(data)
-        toast.success('Test user created')
+        toast.success('Test user created and NINO saved to your profile')
       } else {
         const error = await res.json()
         toast.error(error.error || 'Failed to create test user')

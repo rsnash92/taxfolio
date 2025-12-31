@@ -23,6 +23,13 @@ export async function POST() {
 
   try {
     const testUser = await createTestUser()
+
+    // Save the NINO to user profile so it can be used for submissions
+    await supabase
+      .from('users')
+      .update({ hmrc_nino: testUser.nino })
+      .eq('id', user.id)
+
     return NextResponse.json(testUser)
   } catch (error) {
     console.error('Failed to create test user:', error)
