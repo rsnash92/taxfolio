@@ -204,7 +204,8 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
   return (
     <div className={`flex flex-col h-full ${className || ""}`}>
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
+        <div className="p-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
             <div className="w-16 h-16 rounded-full bg-[#15e49e]/20 flex items-center justify-center mb-4">
@@ -251,10 +252,11 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
             )}
           </div>
         )}
+        </div>
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t p-4 space-y-3">
+      <div className="border-t p-4 space-y-3 shrink-0">
         {rateLimit && rateLimit.remaining < 10 && (
           <p className="text-xs text-muted-foreground text-center">
             {rateLimit.remaining} questions remaining this hour

@@ -32,15 +32,15 @@ export function AskButton() {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-full sm:w-[440px] p-0 flex flex-col"
+        className="w-full sm:w-[440px] p-0 flex flex-col h-full overflow-hidden"
       >
-        <SheetHeader className="px-4 py-3 border-b">
+        <SheetHeader className="px-4 py-3 border-b shrink-0">
           <SheetTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-[#15e49e]" />
             Ask TaxFolio
           </SheetTitle>
         </SheetHeader>
-        <ChatInterface className="flex-1" />
+        <ChatInterface className="flex-1 min-h-0 overflow-hidden" />
       </SheetContent>
     </Sheet>
   )
