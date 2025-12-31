@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
 import Cookies from "js-cookie"
-import { Bell, Download, Loader2, Moon, Sun } from "lucide-react"
+import { Bell, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -104,32 +104,6 @@ export function PageHeader() {
     window.dispatchEvent(new CustomEvent("taxYearChanged", { detail: value }))
   }
 
-  // PDF download state and handler (only shown on dashboard)
-  const [downloading, setDownloading] = useState(false)
-  const showPdfExport = pathname === "/dashboard"
-
-  const handlePdfDownload = async () => {
-    setDownloading(true)
-    try {
-      const response = await fetch(`/api/dashboard/pdf?taxYear=${taxYear}`)
-      if (!response.ok) throw new Error("Failed to generate PDF")
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `TaxFolio-Summary-${taxYear}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error("Download failed:", error)
-      alert("Failed to download PDF. Please try again.")
-    } finally {
-      setDownloading(false)
-    }
-  }
-
   // Get page title from pathname
   const title = pageTitles[pathname] || "Dashboard"
 
@@ -156,22 +130,6 @@ export function PageHeader() {
           <Bell className="h-4 w-4" />
           <span className="sr-only">Notifications</span>
         </Button>
-
-        {showPdfExport && (
-          <Button
-            variant="outline"
-            className="bg-card border-border"
-            onClick={handlePdfDownload}
-            disabled={downloading}
-          >
-            {downloading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {downloading ? "Generating..." : "Download PDF"}
-          </Button>
-        )}
 
         <Select value={taxYear} onValueChange={handleTaxYearChange}>
           <SelectTrigger className="w-[140px] bg-card border-border">
