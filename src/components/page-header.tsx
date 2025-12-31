@@ -83,6 +83,8 @@ export function PageHeader() {
     setTaxYear(value)
     // Save to cookie (expires in 1 year)
     Cookies.set(TAX_YEAR_COOKIE, value, { expires: 365 })
+    // Dispatch custom event so other components can react
+    window.dispatchEvent(new CustomEvent("taxYearChanged", { detail: value }))
   }
 
   // Get page title from pathname

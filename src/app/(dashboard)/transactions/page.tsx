@@ -68,17 +68,25 @@ export default function TransactionsPage() {
   const [showPersonal, setShowPersonal] = useState(true)
   const [stats, setStats] = useState<TransactionStats | null>(null)
 
-  // Sync tax year from cookie when it changes
+  // Sync tax year when it changes (via custom event from PageHeader)
   useEffect(() => {
+    const handleTaxYearChange = (event: CustomEvent<string>) => {
+      setTaxYear(event.detail)
+    }
     const checkCookie = () => {
       const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
       if (cookieYear && cookieYear !== taxYear) {
         setTaxYear(cookieYear)
       }
     }
-    // Check on focus to catch changes from other tabs
+    // Listen for tax year changes from the header selector
+    window.addEventListener("taxYearChanged", handleTaxYearChange as EventListener)
+    // Also check on focus to catch changes from other tabs
     window.addEventListener("focus", checkCookie)
-    return () => window.removeEventListener("focus", checkCookie)
+    return () => {
+      window.removeEventListener("taxYearChanged", handleTaxYearChange as EventListener)
+      window.removeEventListener("focus", checkCookie)
+    }
   }, [taxYear])
 
   const fetchTransactions = useCallback(async () => {
