@@ -29,6 +29,7 @@ import {
   Settings,
   Sparkles,
   MessageCircle,
+  Lightbulb,
 } from "lucide-react"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
@@ -71,6 +72,11 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Export",
     href: "/export",
     icon: Download,
+  },
+  {
+    title: "Suggestions",
+    href: "/suggestions",
+    icon: Lightbulb,
   },
   {
     title: "Ask TaxFolio",

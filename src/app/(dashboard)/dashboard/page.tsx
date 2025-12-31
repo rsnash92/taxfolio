@@ -9,6 +9,7 @@ import Link from "next/link"
 import { TaxSummaryCard } from "@/components/tax-summary-card"
 import { PropertyTaxCard } from "@/components/property-tax-card"
 import { HomeOfficeCard } from "@/components/home-office-card"
+import { SuggestionsWidget } from "@/components/suggestions/suggestions-widget"
 
 interface TransactionData {
   amount: number
@@ -254,6 +255,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <PropertyTaxCard taxYear={taxYear} />
         <HomeOfficeCard taxYear={taxYear} />
       </div>
+
+      {/* Tax Saving Suggestions */}
+      <SuggestionsWidget taxYear={taxYear} />
 
       {/* Connected Accounts */}
       <Card>
