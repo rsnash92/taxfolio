@@ -435,21 +435,15 @@ export default function TransactionsPage() {
 
       {/* Categorisation Progress */}
       {categorising && (
-        <Card className="border-primary/50 bg-primary/5">
-          <CardContent className="pt-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="font-medium">AI Categorisation in Progress</span>
-                </div>
-                <span className="text-sm text-muted-foreground">{categoriseProgress}%</span>
-              </div>
-              <Progress value={categoriseProgress} className="h-2" />
-              <p className="text-sm text-muted-foreground">{categoriseStatus}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="p-4 bg-[#15e49e]/10 border border-[#15e49e]/30 rounded-xl">
+          <div className="flex items-center gap-3 mb-3">
+            <Loader2 className="h-5 w-5 text-[#15e49e] animate-spin" />
+            <span className="font-medium text-[#15e49e]">AI Categorisation in Progress</span>
+            <span className="ml-auto text-sm text-[#15e49e]">{categoriseProgress}%</span>
+          </div>
+          <Progress value={categoriseProgress} className="h-2" />
+          <p className="text-sm text-muted-foreground mt-2">{categoriseStatus}</p>
+        </div>
       )}
 
       {/* Filters */}
