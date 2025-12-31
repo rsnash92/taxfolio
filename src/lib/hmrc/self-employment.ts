@@ -1,6 +1,27 @@
 import { hmrcRequest } from './client'
 import { SelfEmploymentPeriod, SelfEmploymentAnnualSummary } from './types'
 
+interface BusinessDetails {
+  businessId: string
+  typeOfBusiness: 'self-employment' | 'uk-property' | 'foreign-property'
+  tradingName?: string
+  accountingPeriods?: { start: string; end: string }[]
+}
+
+interface ListBusinessesResponse {
+  listOfBusinesses: BusinessDetails[]
+}
+
+/**
+ * List all businesses for a user (MTD ITSA Business Details API)
+ */
+export async function listAllBusinesses(
+  userId: string,
+  nino: string
+): Promise<ListBusinessesResponse> {
+  return hmrcRequest(userId, `/individuals/business/details/${nino}/list`)
+}
+
 /**
  * Get all self-employment businesses for a user
  */
@@ -8,7 +29,16 @@ export async function getSelfEmploymentBusinesses(
   userId: string,
   nino: string
 ): Promise<{ businesses: { businessId: string; tradingName?: string }[] }> {
-  return hmrcRequest(userId, `/individuals/business/self-employment/${nino}`)
+  try {
+    const response = await listAllBusinesses(userId, nino)
+    const selfEmploymentBusinesses = response.listOfBusinesses
+      ?.filter((b) => b.typeOfBusiness === 'self-employment')
+      .map((b) => ({ businessId: b.businessId, tradingName: b.tradingName }))
+    return { businesses: selfEmploymentBusinesses || [] }
+  } catch {
+    // Fallback to old endpoint for compatibility
+    return hmrcRequest(userId, `/individuals/business/self-employment/${nino}`)
+  }
 }
 
 /**
@@ -36,8 +66,38 @@ export async function createSelfEmploymentBusiness(
   })
 }
 
+interface CumulativePeriodSummary {
+  periodDates: {
+    periodStartDate: string
+    periodEndDate: string
+  }
+  periodIncome?: {
+    turnover?: number
+    other?: number
+  }
+  periodExpenses?: {
+    consolidatedExpenses?: number
+    costOfGoods?: number
+    paymentsToSubcontractors?: number
+    wagesAndStaffCosts?: number
+    carVanTravelExpenses?: number
+    premisesRunningCosts?: number
+    maintenanceCosts?: number
+    adminCosts?: number
+    businessEntertainmentCosts?: number
+    advertisingCosts?: number
+    interestOnBankOtherLoans?: number
+    financeCharges?: number
+    irrecoverableDebts?: number
+    professionalFees?: number
+    depreciation?: number
+    otherExpenses?: number
+  }
+}
+
 /**
- * Submit self-employment period summary (quarterly update)
+ * Submit self-employment cumulative period summary (quarterly update)
+ * Uses the MTD ITSA Self-Employment Business API
  */
 export async function submitSelfEmploymentPeriod(
   userId: string,
@@ -46,12 +106,29 @@ export async function submitSelfEmploymentPeriod(
   taxYear: string,
   period: SelfEmploymentPeriod
 ): Promise<{ periodId: string }> {
+  // Convert to cumulative period summary format
+  const cumulativeSummary: CumulativePeriodSummary = {
+    periodDates: {
+      periodStartDate: period.from,
+      periodEndDate: period.to,
+    },
+    periodIncome: {
+      turnover: period.incomes?.turnover || 0,
+      other: period.incomes?.other,
+    },
+    periodExpenses: period.expenses
+      ? {
+          otherExpenses: period.expenses.otherExpenses?.amount,
+        }
+      : undefined,
+  }
+
   return hmrcRequest(
     userId,
-    `/individuals/business/self-employment/${nino}/${businessId}/period/${taxYear}`,
+    `/individuals/business/self-employment/${nino}/${businessId}/cumulative/${taxYear}`,
     {
-      method: 'POST',
-      body: period,
+      method: 'PUT',
+      body: cumulativeSummary,
     }
   )
 }
