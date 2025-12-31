@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
 import Cookies from "js-cookie"
 import { Bell, Moon, Sun } from "lucide-react"
@@ -61,29 +61,45 @@ const pageTitles: Record<string, string> = {
 
 export function PageHeader() {
   const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { theme, setTheme } = useTheme()
   const taxYearOptions = getTaxYearOptions()
 
   const [taxYear, setTaxYear] = useState<string>(() => {
-    // Initialize from cookie or default
+    // Initialize from URL param, cookie, or default
     if (typeof window !== "undefined") {
+      const urlYear = searchParams.get("tax_year")
+      if (urlYear && taxYearOptions.includes(urlYear)) {
+        return urlYear
+      }
       return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
     }
     return getCurrentTaxYear()
   })
 
-  // Sync with cookie on mount
+  // Sync with URL param or cookie on mount/change
   useEffect(() => {
-    const savedYear = Cookies.get(TAX_YEAR_COOKIE)
-    if (savedYear && taxYearOptions.includes(savedYear)) {
-      setTaxYear(savedYear)
+    const urlYear = searchParams.get("tax_year")
+    if (urlYear && taxYearOptions.includes(urlYear)) {
+      setTaxYear(urlYear)
+      Cookies.set(TAX_YEAR_COOKIE, urlYear, { expires: 365 })
+    } else {
+      const savedYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (savedYear && taxYearOptions.includes(savedYear)) {
+        setTaxYear(savedYear)
+      }
     }
-  }, [taxYearOptions])
+  }, [searchParams, taxYearOptions])
 
   const handleTaxYearChange = (value: string) => {
     setTaxYear(value)
     // Save to cookie (expires in 1 year)
     Cookies.set(TAX_YEAR_COOKIE, value, { expires: 365 })
+    // Navigate with the new tax year as a query param
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tax_year", value)
+    router.push(`${pathname}?${params.toString()}`)
     // Dispatch custom event so other components can react
     window.dispatchEvent(new CustomEvent("taxYearChanged", { detail: value }))
   }

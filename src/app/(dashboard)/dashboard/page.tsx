@@ -1,3 +1,4 @@
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -209,7 +210,9 @@ interface PageProps {
 export default async function DashboardPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const params = await searchParams
-  const taxYear = params.tax_year || getCurrentTaxYear()
+  const cookieStore = await cookies()
+  const cookieTaxYear = cookieStore.get("taxfolio_tax_year")?.value
+  const taxYear = params.tax_year || cookieTaxYear || getCurrentTaxYear()
   const [summary, accounts, otherYearsPending, uncategorisedCount] = await Promise.all([
     getTaxSummary(supabase, taxYear),
     getAccounts(supabase),
