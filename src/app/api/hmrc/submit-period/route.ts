@@ -61,8 +61,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Failed to submit period:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to submit to HMRC'
     return NextResponse.json(
-      { error: 'Failed to submit to HMRC' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
