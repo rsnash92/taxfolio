@@ -17,6 +17,25 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
+    console.log('[transactions] Query params:', { taxYear, status, categoryId, limit, offset, userId: user.id })
+
+    // First, check how many transactions exist for this user without tax year filter
+    const { count: totalCount } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    console.log('[transactions] Total transactions for user (no tax year filter):', totalCount)
+
+    // Check what tax years exist
+    const { data: taxYears } = await supabase
+      .from('transactions')
+      .select('tax_year')
+      .eq('user_id', user.id)
+      .limit(10)
+
+    console.log('[transactions] Sample tax years in DB:', taxYears?.map(t => t.tax_year))
+
     let query = supabase
       .from('transactions')
       .select(`
