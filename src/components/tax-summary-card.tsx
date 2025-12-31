@@ -23,9 +23,22 @@ interface TransactionCounts {
   personal_excluded: number
 }
 
+interface HomeOffice {
+  deduction: number
+  method: 'simplified' | 'actual' | null
+}
+
+interface Mileage {
+  total_miles: number
+  total_allowance: number
+  trip_count: number
+}
+
 export function TaxSummaryCard({ taxYear }: { taxYear: string }) {
   const [summary, setSummary] = useState<TaxSummary | null>(null)
   const [transactionCounts, setTransactionCounts] = useState<TransactionCounts | null>(null)
+  const [homeOffice, setHomeOffice] = useState<HomeOffice | null>(null)
+  const [mileage, setMileage] = useState<Mileage | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,6 +48,8 @@ export function TaxSummaryCard({ taxYear }: { taxYear: string }) {
         const data = await res.json()
         setSummary(data.summary)
         setTransactionCounts(data.transaction_counts)
+        setHomeOffice(data.home_office)
+        setMileage(data.mileage)
       } catch (error) {
         console.error('Failed to fetch tax summary:', error)
       } finally {
@@ -95,11 +110,42 @@ export function TaxSummaryCard({ taxYear }: { taxYear: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
+          {/* Income & Expenses Summary */}
           <div className="flex justify-between text-sm">
+            <span>Total Income</span>
+            <span className="font-medium">{formatCurrency(summary.total_income)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Total Expenses</span>
+            <span className="font-medium text-red-500">-{formatCurrency(summary.total_expenses)}</span>
+          </div>
+
+          {/* Deductions breakdown */}
+          {(homeOffice?.deduction || mileage?.total_allowance) && (
+            <div className="pl-4 space-y-1 text-xs text-muted-foreground border-l-2 border-muted">
+              {mileage && mileage.total_allowance > 0 && (
+                <div className="flex justify-between">
+                  <span>Mileage ({mileage.total_miles.toLocaleString()} miles)</span>
+                  <span>{formatCurrency(mileage.total_allowance)}</span>
+                </div>
+              )}
+              {homeOffice && homeOffice.deduction > 0 && (
+                <div className="flex justify-between">
+                  <span>Home Office ({homeOffice.method === 'simplified' ? 'Simplified' : 'Actual'})</span>
+                  <span>{formatCurrency(homeOffice.deduction)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <Separator />
+          <div className="flex justify-between text-sm font-medium">
             <span>Net Profit</span>
-            <span className="font-medium">{formatCurrency(summary.net_profit)}</span>
+            <span>{formatCurrency(summary.net_profit)}</span>
           </div>
           <Separator />
+
+          {/* Tax Breakdown */}
           <div className="flex justify-between text-sm">
             <span>Income Tax</span>
             <span>{formatCurrency(summary.income_tax)}</span>
