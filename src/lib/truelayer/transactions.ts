@@ -221,6 +221,14 @@ export async function syncAllTransactions(
 ): Promise<{ total: number; imported: number; skipped: number; errors: string[] }> {
   const supabase = await createClient()
 
+  // First, let's see ALL accounts for debugging
+  const { data: allAccounts } = await supabase
+    .from('bank_accounts')
+    .select('account_id, display_name, is_business_account, is_active')
+    .eq('user_id', userId)
+
+  console.log('[syncAllTransactions] All user accounts:', JSON.stringify(allAccounts, null, 2))
+
   // Get all active BUSINESS bank accounts only
   const { data: accounts, error: accountsError } = await supabase
     .from('bank_accounts')
@@ -229,7 +237,7 @@ export async function syncAllTransactions(
     .eq('is_active', true)
     .eq('is_business_account', true)
 
-  console.log('[syncAllTransactions] Found accounts:', accounts?.length || 0)
+  console.log('[syncAllTransactions] Found business accounts:', accounts?.length || 0)
 
   if (accountsError) {
     console.error('[syncAllTransactions] Error fetching accounts:', accountsError)

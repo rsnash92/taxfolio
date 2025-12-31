@@ -66,18 +66,25 @@ export async function PATCH(request: NextRequest) {
 
     const { account_id, is_business_account } = await request.json()
 
+    console.log('[accounts PATCH] Updating account:', account_id, 'is_business_account:', is_business_account)
+
     const { data, error } = await supabase
       .from('bank_accounts')
-      .update({ is_business_account: is_business_account as boolean })
+      .update({
+        is_business_account: is_business_account as boolean,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', account_id)
       .eq('user_id', user.id)
       .select()
       .single()
 
     if (error) {
+      console.error('[accounts PATCH] Error:', error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log('[accounts PATCH] Updated:', data)
     return NextResponse.json({ account: data })
   } catch {
     return NextResponse.json(
