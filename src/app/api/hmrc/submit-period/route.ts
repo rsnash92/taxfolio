@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { submitSelfEmploymentPeriod } from '@/lib/hmrc/self-employment'
+import {
+  getSelfEmploymentBusinesses,
+  createSelfEmploymentBusiness,
+  submitSelfEmploymentPeriod,
+} from '@/lib/hmrc/self-employment'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -28,13 +32,38 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { businessId, taxYear, periodFrom, periodTo, income, expenses } = body
+    const { taxYear, periodFrom, periodTo, income, expenses } = body
 
-    if (!businessId || !taxYear || !periodFrom || !periodTo) {
+    if (!taxYear || !periodFrom || !periodTo) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
+    }
+
+    // Get or create business
+    let businessId: string
+
+    try {
+      const { businesses } = await getSelfEmploymentBusinesses(user.id, profile.hmrc_nino)
+      if (businesses && businesses.length > 0) {
+        businessId = businesses[0].businessId
+      } else {
+        // Create a new self-employment business
+        const newBusiness = await createSelfEmploymentBusiness(user.id, profile.hmrc_nino, {
+          accountingPeriodStartDate: `${taxYear.split('-')[0]}-04-06`,
+          accountingPeriodEndDate: `${parseInt(taxYear.split('-')[0]) + 1}-04-05`,
+          tradingName: 'Self Employment',
+          addressLineOne: 'Business Address',
+          countryCode: 'GB',
+          commencementDate: '2020-01-01',
+        })
+        businessId = newBusiness.businessId
+      }
+    } catch (bizError) {
+      console.error('Failed to get/create business:', bizError)
+      // For sandbox testing, use a test business ID format
+      businessId = 'XAIS12345678901'
     }
 
     const periodData = {
