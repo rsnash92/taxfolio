@@ -12,7 +12,7 @@ import { PropertyTaxCard } from "@/components/property-tax-card"
 import { HomeOfficeCard } from "@/components/home-office-card"
 import { SuggestionsWidget } from "@/components/suggestions/suggestions-widget"
 import { HMRCWidgetWrapper } from "@/components/hmrc"
-import { PDFExportButton, YearComparisonWidget, ActionItemsWidget } from "@/components/dashboard"
+import { YearComparisonWidget, ActionItemsWidget } from "@/components/dashboard"
 
 interface TransactionData {
   amount: number
@@ -258,11 +258,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      {/* PDF Export Button */}
-      <div className="flex justify-end -mt-12 mb-2">
-        <PDFExportButton taxYear={taxYear} />
-      </div>
-
       {/* Other Tax Years Alert */}
       {otherYearsPending.length > 0 && (
         <Alert>
