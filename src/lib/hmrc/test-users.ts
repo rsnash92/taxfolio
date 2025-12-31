@@ -10,6 +10,8 @@ interface HMRCTestUserResponse {
   nino?: string
   nationalInsuranceNumber?: string
   mtdItId: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
 }
 
 /**
@@ -34,8 +36,11 @@ export async function createTestUser(): Promise<TestUser> {
 
   const data: HMRCTestUserResponse = await response.json()
 
-  // HMRC API may return NINO as 'nino' or 'nationalInsuranceNumber'
-  const nino = data.nino || data.nationalInsuranceNumber || ''
+  // Log the full response to see the actual field names
+  console.log('HMRC test user response:', JSON.stringify(data, null, 2))
+
+  // HMRC API may return NINO with various field names
+  const nino = data.nino || data.nationalInsuranceNumber || data.ninoNumber || ''
 
   return {
     userId: data.userId,
