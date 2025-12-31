@@ -255,12 +255,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with PDF Export */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Tax Year {taxYear}</p>
-        </div>
+      {/* PDF Export Button */}
+      <div className="flex justify-end -mt-12 mb-2">
         <PDFExportButton taxYear={taxYear} />
       </div>
 
