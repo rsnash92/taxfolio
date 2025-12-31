@@ -8,6 +8,7 @@ import { ArrowRight, Building2, TrendingUp, TrendingDown, Clock, CheckCircle2, A
 import Link from "next/link"
 import { TaxSummaryCard } from "@/components/tax-summary-card"
 import { PropertyTaxCard } from "@/components/property-tax-card"
+import { HomeOfficeCard } from "@/components/home-office-card"
 
 interface TransactionData {
   amount: number
@@ -248,9 +249,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <TaxSummaryCard taxYear={taxYear} />
       </div>
 
-      {/* Property Income Section */}
+      {/* Property & Home Office Section */}
       <div className="grid gap-6 lg:grid-cols-2">
         <PropertyTaxCard taxYear={taxYear} />
+        <HomeOfficeCard taxYear={taxYear} />
       </div>
 
       {/* Connected Accounts */}
