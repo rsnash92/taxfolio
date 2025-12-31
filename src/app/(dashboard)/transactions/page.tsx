@@ -55,6 +55,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [categorising, setCategorising] = useState(false)
   const [status, setStatus] = useState(initialStatus)
   const [searchQuery, setSearchQuery] = useState("")
@@ -67,6 +68,8 @@ export default function TransactionsPage() {
   const [bulkConfirming, setBulkConfirming] = useState(false)
   const [showPersonal, setShowPersonal] = useState(true)
   const [stats, setStats] = useState<TransactionStats | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const PAGE_SIZE = 100
 
   // Sync tax year when it changes (via custom event from PageHeader)
   useEffect(() => {
@@ -91,17 +94,41 @@ export default function TransactionsPage() {
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
+    setTransactions([])
+    setHasMore(true)
+
     try {
       const statusParam = status === "all" ? "" : `&status=${status}`
-      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}`)
+      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}&limit=${PAGE_SIZE}&offset=0`)
       const data = await res.json()
-      setTransactions(data.transactions || [])
+      const newTransactions = data.transactions || []
+
+      setTransactions(newTransactions)
+      setHasMore(newTransactions.length === PAGE_SIZE)
     } catch {
       toast.error("Failed to fetch transactions")
     } finally {
       setLoading(false)
     }
-  }, [status, taxYear])
+  }, [status, taxYear, PAGE_SIZE])
+
+  const loadMoreTransactions = async () => {
+    setLoadingMore(true)
+
+    try {
+      const statusParam = status === "all" ? "" : `&status=${status}`
+      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}&limit=${PAGE_SIZE}&offset=${transactions.length}`)
+      const data = await res.json()
+      const newTransactions = data.transactions || []
+
+      setTransactions(prev => [...prev, ...newTransactions])
+      setHasMore(newTransactions.length === PAGE_SIZE)
+    } catch {
+      toast.error("Failed to load more transactions")
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -365,7 +392,9 @@ export default function TransactionsPage() {
     )
   })
 
-  const pendingCount = transactions.filter((tx) => tx.review_status === "pending").length
+  // Use stats for total counts (from API), local counts for loaded transactions
+  const totalPendingCount = stats?.needs_review || 0
+  const loadedPendingCount = transactions.filter((tx) => tx.review_status === "pending").length
   const uncategorisedCount = transactions.filter(
     (tx) => !tx.ai_suggested_category_id && tx.review_status === "pending"
   ).length
@@ -377,9 +406,9 @@ export default function TransactionsPage() {
     <div className="space-y-6">
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center gap-2">
-        {pendingCount > 0 && (
+        {totalPendingCount > 0 && (
           <Badge variant="secondary" className="text-sm">
-            {pendingCount} pending review
+            {totalPendingCount} pending review
           </Badge>
         )}
         <div className="flex-1" />
@@ -497,9 +526,9 @@ export default function TransactionsPage() {
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="pending">
                   Pending
-                  {pendingCount > 0 && (
+                  {totalPendingCount > 0 && (
                     <Badge variant="secondary" className="ml-2">
-                      {pendingCount}
+                      {totalPendingCount}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -564,6 +593,26 @@ export default function TransactionsPage() {
                   onChange={() => handleChangeCategory(transaction)}
                 />
               ))}
+
+              {/* Load More Button */}
+              {hasMore && !searchQuery && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={loadMoreTransactions}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      `Load More (${transactions.length} of ${stats?.total || '?'} loaded)`
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
