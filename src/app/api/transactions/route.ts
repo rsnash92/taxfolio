@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     const taxYear = searchParams.get('tax_year')
     const status = searchParams.get('status')
     const categoryId = searchParams.get('category_id')
+    const month = searchParams.get('month') // Format: YYYY-MM
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    console.log('[transactions] Query params:', { taxYear, status, categoryId, limit, offset, userId: user.id })
+    console.log('[transactions] Query params:', { taxYear, status, categoryId, month, limit, offset, userId: user.id })
 
     // First, check how many transactions exist for this user without tax year filter
     const { count: totalCount } = await supabase
@@ -59,6 +60,16 @@ export async function GET(request: NextRequest) {
 
     if (categoryId) {
       query = query.eq('category_id', categoryId)
+    }
+
+    // Filter by month (YYYY-MM format)
+    if (month) {
+      const [year, monthNum] = month.split('-')
+      const startDate = `${year}-${monthNum}-01`
+      // Calculate last day of month
+      const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate()
+      const endDate = `${year}-${monthNum}-${lastDay.toString().padStart(2, '0')}`
+      query = query.gte('date', startDate).lte('date', endDate)
     }
 
     const { data: transactions, error, count } = await query

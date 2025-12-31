@@ -11,7 +11,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { Brain, Search, RefreshCw, Upload, Loader2, CheckCheck, User, Briefcase, AlertCircle } from "lucide-react"
+import { Brain, Search, RefreshCw, Upload, Loader2, CheckCheck, User, Briefcase, AlertCircle, Calendar } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { TransactionRow } from "@/components/transaction-row"
 import { CategoryDialog } from "@/components/category-dialog"
@@ -49,6 +56,30 @@ function getTaxYearFromCookie(): string {
   return getCurrentTaxYear()
 }
 
+// Generate month options for a UK tax year (April to March)
+function getMonthsForTaxYear(taxYear: string): { value: string; label: string }[] {
+  const [startYear] = taxYear.split('-').map(Number)
+  const months = [
+    { month: 4, year: startYear, label: 'April' },
+    { month: 5, year: startYear, label: 'May' },
+    { month: 6, year: startYear, label: 'June' },
+    { month: 7, year: startYear, label: 'July' },
+    { month: 8, year: startYear, label: 'August' },
+    { month: 9, year: startYear, label: 'September' },
+    { month: 10, year: startYear, label: 'October' },
+    { month: 11, year: startYear, label: 'November' },
+    { month: 12, year: startYear, label: 'December' },
+    { month: 1, year: startYear + 1, label: 'January' },
+    { month: 2, year: startYear + 1, label: 'February' },
+    { month: 3, year: startYear + 1, label: 'March' },
+  ]
+
+  return months.map(m => ({
+    value: `${m.year}-${m.month.toString().padStart(2, '0')}`,
+    label: `${m.label} ${m.year}`,
+  }))
+}
+
 export default function TransactionsPage() {
   const searchParams = useSearchParams()
   const initialStatus = searchParams.get("status") || "all"
@@ -56,7 +87,6 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [categorising, setCategorising] = useState(false)
   const [status, setStatus] = useState(initialStatus)
   const [searchQuery, setSearchQuery] = useState("")
@@ -69,8 +99,7 @@ export default function TransactionsPage() {
   const [bulkConfirming, setBulkConfirming] = useState(false)
   const [showPersonal, setShowPersonal] = useState(true)
   const [stats, setStats] = useState<TransactionStats | null>(null)
-  const [hasMore, setHasMore] = useState(true)
-  const PAGE_SIZE = 100
+  const [selectedMonth, setSelectedMonth] = useState<string>("all")
 
   // Sync tax year when it changes (via custom event from PageHeader)
   useEffect(() => {
@@ -96,40 +125,21 @@ export default function TransactionsPage() {
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
     setTransactions([])
-    setHasMore(true)
 
     try {
       const statusParam = status === "all" ? "" : `&status=${status}`
-      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}&limit=${PAGE_SIZE}&offset=0`)
+      const monthParam = selectedMonth === "all" ? "" : `&month=${selectedMonth}`
+      // When filtering by month, load all transactions (up to 2000)
+      const limit = selectedMonth === "all" ? 100 : 2000
+      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}${monthParam}&limit=${limit}`)
       const data = await res.json()
-      const newTransactions = data.transactions || []
-
-      setTransactions(newTransactions)
-      setHasMore(newTransactions.length === PAGE_SIZE)
+      setTransactions(data.transactions || [])
     } catch {
       toast.error("Failed to fetch transactions")
     } finally {
       setLoading(false)
     }
-  }, [status, taxYear, PAGE_SIZE])
-
-  const loadMoreTransactions = async () => {
-    setLoadingMore(true)
-
-    try {
-      const statusParam = status === "all" ? "" : `&status=${status}`
-      const res = await fetch(`/api/transactions?tax_year=${taxYear}${statusParam}&limit=${PAGE_SIZE}&offset=${transactions.length}`)
-      const data = await res.json()
-      const newTransactions = data.transactions || []
-
-      setTransactions(prev => [...prev, ...newTransactions])
-      setHasMore(newTransactions.length === PAGE_SIZE)
-    } catch {
-      toast.error("Failed to load more transactions")
-    } finally {
-      setLoadingMore(false)
-    }
-  }
+  }, [status, taxYear, selectedMonth])
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -520,6 +530,21 @@ export default function TransactionsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {/* Month Filter */}
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px]">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {getMonthsForTaxYear(taxYear).map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Tabs value={status} onValueChange={setStatus}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -558,6 +583,11 @@ export default function TransactionsPage() {
         <CardHeader>
           <CardTitle>
             {filteredTransactions.length} transactions
+            {selectedMonth === "all" && stats && transactions.length < stats.total && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                (showing first 100 of {stats.total} - select a month to see all)
+              </span>
+            )}
           </CardTitle>
           <CardDescription>
             Click confirm to accept AI suggestion, or change to select a different category
@@ -592,26 +622,6 @@ export default function TransactionsPage() {
                   onChange={() => handleChangeCategory(transaction)}
                 />
               ))}
-
-              {/* Load More Button */}
-              {hasMore && !searchQuery && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={loadMoreTransactions}
-                    disabled={loadingMore}
-                  >
-                    {loadingMore ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      `Load More (${transactions.length} of ${stats?.total || '?'} loaded)`
-                    )}
-                  </Button>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
