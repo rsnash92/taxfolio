@@ -30,6 +30,7 @@ import {
   Sparkles,
   MessageCircle,
   Lightbulb,
+  FileText,
 } from "lucide-react"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
@@ -72,6 +73,11 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Export",
     href: "/export",
     icon: Download,
+  },
+  {
+    title: "Year-End",
+    href: "/year-end",
+    icon: FileText,
   },
   {
     title: "Suggestions",
