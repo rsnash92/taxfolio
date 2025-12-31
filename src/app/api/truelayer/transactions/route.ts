@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { syncAllTransactions } from '@/lib/truelayer/transactions'
+import { trackFirstTransaction, updateTransactionCount } from '@/lib/loops'
 
 export async function POST(request: NextRequest) {
   console.log('[truelayer/transactions] POST request started')
@@ -17,6 +18,12 @@ export async function POST(request: NextRequest) {
   console.log('[truelayer/transactions] User:', user.id)
 
   try {
+    // Check if user has any existing transactions (for first transaction tracking)
+    const { count: existingCount } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
     const body = await request.json().catch(() => ({}))
     console.log('[truelayer/transactions] Request body:', body)
 
@@ -33,6 +40,19 @@ export async function POST(request: NextRequest) {
         ...result,
         message: 'No business accounts to sync. Mark at least one account as a business account first.',
       })
+    }
+
+    // Track in Loops if transactions were imported
+    if (result.total > 0 && user.email) {
+      const totalAfterSync = (existingCount || 0) + result.total
+
+      // If this was their first transaction import
+      if (existingCount === 0 || existingCount === null) {
+        await trackFirstTransaction(user.email, user.id, result.total)
+      } else {
+        // Just update the transaction count
+        await updateTransactionCount(user.email, totalAfterSync)
+      }
     }
 
     return NextResponse.json(result)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Papa from 'papaparse'
+import { trackFirstTransaction, updateTransactionCount } from '@/lib/loops'
 
 const MAX_ROWS = 500
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -219,6 +220,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Check existing transaction count for first transaction tracking
+    const { count: existingCount } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
     // Insert transactions
     const { error: insertError } = await supabase
       .from('transactions')
@@ -229,6 +236,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: 'Failed to save transactions'
       }, { status: 500 })
+    }
+
+    // Track in Loops if transactions were imported
+    if (validTransactions.length > 0 && user.email) {
+      const totalAfterUpload = (existingCount || 0) + validTransactions.length
+
+      // If this was their first transaction import
+      if (existingCount === 0 || existingCount === null) {
+        await trackFirstTransaction(user.email, user.id, validTransactions.length)
+      } else {
+        // Just update the transaction count
+        await updateTransactionCount(user.email, totalAfterUpload)
+      }
     }
 
     return NextResponse.json({

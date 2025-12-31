@@ -5,6 +5,15 @@ import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { createCommission, handleCommissionRefund } from '@/lib/partners/commissions'
 import { attributeSubscription } from '@/lib/partners/tracking'
+import {
+  trackSubscriptionStarted,
+  trackSubscriptionCancelled,
+  trackPaymentFailed,
+  sendPaymentReceipt,
+  sendSubscriptionConfirmed,
+  sendSubscriptionCancelled,
+  sendPaymentFailedEmail,
+} from '@/lib/loops'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -110,6 +119,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       // Handle partner commission for lifetime deal
       await handlePartnerCommission(userId, paymentIntent, (session.amount_total || 0) / 100, 'lifetime', false)
 
+      // Track in Loops
+      const email = session.customer_email || session.customer_details?.email
+      if (email) {
+        await trackSubscriptionStarted(email, userId, 'lifetime')
+        await sendSubscriptionConfirmed(email, {
+          firstName: session.customer_details?.name?.split(' ')[0] || 'there',
+          plan: 'Lifetime',
+          amount: `£${((session.amount_total || 0) / 100).toFixed(2)}`,
+        })
+      }
+
       console.log(`Lifetime deal purchased by user ${userId}`)
     }
   }
@@ -170,7 +190,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('is_lifetime')
+    .select('id, email, is_lifetime, subscription_tier')
     .eq('stripe_customer_id', subscription.customer as string)
     .single()
 
@@ -192,17 +212,48 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     })
     .eq('stripe_customer_id', subscription.customer as string)
 
+  // Track in Loops
+  if (user?.email) {
+    await trackSubscriptionCancelled(user.email, user.id)
+
+    // Access cancel_at with type assertion
+    const subAny = subscription as unknown as { cancel_at?: number }
+    const accessUntil = subAny.cancel_at
+      ? new Date(subAny.cancel_at * 1000).toLocaleDateString('en-GB')
+      : 'immediately'
+
+    await sendSubscriptionCancelled(user.email, {
+      firstName: 'there',
+      plan: user.subscription_tier || 'subscription',
+      accessUntil,
+    })
+  }
+
   console.log(`Subscription ${subscription.id} deleted`)
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   // Access subscription property with type assertion for newer Stripe SDK
-  const invoiceAny = invoice as unknown as { subscription?: string }
+  const invoiceAny = invoice as unknown as { subscription?: string; amount_due?: number }
   if (invoiceAny.subscription) {
-    await supabaseAdmin
+    // Update user status
+    const { data: user } = await supabaseAdmin
       .from('users')
       .update({ subscription_status: 'past_due' })
       .eq('stripe_customer_id', invoice.customer as string)
+      .select('id, email')
+      .single()
+
+    // Track in Loops
+    if (user?.email) {
+      const amount = `£${((invoiceAny.amount_due || 0) / 100).toFixed(2)}`
+      await trackPaymentFailed(user.email, user.id, amount)
+      await sendPaymentFailedEmail(user.email, {
+        firstName: 'there',
+        amount,
+        updatePaymentUrl: 'https://app.taxfolio.io/settings/billing',
+      })
+    }
   }
   console.log(`Payment failed for invoice ${invoice.id}`)
 }
@@ -219,7 +270,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // Get user from customer ID
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('id, referred_by_partner_id')
+    .select('id, email, referred_by_partner_id')
     .eq('stripe_customer_id', invoice.customer as string)
     .single()
 
@@ -228,7 +279,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // Determine plan from price
   const lineItem = invoice.lines?.data?.[0] as unknown as { price?: { id?: string } }
   const priceId = lineItem?.price?.id
-  let planName = 'lite'
+  let planName: 'lite' | 'pro' = 'lite'
   if (priceId === process.env.STRIPE_PRICE_PRO_ANNUAL) {
     planName = 'pro'
   }
@@ -242,11 +293,43 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }
 
   // Handle partner commission
-  const invoicePayment = invoice as unknown as { payment_intent?: string; amount_paid?: number }
+  const invoicePayment = invoice as unknown as {
+    payment_intent?: string
+    amount_paid?: number
+    hosted_invoice_url?: string
+  }
   const paymentIntentId = invoicePayment.payment_intent as string
   const amount = (invoicePayment.amount_paid || 0) / 100
 
   await handlePartnerCommission(user.id, paymentIntentId, amount, planName, isRecurring)
+
+  // Track in Loops
+  if (user.email) {
+    const invoiceData = invoice as unknown as { created?: number }
+    const amountStr = `£${amount.toFixed(2)}`
+    const date = invoiceData.created
+      ? new Date(invoiceData.created * 1000).toLocaleDateString('en-GB')
+      : new Date().toLocaleDateString('en-GB')
+
+    // Send payment receipt
+    await sendPaymentReceipt(user.email, {
+      firstName: 'there',
+      amount: amountStr,
+      plan: planName === 'pro' ? 'Pro' : 'Lite',
+      date,
+      invoiceUrl: invoicePayment.hosted_invoice_url,
+    })
+
+    // If first payment, track subscription started and send confirmation
+    if (!isRecurring) {
+      await trackSubscriptionStarted(user.email, user.id, planName)
+      await sendSubscriptionConfirmed(user.email, {
+        firstName: 'there',
+        plan: planName === 'pro' ? 'Pro' : 'Lite',
+        amount: amountStr,
+      })
+    }
+  }
 
   console.log(`Invoice paid: ${invoice.id} - ${planName} - ${isRecurring ? 'recurring' : 'initial'}`)
 }

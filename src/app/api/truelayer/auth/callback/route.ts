@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens } from '@/lib/truelayer/auth'
 import { storeConnection } from '@/lib/truelayer/tokens'
 import { syncAccounts } from '@/lib/truelayer/accounts'
+import { trackBankConnected } from '@/lib/loops'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -57,8 +58,19 @@ export async function GET(request: NextRequest) {
 
     // Sync accounts
     console.log('Syncing accounts...')
-    await syncAccounts(user.id, connectionId)
-    console.log('Accounts synced successfully')
+    const syncResult = await syncAccounts(user.id, connectionId)
+    const accountCount = syncResult?.accounts?.length || syncResult?.synced || 1
+    console.log('Accounts synced successfully:', accountCount, 'accounts')
+
+    // Track bank connection in Loops
+    if (user.email) {
+      await trackBankConnected(
+        user.email,
+        user.id,
+        'Bank', // TrueLayer doesn't always provide bank name
+        accountCount
+      )
+    }
 
     // Clear state cookie and redirect
     const response = NextResponse.redirect(`${APP_URL}/connect-bank?success=true`)

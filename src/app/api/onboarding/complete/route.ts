@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { trackOnboardingCompleted, trackTrialStarted } from '@/lib/loops'
 
 export async function POST() {
   try {
@@ -14,6 +15,13 @@ export async function POST() {
     const trialEndsAt = new Date()
     trialEndsAt.setDate(trialEndsAt.getDate() + 30)
 
+    // Get current user type
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', user.id)
+      .single()
+
     // Mark onboarding complete and start free trial
     const { error } = await supabase
       .from('users')
@@ -27,6 +35,13 @@ export async function POST() {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Track in Loops
+    if (user.email) {
+      const userType = userData?.user_type || 'sole_trader'
+      await trackOnboardingCompleted(user.email, user.id, userType)
+      await trackTrialStarted(user.email, user.id, trialEndsAt)
     }
 
     return NextResponse.json({ success: true })
