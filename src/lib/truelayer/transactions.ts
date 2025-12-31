@@ -86,6 +86,13 @@ export async function importTransactions(
     .eq('user_id', userId)
     .single()
 
+  // Get all categories for mapping
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, code')
+
+  const categoryMap = new Map((categories || []).map(c => [c.code, c.id]))
+
   // Get all existing external_ids in one query
   const externalIds = transactions.map(tx => tx.transaction_id)
   const { data: existingTxs } = await supabase
@@ -103,6 +110,9 @@ export async function importTransactions(
     .filter(tx => !existingIds.has(tx.transaction_id))
     .map(tx => {
       const isIncome = tx.transaction_type === 'CREDIT'
+      const categoryCode = mapTrueLayerCategory(tx.transaction_category, tx.transaction_classification)
+      const categoryId = categoryCode ? categoryMap.get(categoryCode) : null
+
       return {
         user_id: userId,
         external_id: tx.transaction_id,
@@ -110,14 +120,15 @@ export async function importTransactions(
         description: tx.description,
         amount: Math.abs(tx.amount),
         type: isIncome ? 'income' : 'expense',
-        category: mapTrueLayerCategory(tx.transaction_category, tx.transaction_classification),
+        category_id: categoryId || null,
+        ai_suggested_category_id: categoryId || null,
         merchant_name: tx.merchant_name,
         source: 'truelayer',
         source_account: bankAccount?.display_name,
         bank_account_id: bankAccount?.id,
         raw_data: tx,
         tax_year: taxYear,
-        needs_review: true,
+        review_status: 'pending',
       }
     })
 
