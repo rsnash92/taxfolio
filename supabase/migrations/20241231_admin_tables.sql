@@ -53,9 +53,9 @@ begin
     'users_today', (select count(*) from auth.users where created_at > current_date),
     'users_this_week', (select count(*) from auth.users where created_at > current_date - interval '7 days'),
     'users_this_month', (select count(*) from auth.users where created_at > current_date - interval '30 days'),
-    'active_subscriptions', (select count(*) from profiles where subscription_status = 'active'),
-    'trialing_users', (select count(*) from profiles where subscription_status = 'trialing'),
-    'churned_users', (select count(*) from profiles where subscription_status = 'canceled'),
+    'active_subscriptions', (select count(*) from public.users where subscription_status = 'active'),
+    'trialing_users', (select count(*) from public.users where subscription_status = 'trialing'),
+    'churned_users', (select count(*) from public.users where subscription_status = 'canceled'),
     'bank_connections', (select count(*) from bank_connections where status = 'active'),
     'total_transactions', (select count(*) from transactions)
   ) into result;
@@ -118,21 +118,21 @@ language sql
 security definer
 as $$
   select
-    u.id,
-    u.email,
-    u.created_at,
-    p.full_name,
-    p.subscription_status,
-    p.subscription_plan,
-    p.trial_ends_at,
-    (select count(*) from transactions t where t.user_id = u.id) as transaction_count,
-    exists(select 1 from bank_connections bc where bc.user_id = u.id and bc.status = 'active') as bank_connected
-  from auth.users u
-  left join profiles p on p.id = u.id
+    au.id,
+    au.email,
+    au.created_at,
+    pu.full_name,
+    pu.subscription_status,
+    pu.subscription_tier as subscription_plan,
+    pu.trial_ends_at,
+    (select count(*) from transactions t where t.user_id = au.id) as transaction_count,
+    exists(select 1 from bank_connections bc where bc.user_id = au.id and bc.status = 'active') as bank_connected
+  from auth.users au
+  left join public.users pu on pu.id = au.id
   where
-    (p_search is null or u.email ilike '%' || p_search || '%' or p.full_name ilike '%' || p_search || '%')
-    and (p_status is null or p.subscription_status = p_status)
-  order by u.created_at desc
+    (p_search is null or au.email ilike '%' || p_search || '%' or pu.full_name ilike '%' || p_search || '%')
+    and (p_status is null or pu.subscription_status = p_status)
+  order by au.created_at desc
   limit p_limit
   offset p_offset;
 $$;
@@ -147,11 +147,11 @@ language sql
 security definer
 as $$
   select count(*)
-  from auth.users u
-  left join profiles p on p.id = u.id
+  from auth.users au
+  left join public.users pu on pu.id = au.id
   where
-    (p_search is null or u.email ilike '%' || p_search || '%' or p.full_name ilike '%' || p_search || '%')
-    and (p_status is null or p.subscription_status = p_status);
+    (p_search is null or au.email ilike '%' || p_search || '%' or pu.full_name ilike '%' || p_search || '%')
+    and (p_status is null or pu.subscription_status = p_status);
 $$;
 
 -- Function to log activity

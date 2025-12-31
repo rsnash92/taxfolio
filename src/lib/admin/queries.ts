@@ -210,9 +210,9 @@ export async function getRevenueMetrics(): Promise<{
     .reduce((sum, p) => sum + Number(p.amount), 0)
 
   // Get active subscriptions for MRR
-  const { data: activeProfiles } = await supabase
-    .from('profiles')
-    .select('subscription_plan')
+  const { data: activeUsers } = await supabase
+    .from('users')
+    .select('subscription_tier')
     .eq('subscription_status', 'active')
 
   const planPrices: Record<string, number> = {
@@ -221,14 +221,14 @@ export async function getRevenueMetrics(): Promise<{
     lifetime: 0, // No recurring
   }
 
-  const mrr = (activeProfiles || []).reduce((sum, p) => {
-    return sum + (planPrices[p.subscription_plan] || 0)
+  const mrr = (activeUsers || []).reduce((sum, u) => {
+    return sum + (planPrices[u.subscription_tier] || 0)
   }, 0)
 
   // Subscription breakdown
   const breakdown: Record<string, { count: number; revenue: number }> = {}
-  ;(activeProfiles || []).forEach(p => {
-    const plan = p.subscription_plan || 'unknown'
+  ;(activeUsers || []).forEach(u => {
+    const plan = u.subscription_tier || 'unknown'
     if (!breakdown[plan]) {
       breakdown[plan] = { count: 0, revenue: 0 }
     }
