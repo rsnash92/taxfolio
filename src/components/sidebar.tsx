@@ -29,7 +29,6 @@ import {
   LucideIcon,
   Settings,
   Sparkles,
-  MessageCircle,
   Lightbulb,
 } from "lucide-react"
 import { HMRCStatusBadge } from "@/components/hmrc/hmrc-status-badge"
@@ -62,7 +61,7 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     icon: Home,
   },
   {
-    title: "Accounts",
+    title: "Bank Accounts",
     href: "/accounts",
     icon: Landmark,
   },
@@ -80,11 +79,6 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Suggestions",
     href: "/suggestions",
     icon: Lightbulb,
-  },
-  {
-    title: "Ask TaxFolio",
-    href: "/ask",
-    icon: MessageCircle,
   },
 ]
 
