@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Check feature access
     const subscription = await getSubscription(user.id)
+    console.log('[mileage] POST subscription check:', { tier: subscription.tier, isLifetime: subscription.isLifetime, isTrial: subscription.isTrial })
     if (!canAccessFeature(subscription.tier, subscription.isLifetime, subscription.isTrial, 'mileage')) {
       return NextResponse.json(
         { error: 'Mileage tracking requires a Pro subscription', code: 'FEATURE_GATED' },
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('[mileage] POST body:', body)
     const {
       tax_year,
       trip_date,
@@ -146,15 +148,16 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('[mileage] Insert error:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[mileage] Insert error:', error.message, error.code, error.details)
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 500 })
     }
 
     return NextResponse.json({ trip })
   } catch (error) {
     console.error('[mileage] Error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to create mileage trip'
     return NextResponse.json(
-      { error: 'Failed to create mileage trip' },
+      { error: message },
       { status: 500 }
     )
   }

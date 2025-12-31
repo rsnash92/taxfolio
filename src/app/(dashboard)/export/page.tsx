@@ -4,11 +4,14 @@ import { useState, useEffect } from "react"
 import Cookies from "js-cookie"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { Download, FileSpreadsheet, Calculator, ChevronDown, ChevronUp } from "lucide-react"
 import { SA103Summary } from "@/components/sa103-summary"
 import { PDFExportCard } from "@/components/export/pdf-export-card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { FeatureGate } from "@/components/feature-gate"
+import { useSubscription } from "@/hooks/use-subscription"
 
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
@@ -33,9 +36,12 @@ function getTaxYearFromCookie(): string {
 }
 
 export default function ExportPage() {
+  const { canAccessFeature, loading: subscriptionLoading } = useSubscription()
   const [selectedYear, setSelectedYear] = useState(getTaxYearFromCookie)
   const [downloading, setDownloading] = useState(false)
   const [sa103Open, setSa103Open] = useState(true)
+
+  const hasAccess = canAccessFeature('csv_export')
 
   // Sync tax year from cookie when it changes
   useEffect(() => {
@@ -79,12 +85,31 @@ export default function ExportPage() {
     }
   }
 
+  // Show loading state while checking subscription
+  if (subscriptionLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+        <Skeleton className="h-48 rounded-xl" />
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Export Options */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* CSV Export */}
-        <Card>
+    <FeatureGate
+      feature="csv_export"
+      title="Export & Reports"
+      description="Export your transactions to CSV and generate PDF tax reports. Upgrade to Pro to unlock this feature."
+      hasAccess={hasAccess}
+    >
+      <div className="space-y-6">
+        {/* Export Options */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* CSV Export */}
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -152,6 +177,7 @@ export default function ExportPage() {
           </CollapsibleContent>
         </Card>
       </Collapsible>
-    </div>
+      </div>
+    </FeatureGate>
   )
 }

@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CalendarDays, AlertCircle, CheckCircle2 } from "lucide-react"
 import { QuarterCard } from "@/components/mtd/quarter-card"
+import { FeatureGate } from "@/components/feature-gate"
+import { useSubscription } from "@/hooks/use-subscription"
 import type { QuarterStatus } from "@/lib/mtd-utils"
 
 interface CategoryBreakdown {
@@ -75,10 +77,13 @@ function getTaxYearFromCookie(): string {
 }
 
 export default function MTDPage() {
+  const { canAccessFeature, loading: subscriptionLoading } = useSubscription()
   const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
   const [data, setData] = useState<MTDData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const hasAccess = canAccessFeature('mtd_quarters')
 
   // Sync tax year from cookie when it changes
   useEffect(() => {
@@ -119,10 +124,32 @@ export default function MTDPage() {
 
   const progressPercentage = data ? (data.summary.readyQuarters / 4) * 100 : 0
 
+  // Show loading state while checking subscription
+  if (subscriptionLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Error State */}
-      {error && (
+    <FeatureGate
+      feature="mtd_quarters"
+      title="MTD Quarterly Tracking"
+      description="Track and prepare your quarterly submissions for Making Tax Digital. Upgrade to Pro to unlock this feature."
+      hasAccess={hasAccess}
+    >
+      <div className="space-y-6">
+        {/* Error State */}
+        {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -238,7 +265,8 @@ export default function MTDPage() {
             These quarterly breakdowns help you prepare for quarterly submissions to HMRC.
           </p>
         </>
-      )}
-    </div>
+        )}
+      </div>
+    </FeatureGate>
   )
 }

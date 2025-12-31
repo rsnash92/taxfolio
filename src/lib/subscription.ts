@@ -111,6 +111,9 @@ export function canAccessFeature(
   isTrial: boolean,
   feature: string
 ): boolean {
+  // In development, allow all features for easier testing
+  if (process.env.NODE_ENV === 'development') return true
+
   const proFeatures = [
     'sa105',
     'mtd_quarters',

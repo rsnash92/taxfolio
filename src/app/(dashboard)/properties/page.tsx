@@ -4,9 +4,12 @@ import { useEffect, useState, useCallback } from "react"
 import Cookies from "js-cookie"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, Home, Building2, Palmtree, MoreVertical, Pencil, Trash2, PoundSterling } from "lucide-react"
 import { PropertyDialog } from "@/components/property-dialog"
 import { FinanceCostsDialog } from "@/components/finance-costs-dialog"
+import { FeatureGate } from "@/components/feature-gate"
+import { useSubscription } from "@/hooks/use-subscription"
 import type { Property } from "@/types/database"
 import {
   DropdownMenu,
@@ -63,6 +66,7 @@ function formatCurrency(amount: number): string {
 }
 
 export default function PropertiesPage() {
+  const { canAccessFeature, loading: subscriptionLoading } = useSubscription()
   const [properties, setProperties] = useState<Property[]>([])
   const [financeCosts, setFinanceCosts] = useState<FinanceCost[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,6 +75,8 @@ export default function PropertiesPage() {
   const [financeCostsProperty, setFinanceCostsProperty] = useState<Property | null>(null)
   const [deleteProperty, setDeleteProperty] = useState<Property | null>(null)
   const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
+
+  const hasAccess = canAccessFeature('sa105')
 
   const fetchProperties = async () => {
     try {
@@ -151,16 +157,39 @@ export default function PropertiesPage() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-end">
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Property
-        </Button>
+  // Show loading state while checking subscription
+  if (subscriptionLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+          </CardContent>
+        </Card>
       </div>
+    )
+  }
 
-      {loading ? (
+  return (
+    <FeatureGate
+      feature="sa105"
+      title="Property Income (SA105)"
+      description="Track rental income, expenses, and generate SA105 property tax data. Upgrade to Pro to unlock this feature."
+      hasAccess={hasAccess}
+    >
+      <div className="space-y-6">
+        <div className="flex items-center justify-end">
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Property
+          </Button>
+        </div>
+
+        {loading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
             <Card key={i} className="animate-pulse">
@@ -337,6 +366,7 @@ export default function PropertiesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </FeatureGate>
   )
 }
