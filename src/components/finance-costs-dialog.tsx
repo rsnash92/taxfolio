@@ -26,6 +26,7 @@ interface FinanceCostsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   property: Property
+  onSuccess?: () => void
 }
 
 // Generate tax years (current and previous 2)
@@ -44,6 +45,7 @@ export function FinanceCostsDialog({
   open,
   onOpenChange,
   property,
+  onSuccess,
 }: FinanceCostsDialogProps) {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(false)
@@ -101,6 +103,7 @@ export function FinanceCostsDialog({
       })
 
       if (res.ok) {
+        onSuccess?.()
         onOpenChange(false)
       }
     } catch (error) {

@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import Cookies from "js-cookie"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Home, Building2, Palmtree, MoreVertical, Pencil, Trash2 } from "lucide-react"
+import { Plus, Home, Building2, Palmtree, MoreVertical, Pencil, Trash2, PoundSterling } from "lucide-react"
 import { PropertyDialog } from "@/components/property-dialog"
 import { FinanceCostsDialog } from "@/components/finance-costs-dialog"
 import type { Property } from "@/types/database"
@@ -24,13 +25,52 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+interface FinanceCost {
+  id: string
+  property_id: string
+  tax_year: string
+  mortgage_interest: number
+  other_finance_costs: number
+}
+
+const TAX_YEAR_COOKIE = "taxfolio_tax_year"
+
+function getCurrentTaxYear(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+
+  if (month > 4 || (month === 4 && day >= 6)) {
+    return `${year}-${(year + 1).toString().slice(-2)}`
+  } else {
+    return `${year - 1}-${year.toString().slice(-2)}`
+  }
+}
+
+function getTaxYearFromCookie(): string {
+  if (typeof window !== "undefined") {
+    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
+  }
+  return getCurrentTaxYear()
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+  }).format(amount)
+}
+
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
+  const [financeCosts, setFinanceCosts] = useState<FinanceCost[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [financeCostsProperty, setFinanceCostsProperty] = useState<Property | null>(null)
   const [deleteProperty, setDeleteProperty] = useState<Property | null>(null)
+  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
 
   const fetchProperties = async () => {
     try {
@@ -44,9 +84,38 @@ export default function PropertiesPage() {
     }
   }
 
+  const fetchFinanceCosts = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/properties/finance-costs?tax_year=${taxYear}`)
+      const data = await res.json()
+      setFinanceCosts(data.finance_costs || [])
+    } catch (error) {
+      console.error("Failed to fetch finance costs:", error)
+    }
+  }, [taxYear])
+
+  // Listen for tax year changes
+  useEffect(() => {
+    const handleTaxYearChange = (event: CustomEvent<string>) => {
+      setTaxYear(event.detail)
+    }
+    window.addEventListener("taxYearChanged", handleTaxYearChange as EventListener)
+    return () => {
+      window.removeEventListener("taxYearChanged", handleTaxYearChange as EventListener)
+    }
+  }, [])
+
   useEffect(() => {
     fetchProperties()
   }, [])
+
+  useEffect(() => {
+    fetchFinanceCosts()
+  }, [fetchFinanceCosts])
+
+  const getFinanceCostsForProperty = (propertyId: string): FinanceCost | undefined => {
+    return financeCosts.find(fc => fc.property_id === propertyId)
+  }
 
   const handleDelete = async () => {
     if (!deleteProperty) return
@@ -181,6 +250,40 @@ export default function PropertiesPage() {
                     </div>
                   )}
                 </div>
+                {/* Finance Costs for current tax year */}
+                {(() => {
+                  const fc = getFinanceCostsForProperty(property.id)
+                  const totalFinanceCosts = (fc?.mortgage_interest || 0) + (fc?.other_finance_costs || 0)
+                  if (totalFinanceCosts > 0) {
+                    return (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center gap-2 text-sm mb-2">
+                          <PoundSterling className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">Finance Costs ({taxYear}):</span>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-sm pl-6">
+                          {fc?.mortgage_interest && fc.mortgage_interest > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Mortgage Interest:</span>
+                              <span className="text-[#15e49e]">{formatCurrency(fc.mortgage_interest)}</span>
+                            </div>
+                          )}
+                          {fc?.other_finance_costs && fc.other_finance_costs > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Other Costs:</span>
+                              <span className="text-[#15e49e]">{formatCurrency(fc.other_finance_costs)}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Section 24 Relief (20%):</span>
+                            <span className="text-[#15e49e] font-medium">{formatCurrency(totalFinanceCosts * 0.2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
               </CardContent>
             </Card>
           ))}
@@ -212,6 +315,7 @@ export default function PropertiesPage() {
             if (!open) setFinanceCostsProperty(null)
           }}
           property={financeCostsProperty}
+          onSuccess={fetchFinanceCosts}
         />
       )}
 
