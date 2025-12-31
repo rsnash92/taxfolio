@@ -36,13 +36,14 @@ export async function GET(request: NextRequest) {
 
     console.log('[transactions] Sample tax years in DB:', taxYears?.map(t => t.tax_year))
 
+    // Note: bank_account join removed temporarily due to PostgREST schema cache issue
+    // The bank_account_id FK was added via ALTER TABLE and may not be detected
     let query = supabase
       .from('transactions')
       .select(`
         *,
         category:categories!category_id(*),
-        ai_suggested_category:categories!ai_suggested_category_id(*),
-        bank_account:bank_accounts(display_name, account_number_last4, connection:bank_connections(bank_name))
+        ai_suggested_category:categories!ai_suggested_category_id(*)
       `)
       .eq('user_id', user.id)
       .order('date', { ascending: false })
