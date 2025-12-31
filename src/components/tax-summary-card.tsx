@@ -12,6 +12,8 @@ interface TaxSummary {
   total_expenses: number
   net_profit: number
   income_tax: number
+  section24_credit: number
+  income_tax_after_credit: number
   class2_ni: number
   class4_ni: number
   total_tax: number
@@ -102,6 +104,12 @@ export function TaxSummaryCard({ taxYear }: { taxYear: string }) {
             <span>Income Tax</span>
             <span>{formatCurrency(summary.income_tax)}</span>
           </div>
+          {summary.section24_credit > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-[#15e49e]">Section 24 Credit</span>
+              <span className="text-[#15e49e]">-{formatCurrency(summary.section24_credit)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span>Class 2 NI</span>
             <span>{formatCurrency(summary.class2_ni)}</span>

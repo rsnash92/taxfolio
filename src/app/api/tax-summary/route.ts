@@ -167,6 +167,19 @@ export async function GET(request: NextRequest) {
     const incomeTax = calculateIncomeTax(netProfit)
     const { class2, class4 } = calculateNI(netProfit)
 
+    // Fetch property finance costs for Section 24 tax credit
+    const { data: financeCosts } = await supabase
+      .from('property_finance_costs')
+      .select('mortgage_interest, other_finance_costs')
+      .eq('user_id', user.id)
+      .eq('tax_year', taxYear)
+
+    // Calculate Section 24 tax credit (20% of finance costs)
+    const totalFinanceCosts = (financeCosts || []).reduce((sum, fc) => {
+      return sum + (fc.mortgage_interest || 0) + (fc.other_finance_costs || 0)
+    }, 0)
+    const section24Credit = totalFinanceCosts * 0.2
+
     // Get transaction counts
     const { count: totalCount } = await supabase
       .from('transactions')
@@ -227,6 +240,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Calculate final tax after Section 24 credit
+    const incomeTaxAfterCredit = Math.max(0, incomeTax - section24Credit)
+    const totalTax = Math.round((incomeTaxAfterCredit + class2 + class4) * 100) / 100
+
     return NextResponse.json({
       tax_year: taxYear,
       summary: {
@@ -234,9 +251,11 @@ export async function GET(request: NextRequest) {
         total_expenses: Math.round(totalExpensesWithMileage * 100) / 100,
         net_profit: Math.round(netProfit * 100) / 100,
         income_tax: incomeTax,
+        section24_credit: Math.round(section24Credit * 100) / 100,
+        income_tax_after_credit: Math.round(incomeTaxAfterCredit * 100) / 100,
         class2_ni: class2,
         class4_ni: class4,
-        total_tax: Math.round((incomeTax + class2 + class4) * 100) / 100,
+        total_tax: totalTax,
       },
       income_breakdown: Object.values(incomeByCategory).map(c => ({
         ...c,
