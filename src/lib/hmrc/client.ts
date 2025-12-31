@@ -5,7 +5,9 @@ import { HMRCTokens, StoredHMRCTokens, HMRCError } from './types'
 const HMRC_BASE_URL = process.env.HMRC_API_BASE_URL || 'https://test-api.service.hmrc.gov.uk'
 const HMRC_CLIENT_ID = process.env.HMRC_CLIENT_ID!
 const HMRC_CLIENT_SECRET = process.env.HMRC_CLIENT_SECRET!
-const IS_SANDBOX = HMRC_BASE_URL.includes('test-api')
+// Use explicit env var if set, otherwise detect from URL
+const IS_SANDBOX = process.env.HMRC_SANDBOX_MODE === 'true' ||
+  (process.env.HMRC_SANDBOX_MODE !== 'false' && HMRC_BASE_URL.includes('test-api'))
 
 /**
  * Get stored HMRC tokens for a user

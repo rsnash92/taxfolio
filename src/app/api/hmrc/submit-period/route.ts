@@ -7,7 +7,9 @@ import {
 } from '@/lib/hmrc/self-employment'
 
 const HMRC_BASE_URL = process.env.HMRC_API_BASE_URL || 'https://test-api.service.hmrc.gov.uk'
-const IS_SANDBOX = HMRC_BASE_URL.includes('test-api')
+// Use explicit env var if set, otherwise detect from URL
+const IS_SANDBOX = process.env.HMRC_SANDBOX_MODE === 'true' ||
+  (process.env.HMRC_SANDBOX_MODE !== 'false' && HMRC_BASE_URL.includes('test-api'))
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
