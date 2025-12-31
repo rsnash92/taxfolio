@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         *,
         category:categories!category_id(*),
         ai_suggested_category:categories!ai_suggested_category_id(*),
-        account:accounts(name, mask, bank_connections(institution_name))
+        bank_account:bank_accounts(display_name, account_number_last4, connection:bank_connections(bank_name))
       `)
       .eq('user_id', user.id)
       .order('date', { ascending: false })
