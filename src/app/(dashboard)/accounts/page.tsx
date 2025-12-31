@@ -74,18 +74,18 @@ export default function AccountsPage() {
     }
   }
 
-  const handleSync = async (accountId: string) => {
-    setSyncing(accountId)
+  const handleSync = async () => {
+    setSyncing("all")
     try {
-      const res = await fetch("/api/plaid/sync-transactions", {
+      const res = await fetch("/api/truelayer/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account_id: accountId }),
+        body: JSON.stringify({}),
       })
 
       const data = await res.json()
-      if (data.success) {
-        toast.success(`Synced ${data.synced_count} transactions`)
+      if (res.ok) {
+        toast.success(`Synced ${data.imported} new transactions (${data.skipped} already imported)`)
         fetchAccounts()
       } else {
         toast.error(data.error || "Failed to sync")
@@ -109,6 +109,16 @@ export default function AccountsPage() {
     <div className="space-y-6">
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2">
+        {accounts.length > 0 && (
+          <Button variant="outline" onClick={handleSync} disabled={syncing === "all"}>
+            {syncing === "all" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Sync Transactions
+          </Button>
+        )}
         <Button variant="outline" onClick={() => setCsvDialogOpen(true)}>
           <Upload className="mr-2 h-4 w-4" />
           Upload CSV
@@ -189,8 +199,6 @@ export default function AccountsPage() {
                       key={account.id}
                       account={account}
                       onToggle={handleToggleBusiness}
-                      onSync={handleSync}
-                      syncing={syncing === account.id}
                     />
                   ))}
                 </div>
@@ -217,8 +225,6 @@ export default function AccountsPage() {
                       key={account.id}
                       account={account}
                       onToggle={handleToggleBusiness}
-                      onSync={handleSync}
-                      syncing={syncing === account.id}
                     />
                   ))}
                 </div>
@@ -251,13 +257,9 @@ function formatCurrency(amount: number | null, currency: string = 'GBP'): string
 function AccountRow({
   account,
   onToggle,
-  onSync,
-  syncing,
 }: {
   account: Account
   onToggle: (id: string, isBusiness: boolean) => void
-  onSync: (id: string) => void
-  syncing: boolean
 }) {
   return (
     <div className="flex items-center gap-4 p-4 border rounded-lg">
@@ -287,28 +289,12 @@ function AccountRow({
           </p>
         )}
       </div>
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Business</span>
-          <Switch
-            checked={account.is_business_account}
-            onCheckedChange={(checked) => onToggle(account.id, checked)}
-          />
-        </div>
-        {account.is_business_account && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onSync(account.id)}
-            disabled={syncing}
-          >
-            {syncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-          </Button>
-        )}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Business</span>
+        <Switch
+          checked={account.is_business_account}
+          onCheckedChange={(checked) => onToggle(account.id, checked)}
+        />
       </div>
     </div>
   )
