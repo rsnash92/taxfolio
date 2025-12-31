@@ -63,12 +63,16 @@ export async function importTransactions(
 ): Promise<{ imported: number; skipped: number }> {
   const supabase = await createClient()
 
+  console.log(`[importTransactions] Fetching transactions for account ${accountId}`)
+
   // Get transactions from TrueLayer
   const transactions = await getTransactions(userId, accountId, {
     from: options?.from,
     to: options?.to,
     connectionId: options?.connectionId,
   })
+
+  console.log(`[importTransactions] Got ${transactions.length} transactions from TrueLayer`)
 
   let imported = 0
   let skipped = 0
@@ -199,42 +203,64 @@ function getCurrentTaxYear(): string {
 }
 
 /**
- * Sync all transactions for a user
+ * Sync all transactions for a user (business accounts only)
  */
 export async function syncAllTransactions(
   userId: string,
   options?: { from?: string; to?: string }
-): Promise<{ total: number; imported: number; skipped: number }> {
+): Promise<{ total: number; imported: number; skipped: number; errors: string[] }> {
   const supabase = await createClient()
 
-  // Get all active bank accounts
-  const { data: accounts } = await supabase
+  // Get all active BUSINESS bank accounts only
+  const { data: accounts, error: accountsError } = await supabase
     .from('bank_accounts')
-    .select('account_id, connection_id')
+    .select('account_id, connection_id, display_name, is_business_account')
     .eq('user_id', userId)
     .eq('is_active', true)
+    .eq('is_business_account', true)
+
+  console.log('[syncAllTransactions] Found accounts:', accounts?.length || 0)
+
+  if (accountsError) {
+    console.error('[syncAllTransactions] Error fetching accounts:', accountsError)
+    throw new Error('Failed to fetch accounts')
+  }
 
   if (!accounts || accounts.length === 0) {
-    return { total: 0, imported: 0, skipped: 0 }
+    console.log('[syncAllTransactions] No business accounts to sync')
+    return { total: 0, imported: 0, skipped: 0, errors: [] }
   }
 
   let totalImported = 0
   let totalSkipped = 0
+  const errors: string[] = []
 
   for (const account of accounts) {
-    const result = await importTransactions(userId, account.account_id, {
-      from: options?.from,
-      to: options?.to,
-      connectionId: account.connection_id,
-    })
+    console.log(`[syncAllTransactions] Syncing account: ${account.display_name} (${account.account_id})`)
 
-    totalImported += result.imported
-    totalSkipped += result.skipped
+    try {
+      const result = await importTransactions(userId, account.account_id, {
+        from: options?.from,
+        to: options?.to,
+        connectionId: account.connection_id,
+      })
+
+      console.log(`[syncAllTransactions] Account ${account.display_name}: imported=${result.imported}, skipped=${result.skipped}`)
+      totalImported += result.imported
+      totalSkipped += result.skipped
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      console.error(`[syncAllTransactions] Error syncing ${account.display_name}:`, errorMsg)
+      errors.push(`${account.display_name}: ${errorMsg}`)
+    }
   }
+
+  console.log(`[syncAllTransactions] Complete: total=${totalImported + totalSkipped}, imported=${totalImported}, skipped=${totalSkipped}`)
 
   return {
     total: totalImported + totalSkipped,
     imported: totalImported,
     skipped: totalSkipped,
+    errors,
   }
 }

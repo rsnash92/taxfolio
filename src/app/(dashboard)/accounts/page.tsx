@@ -109,8 +109,14 @@ export default function AccountsPage() {
       setSyncProgress(100)
 
       if (res.ok) {
-        setSyncStatus(`Done! ${data.imported} new, ${data.skipped} already imported`)
-        toast.success(`Synced ${data.imported} new transactions (${data.skipped} already imported)`)
+        if (data.message) {
+          // No business accounts to sync
+          setSyncStatus(data.message)
+          toast.info(data.message)
+        } else {
+          setSyncStatus(`Done! ${data.imported} new, ${data.skipped} already imported`)
+          toast.success(`Synced ${data.imported} new transactions (${data.skipped} already imported)`)
+        }
         fetchAccounts()
       } else {
         setSyncStatus("")
