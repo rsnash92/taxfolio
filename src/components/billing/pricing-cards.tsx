@@ -12,8 +12,8 @@ interface PricingCardsProps {
   isTrial?: boolean
 }
 
-// Calculate discounted prices (20% off)
-const EARLY_BIRD_DISCOUNT = 0.20
+// Calculate discounted prices (10% off)
+const EARLY_BIRD_DISCOUNT = 0.10
 const LITE_PRICE = 69.99
 const PRO_PRICE = 129.99
 const LITE_DISCOUNTED = Math.round(LITE_PRICE * (1 - EARLY_BIRD_DISCOUNT) * 100) / 100
@@ -119,7 +119,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         {isTrial && (
           <div className="mt-1">
             <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
-              20% off during trial
+              10% off during trial
             </span>
           </div>
         )}
@@ -178,7 +178,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         {isTrial && (
           <div className="mt-1">
             <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
-              20% off during trial
+              10% off during trial
             </span>
           </div>
         )}

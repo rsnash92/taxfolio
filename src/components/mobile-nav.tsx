@@ -162,7 +162,7 @@ export function MobileNav({ user, isTrial, showProperties = true }: MobileNavPro
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Upgrade early for 20% off
+                Upgrade early for 10% off
               </Button>
             </Link>
           )}

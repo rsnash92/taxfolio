@@ -19,7 +19,7 @@ export function TrialBanner({ daysLeft }: TrialBannerProps) {
         href="/settings/billing"
         className="text-xs font-semibold text-black underline hover:no-underline"
       >
-        Upgrade early for 20% off
+        Upgrade early for 10% off
       </Link>
     </div>
   )
