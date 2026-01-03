@@ -9,13 +9,15 @@ import {
   Activity,
   Settings,
   ArrowLeft,
-  Zap
+  Zap,
+  Gift
 } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/revenue', label: 'Revenue', icon: CreditCard },
+  { href: '/admin/referrals', label: 'Referrals', icon: Gift },
   { href: '/admin/activity', label: 'Activity', icon: Activity },
   { href: '/admin/system', label: 'System', icon: Settings },
 ]

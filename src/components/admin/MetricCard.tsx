@@ -6,7 +6,7 @@ interface MetricCardProps {
   icon: LucideIcon
   trend?: string
   trendUp?: boolean
-  color?: 'default' | 'green' | 'blue' | 'purple' | 'red'
+  color?: 'default' | 'green' | 'blue' | 'purple' | 'red' | 'yellow'
 }
 
 const colorClasses = {
@@ -15,6 +15,7 @@ const colorClasses = {
   blue: 'bg-blue-500/20 text-blue-500',
   purple: 'bg-purple-500/20 text-purple-500',
   red: 'bg-red-500/20 text-red-500',
+  yellow: 'bg-yellow-500/20 text-yellow-500',
 }
 
 export function MetricCard({
