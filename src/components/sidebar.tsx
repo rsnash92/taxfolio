@@ -48,7 +48,7 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
   },
   {
     title: "Referrals",
-    href: "/partners",
+    href: "/referrals",
     icon: Users,
   },
   {

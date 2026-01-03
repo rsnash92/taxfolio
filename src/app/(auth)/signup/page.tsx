@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles, Gift } from "lucide-react"
+import { REFERRAL_CONFIG } from "@/lib/referrals/config"
 
 // Google icon component
 function GoogleIcon({ className }: { className?: string }) {
@@ -43,14 +44,16 @@ function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [introSession, setIntroSession] = useState<string | null>(null)
+  const [referralCode, setReferralCode] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  // Pre-fill email and capture intro_session from URL query parameters
+  // Pre-fill email and capture intro_session/ref from URL query parameters
   useEffect(() => {
     const emailParam = searchParams.get("email")
     const sessionParam = searchParams.get("intro_session")
+    const refParam = searchParams.get("ref")
 
     if (emailParam) {
       setEmail(emailParam)
@@ -59,6 +62,11 @@ function SignUpForm() {
       setIntroSession(sessionParam)
       // Store in localStorage for OAuth callback
       localStorage.setItem('taxfolio_intro_session', sessionParam)
+    }
+    if (refParam) {
+      setReferralCode(refParam.toUpperCase())
+      // Store in localStorage for OAuth callback
+      localStorage.setItem('taxfolio_referral_code', refParam.toUpperCase())
     }
   }, [searchParams])
 
@@ -79,6 +87,25 @@ function SignUpForm() {
     }
   }
 
+  // Function to apply referral code after signup
+  const applyReferralCode = async (code: string) => {
+    try {
+      const response = await fetch('/api/referrals/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success(`Referral code applied! You'll get £${REFERRAL_CONFIG.rewards.self_assessment.referredDiscount} off.`)
+      } else if (result.error) {
+        console.warn('Failed to apply referral code:', result.error)
+      }
+    } catch (error) {
+      console.error('Failed to apply referral code:', error)
+    }
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -91,6 +118,7 @@ function SignUpForm() {
           data: {
             full_name: fullName,
             intro_session: introSession,
+            referral_code: referralCode,
           },
         },
       })
@@ -105,6 +133,11 @@ function SignUpForm() {
         await linkIntroSession(data.user.id, introSession)
       }
 
+      // If user is created and we have a referral code, apply it
+      if (data.user && referralCode) {
+        await applyReferralCode(referralCode)
+      }
+
       toast.success("Account created! Please check your email to verify your account.")
       router.push("/login")
     } catch {
@@ -117,10 +150,17 @@ function SignUpForm() {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true)
     try {
+      // Build callback URL with query params
+      const callbackParams = new URLSearchParams()
+      if (introSession) callbackParams.set('intro_session', introSession)
+      if (referralCode) callbackParams.set('ref', referralCode)
+      const queryString = callbackParams.toString()
+      const redirectTo = `${window.location.origin}/auth/callback${queryString ? `?${queryString}` : ''}`
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback${introSession ? `?intro_session=${introSession}` : ''}`,
+          redirectTo,
         },
       })
 
@@ -149,6 +189,17 @@ function SignUpForm() {
             <Sparkles className="h-4 w-4 text-[#15e49e] flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
               Your answers will be used to personalize your experience
+            </p>
+          </div>
+        )}
+
+        {/* Referral code notice */}
+        {referralCode && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#15e49e]/10 border border-[#15e49e]/20">
+            <Gift className="h-4 w-4 text-[#15e49e] flex-shrink-0" />
+            <p className="text-sm text-muted-foreground">
+              Referral code <span className="font-mono font-medium">{referralCode}</span> applied -
+              you&apos;ll get £{REFERRAL_CONFIG.rewards.self_assessment.referredDiscount} off!
             </p>
           </div>
         )}

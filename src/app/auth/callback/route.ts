@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const introSession = requestUrl.searchParams.get('intro_session')
+  const referralCode = requestUrl.searchParams.get('ref')
 
   if (code) {
     const supabase = createServerClient()
@@ -41,6 +42,24 @@ export async function GET(request: NextRequest) {
         }
       } catch (error) {
         console.error('Failed to link intro session:', error)
+      }
+    }
+
+    if (session?.user && referralCode) {
+      // Apply referral code for new OAuth signups
+      try {
+        const { data, error: refError } = await supabase.rpc('apply_referral_code', {
+          p_code: referralCode.toUpperCase(),
+          p_referred_user_id: session.user.id,
+        })
+
+        if (refError) {
+          console.warn('Failed to apply referral code:', refError)
+        } else {
+          console.log('Applied referral code:', data)
+        }
+      } catch (error) {
+        console.error('Failed to apply referral code:', error)
       }
     }
   }

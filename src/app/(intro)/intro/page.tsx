@@ -172,25 +172,25 @@ function OptionCard({
       onClick={onClick}
       className={cn(
         "w-full text-left p-4 rounded-xl border-2 transition-all duration-200",
-        "hover:border-[#15e49e]/50 hover:bg-[#15e49e]/5",
+        "hover:border-blue-400 hover:bg-blue-50",
         selected
-          ? "border-[#15e49e] bg-[#15e49e]/10"
-          : "border-zinc-700 bg-zinc-800/50"
+          ? "border-blue-600 bg-blue-50 shadow-sm"
+          : "border-gray-200 bg-white"
       )}
     >
       <div className="flex items-start gap-4">
         <div className={cn(
           "p-2 rounded-lg",
-          selected ? "bg-[#15e49e]/20 text-[#15e49e]" : "bg-zinc-700 text-zinc-300"
+          selected ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
         )}>
           {option.icon}
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-white">{option.label}</h3>
-          <p className="text-sm text-zinc-400">{option.description}</p>
+          <h3 className="font-semibold text-gray-900">{option.label}</h3>
+          <p className="text-sm text-gray-500">{option.description}</p>
         </div>
         {selected && (
-          <CheckCircle2 className="h-5 w-5 text-[#15e49e] flex-shrink-0" />
+          <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
         )}
       </div>
     </button>
@@ -290,7 +290,7 @@ export default function IntroWizard() {
   if (!isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-pulse text-zinc-400">Loading...</div>
+        <div className="animate-pulse text-gray-400">Loading...</div>
       </div>
     )
   }
@@ -301,10 +301,10 @@ export default function IntroWizard() {
         return (
           <>
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 What brings you here today?
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-gray-500">
                 Help us understand how we can best assist you
               </CardDescription>
             </CardHeader>
@@ -325,10 +325,10 @@ export default function IntroWizard() {
         return (
           <>
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 What&apos;s your main income source?
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-gray-500">
                 This helps us set up the right sections for you
               </CardDescription>
             </CardHeader>
@@ -349,10 +349,10 @@ export default function IntroWizard() {
         return (
           <>
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 How familiar are you with Self Assessment?
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-gray-500">
                 We&apos;ll adjust guidance to your experience level
               </CardDescription>
             </CardHeader>
@@ -373,10 +373,10 @@ export default function IntroWizard() {
         return (
           <>
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 What&apos;s your current situation?
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-gray-500">
                 This helps us prioritize what you see first
               </CardDescription>
             </CardHeader>
@@ -397,35 +397,35 @@ export default function IntroWizard() {
         return (
           <>
             <CardHeader className="text-center pb-6">
-              <div className="mx-auto w-16 h-16 bg-[#15e49e]/20 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-8 w-8 text-[#15e49e]" />
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-blue-600" />
               </div>
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 You&apos;re all set!
               </CardTitle>
-              <CardDescription className="text-zinc-400 text-base">
+              <CardDescription className="text-gray-500 text-base">
                 Based on your answers, we&apos;ve prepared a personalized tax assessment experience for you.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-zinc-800/50 rounded-xl p-4 space-y-3">
-                <h4 className="font-medium text-white">Your profile:</h4>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
+                <h4 className="font-medium text-gray-900">Your profile:</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Goal:</span>
-                    <span className="text-white">
+                    <span className="text-gray-500">Goal:</span>
+                    <span className="text-gray-900 font-medium">
                       {INTENT_OPTIONS.find(o => o.value === intent)?.label}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Income type:</span>
-                    <span className="text-white">
+                    <span className="text-gray-500">Income type:</span>
+                    <span className="text-gray-900 font-medium">
                       {INCOME_OPTIONS.find(o => o.value === incomeSource)?.label}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Experience:</span>
-                    <span className="text-white">
+                    <span className="text-gray-500">Experience:</span>
+                    <span className="text-gray-900 font-medium">
                       {EXPERIENCE_OPTIONS.find(o => o.value === experience)?.label}
                     </span>
                   </div>
@@ -434,15 +434,15 @@ export default function IntroWizard() {
 
               <Button
                 onClick={handleGetStarted}
-                className="w-full h-12 text-lg font-semibold rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black"
+                className="w-full h-12 text-lg font-semibold rounded-full bg-blue-600 hover:bg-blue-700 text-white"
               >
                 Create your account
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
 
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-gray-500">
                 Already have an account?{' '}
-                <a href="/login" className="text-[#15e49e] hover:underline">
+                <a href="/login" className="text-blue-600 hover:underline font-medium">
                   Sign in
                 </a>
               </p>
@@ -456,24 +456,24 @@ export default function IntroWizard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          <span className="text-[#15e49e]">tax</span>folio
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <span className="text-blue-600">tax</span>folio
         </h1>
-        <p className="text-zinc-400">
+        <p className="text-gray-500">
           Self Assessment made simple
         </p>
       </div>
 
       {/* Progress bar */}
       <div className="space-y-2">
-        <Progress value={progress} className="h-2 bg-zinc-700" />
-        <p className="text-xs text-zinc-500 text-center">
+        <Progress value={progress} className="h-2 bg-gray-200" />
+        <p className="text-xs text-gray-500 text-center">
           {step === 'ready' ? 'Complete!' : `Step ${step} of 4`}
         </p>
       </div>
 
       {/* Card */}
-      <Card className="bg-zinc-900 border-zinc-700">
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
         {renderStep()}
       </Card>
 
@@ -484,7 +484,7 @@ export default function IntroWizard() {
             <Button
               variant="outline"
               onClick={handleBack}
-              className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -496,7 +496,7 @@ export default function IntroWizard() {
             className={cn(
               "flex-1 rounded-full font-semibold",
               step === 1 ? "w-full" : "",
-              "bg-[#15e49e] hover:bg-[#12c98a] text-black disabled:opacity-50"
+              "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
             )}
           >
             Continue
