@@ -1,194 +1,10 @@
-import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ArrowRight, Building2, TrendingUp, TrendingDown, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { ExternalLink, FileText, Calendar, Users, CreditCard } from "lucide-react"
 import Link from "next/link"
-import { TaxSummaryCard } from "@/components/tax-summary-card"
-import { PropertyTaxCard } from "@/components/property-tax-card"
-import { HomeOfficeCard } from "@/components/home-office-card"
-import { SuggestionsWidget } from "@/components/suggestions/suggestions-widget"
 import { HMRCWidgetWrapper } from "@/components/hmrc"
-import { PDFExportButton, YearComparisonWidget, ActionItemsWidget } from "@/components/dashboard"
-
-interface TransactionData {
-  amount: number
-  review_status: string
-  category: { code: string; name: string; type: string } | null
-}
-
-interface AccountData {
-  id: string
-  name: string
-  mask: string | null
-  bank_connections: { institution_name: string; last_synced_at: string | null } | null
-}
-
-async function getTaxSummary(supabase: Awaited<ReturnType<typeof createClient>>, taxYear: string) {
-  const { data } = await supabase
-    .from('transactions')
-    .select(`
-      amount,
-      review_status,
-      category:categories!transactions_category_id_fkey(code, name, type)
-    `)
-    .eq('tax_year', taxYear)
-
-  const transactions = data as TransactionData[] | null
-
-  let totalIncome = 0
-  let totalExpenses = 0
-  let pendingCount = 0
-  let confirmedCount = 0
-
-  for (const tx of transactions || []) {
-    if (tx.review_status === 'pending') pendingCount++
-    if (tx.review_status === 'confirmed') confirmedCount++
-
-    const category = tx.category
-    if (tx.review_status === 'confirmed' && category) {
-      if (category.type === 'income') {
-        totalIncome += Math.abs(tx.amount)
-      } else if (category.type === 'expense') {
-        totalExpenses += Math.abs(tx.amount)
-      }
-    }
-  }
-
-  const netProfit = totalIncome - totalExpenses
-  const totalTransactions = (transactions?.length || 0)
-  const reviewProgress = totalTransactions > 0
-    ? Math.round((confirmedCount / totalTransactions) * 100)
-    : 0
-
-  return {
-    totalIncome,
-    totalExpenses,
-    netProfit,
-    pendingCount,
-    confirmedCount,
-    totalTransactions,
-    reviewProgress,
-  }
-}
-
-interface OtherYearPending {
-  tax_year: string
-  count: number
-}
-
-async function getOtherYearsPending(supabase: Awaited<ReturnType<typeof createClient>>, currentTaxYear: string): Promise<OtherYearPending[]> {
-  const { data } = await supabase
-    .from('transactions')
-    .select('tax_year')
-    .eq('review_status', 'pending')
-    .neq('tax_year', currentTaxYear)
-
-  if (!data || data.length === 0) return []
-
-  // Count by tax year
-  const counts = new Map<string, number>()
-  for (const tx of data) {
-    counts.set(tx.tax_year, (counts.get(tx.tax_year) || 0) + 1)
-  }
-
-  return Array.from(counts.entries())
-    .map(([tax_year, count]) => ({ tax_year, count }))
-    .sort((a, b) => b.tax_year.localeCompare(a.tax_year))
-}
-
-async function getAccounts(supabase: Awaited<ReturnType<typeof createClient>>): Promise<AccountData[]> {
-  const { data } = await supabase
-    .from('accounts')
-    .select('id, name, mask, bank_connections(institution_name, last_synced_at)')
-    .eq('is_business_account', true)
-
-  return (data as AccountData[] | null) || []
-}
-
-interface PrevTransactionData {
-  amount: number
-  review_status: string
-  category: { type: string } | null
-}
-
-async function getYearComparison(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  currentYear: string,
-  currentIncome: number,
-  currentExpenses: number
-) {
-  const [startYear] = currentYear.split('-').map(Number)
-  const previousYear = `${startYear - 1}-${startYear.toString().slice(-2)}`
-
-  const { data: prevTransactions } = await supabase
-    .from('transactions')
-    .select(`
-      amount,
-      review_status,
-      category:categories!transactions_category_id_fkey(type)
-    `)
-    .eq('tax_year', previousYear)
-
-  const prevTxs = prevTransactions as PrevTransactionData[] | null
-
-  if (!prevTxs || prevTxs.length === 0) return null
-
-  let prevIncome = 0
-  let prevExpenses = 0
-
-  for (const tx of prevTxs) {
-    if (tx.review_status !== 'confirmed') continue
-    const category = tx.category
-    if (!category) continue
-
-    if (category.type === 'income') {
-      prevIncome += Math.abs(tx.amount)
-    } else if (category.type === 'expense') {
-      prevExpenses += Math.abs(tx.amount)
-    }
-  }
-
-  if (prevIncome === 0 && prevExpenses === 0) return null
-
-  const currentProfit = currentIncome - currentExpenses
-  const prevProfit = prevIncome - prevExpenses
-
-  return {
-    previousYear,
-    income: {
-      current: currentIncome,
-      previous: prevIncome,
-      change: currentIncome - prevIncome,
-      changePercent: prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0,
-    },
-    expenses: {
-      current: currentExpenses,
-      previous: prevExpenses,
-      change: currentExpenses - prevExpenses,
-      changePercent: prevExpenses > 0 ? ((currentExpenses - prevExpenses) / prevExpenses) * 100 : 0,
-    },
-    profit: {
-      current: currentProfit,
-      previous: prevProfit,
-      change: currentProfit - prevProfit,
-      changePercent: Math.abs(prevProfit) > 0 ? ((currentProfit - prevProfit) / Math.abs(prevProfit)) * 100 : 0,
-    },
-  }
-}
-
-async function getUncategorisedCount(supabase: Awaited<ReturnType<typeof createClient>>, taxYear: string): Promise<number> {
-  const { count } = await supabase
-    .from('transactions')
-    .select('*', { count: 'exact', head: true })
-    .eq('tax_year', taxYear)
-    .is('category_id', null)
-
-  return count || 0
-}
+import { getSubscription } from "@/lib/subscription"
 
 function getCurrentTaxYear(): string {
   const now = new Date()
@@ -203,261 +19,142 @@ function getCurrentTaxYear(): string {
   }
 }
 
-interface PageProps {
-  searchParams: Promise<{ tax_year?: string }>
-}
-
-export default async function DashboardPage({ searchParams }: PageProps) {
+export default async function DashboardPage() {
   const supabase = await createClient()
-  const params = await searchParams
-  const cookieStore = await cookies()
-  const cookieTaxYear = cookieStore.get("taxfolio_tax_year")?.value
-  const taxYear = params.tax_year || cookieTaxYear || getCurrentTaxYear()
-  const [summary, accounts, otherYearsPending, uncategorisedCount] = await Promise.all([
-    getTaxSummary(supabase, taxYear),
-    getAccounts(supabase),
-    getOtherYearsPending(supabase, taxYear),
-    getUncategorisedCount(supabase, taxYear),
-  ])
+  const { data: { user } } = await supabase.auth.getUser()
+  const taxYear = getCurrentTaxYear()
 
-  // Get year comparison after we have summary data
-  const yearComparison = await getYearComparison(
-    supabase,
-    taxYear,
-    summary.totalIncome,
-    summary.totalExpenses
-  )
+  // Get user name and subscription
+  const { data: userData } = await supabase
+    .from("users")
+    .select("full_name")
+    .eq("id", user?.id)
+    .single()
 
-  // Build action items
-  const actionItems = [
-    ...(uncategorisedCount > 0
-      ? [
-          {
-            id: 'categorise',
-            title: `Categorise ${uncategorisedCount} transaction${uncategorisedCount > 1 ? 's' : ''}`,
-            href: '/transactions?category=uncategorised',
-          },
-        ]
-      : []),
-    {
-      id: 'mileage',
-      title: 'Review mileage log',
-      href: '/mileage',
-    },
-    {
-      id: 'home-office',
-      title: 'Confirm home office deduction',
-      href: '/home-office',
-    },
-    {
-      id: 'file',
-      title: 'File self-assessment',
-      deadline: '31 January',
-    },
-  ]
+  const subscription = user ? await getSubscription(user.id) : null
+  const firstName = userData?.full_name?.split(" ")[0] || "there"
+
+  const assessmentUrl = process.env.NEXT_PUBLIC_ASSESSMENT_URL || "https://assessment.taxfolio.io"
 
   return (
     <div className="space-y-6">
-      {/* PDF Export */}
-      <div className="flex justify-end">
-        <PDFExportButton taxYear={taxYear} />
+      {/* Welcome Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome back, {firstName}</h1>
+        <p className="text-muted-foreground mt-1">
+          Tax year {taxYear} • Manage your self-assessment and Making Tax Digital
+        </p>
       </div>
 
-      {/* Other Tax Years Alert */}
-      {otherYearsPending.length > 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Transactions in other tax years</AlertTitle>
-          <AlertDescription className="flex flex-col gap-2">
-            <span>You have pending transactions in previous tax years that need review:</span>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {otherYearsPending.map(({ tax_year, count }) => (
-                <Link key={tax_year} href={`/transactions?status=pending`}>
-                  <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
-                    {tax_year}: {count} pending
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{summary.totalIncome.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">From confirmed transactions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{summary.totalExpenses.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Business expenses only</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <Badge variant={summary.netProfit >= 0 ? "default" : "destructive"}>
-              {summary.netProfit >= 0 ? "Profit" : "Loss"}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{summary.netProfit.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Income minus expenses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Review Progress</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.reviewProgress}%</div>
-            <Progress value={summary.reviewProgress} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              {summary.confirmedCount} of {summary.totalTransactions} reviewed
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Pending Review */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Pending Review
-            </CardTitle>
-            <CardDescription>
-              Transactions waiting for your confirmation
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {summary.pendingCount > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-4xl font-bold">{summary.pendingCount}</span>
-                  <Link href="/transactions?status=pending">
-                    <Button>
-                      Review now
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  AI has suggested categories for these transactions. Review and confirm to update your tax position.
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <p className="font-medium">All caught up!</p>
-                <p className="text-sm text-muted-foreground">No pending transactions to review</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Self-Employment Tax Summary */}
-        <TaxSummaryCard taxYear={taxYear} />
-      </div>
-
-      {/* Property & Home Office Section */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PropertyTaxCard taxYear={taxYear} />
-        <HomeOfficeCard taxYear={taxYear} />
-      </div>
-
-      {/* Year Comparison & Action Items */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {yearComparison && (
-          <YearComparisonWidget
-            currentYear={taxYear}
-            previousYear={yearComparison.previousYear}
-            income={yearComparison.income}
-            expenses={yearComparison.expenses}
-            profit={yearComparison.profit}
-          />
-        )}
-        <ActionItemsWidget items={actionItems} />
-      </div>
-
-      {/* MTD Status & Suggestions */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <HMRCWidgetWrapper taxYear={taxYear} />
-        <div className="lg:col-span-2">
-          <SuggestionsWidget taxYear={taxYear} />
-        </div>
-      </div>
-
-      {/* Connected Accounts */}
-      <Card>
+      {/* Primary CTA - Go to Assessment */}
+      <Card className="border-[#15e49e]/50 bg-[#15e49e]/5">
         <CardHeader>
-          <CardTitle>Connected Accounts</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-[#15e49e]" />
+            Self Assessment Tax Return
+          </CardTitle>
           <CardDescription>
-            Your business bank accounts synced with TaxFolio
+            Prepare and submit your self-assessment tax return with our guided wizard
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {accounts.length > 0 ? (
-            <div className="space-y-4">
-              {accounts.map((account) => (
-                <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{account.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {account.bank_connections?.institution_name} •••• {account.mask}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline">Business</Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {account.bank_connections?.last_synced_at
-                        ? `Synced ${new Date(account.bank_connections.last_synced_at).toLocaleDateString()}`
-                        : 'Not synced'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="font-medium">No accounts connected</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect your business bank account to start tracking transactions
-              </p>
-              <Link href="/accounts">
-                <Button>
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Connect Bank
-                </Button>
-              </Link>
-            </div>
-          )}
+          <a href={assessmentUrl} target="_blank" rel="noopener noreferrer">
+            <Button className="bg-[#15e49e] hover:bg-[#12c98a] text-black">
+              Go to Tax Return Wizard
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Button>
+          </a>
         </CardContent>
       </Card>
+
+      {/* Quick Links Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Link href="/personal-tax">
+          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Personal Tax</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">View your tax summary and history</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/mtd">
+          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Making Tax Digital</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Quarterly submissions to HMRC</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/partners">
+          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Referrals</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Earn rewards by inviting others</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/settings/billing">
+          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Billing</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                {subscription?.isTrial
+                  ? `Trial ends ${subscription.trialEndsAt ? new Date(subscription.trialEndsAt).toLocaleDateString() : 'soon'}`
+                  : 'Manage your subscription'}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* MTD Status */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <HMRCWidgetWrapper taxYear={taxYear} />
+
+        {/* Subscription Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Plan</CardTitle>
+            <CardDescription>Current subscription status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium capitalize">
+                    {subscription?.isTrial ? 'Free Trial' : subscription?.tier?.replace('_', ' ') || 'Free'}
+                  </p>
+                  {subscription?.isTrial && subscription.trialEndsAt && (
+                    <p className="text-sm text-muted-foreground">
+                      Trial ends {new Date(subscription.trialEndsAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                <Link href="/settings/billing">
+                  <Button variant="outline" size="sm">
+                    Manage
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

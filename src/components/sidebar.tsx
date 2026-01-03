@@ -19,17 +19,13 @@ import {
 import {
   LogOut,
   LayoutDashboard,
-  Receipt,
-  Building2,
-  Car,
-  Home,
-  Landmark,
   Calendar,
-  Download,
   LucideIcon,
   Settings,
   Sparkles,
-  Lightbulb,
+  Users,
+  CreditCard,
+  FileText,
 } from "lucide-react"
 import { HMRCStatusBadge } from "@/components/hmrc/hmrc-status-badge"
 import { hasApproachingDeadline, getCurrentTaxYear } from "@/lib/hmrc/deadlines"
@@ -41,44 +37,29 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Transactions",
-    href: "/transactions",
-    icon: Receipt,
+    title: "Personal Tax",
+    href: "/personal-tax",
+    icon: FileText,
   },
   {
-    title: "Properties",
-    href: "/properties",
-    icon: Building2,
-  },
-  {
-    title: "Mileage",
-    href: "/mileage",
-    icon: Car,
-  },
-  {
-    title: "Home Office",
-    href: "/home-office",
-    icon: Home,
-  },
-  {
-    title: "Bank Accounts",
-    href: "/accounts",
-    icon: Landmark,
-  },
-  {
-    title: "MTD Quarters",
+    title: "Making Tax Digital",
     href: "/mtd",
     icon: Calendar,
   },
   {
-    title: "Export",
-    href: "/export",
-    icon: Download,
+    title: "Referrals",
+    href: "/partners",
+    icon: Users,
   },
   {
-    title: "Suggestions",
-    href: "/suggestions",
-    icon: Lightbulb,
+    title: "Billing",
+    href: "/settings/billing",
+    icon: CreditCard,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
 ]
 
@@ -86,10 +67,9 @@ interface SidebarProps {
   user: User
   className?: string
   isTrial?: boolean
-  showProperties?: boolean
 }
 
-export function Sidebar({ user, className, isTrial, showProperties = true }: SidebarProps) {
+export function Sidebar({ user, className, isTrial }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -137,11 +117,6 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
     fetchMTDStatus()
   }, [])
 
-  // Filter nav items based on user settings
-  const filteredNavItems = navItems.filter(item => {
-    if (item.href === '/properties' && !showProperties) return false
-    return true
-  })
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -180,7 +155,7 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 px-6">
-        {filteredNavItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
           const showMTDBadge = item.href === '/mtd' && mtdStatus
@@ -191,7 +166,7 @@ export function Sidebar({ user, className, isTrial, showProperties = true }: Sid
               className={cn(
                 "flex items-center justify-between rounded-xl px-5 py-3 text-base font-medium transition-colors",
                 isActive
-                  ? "bg-foreground text-background"
+                  ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >

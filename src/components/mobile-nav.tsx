@@ -18,16 +18,13 @@ import {
   Menu,
   LogOut,
   LayoutDashboard,
-  Receipt,
-  Building2,
-  Car,
-  Home,
-  Landmark,
   Calendar,
-  Download,
   LucideIcon,
   Settings,
   Sparkles,
+  Users,
+  CreditCard,
+  FileText,
 } from "lucide-react"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
@@ -37,59 +34,42 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Transactions",
-    href: "/transactions",
-    icon: Receipt,
+    title: "Personal Tax",
+    href: "/personal-tax",
+    icon: FileText,
   },
   {
-    title: "Properties",
-    href: "/properties",
-    icon: Building2,
-  },
-  {
-    title: "Mileage",
-    href: "/mileage",
-    icon: Car,
-  },
-  {
-    title: "Home Office",
-    href: "/home-office",
-    icon: Home,
-  },
-  {
-    title: "Accounts",
-    href: "/accounts",
-    icon: Landmark,
-  },
-  {
-    title: "MTD Quarters",
+    title: "Making Tax Digital",
     href: "/mtd",
     icon: Calendar,
   },
   {
-    title: "Export",
-    href: "/export",
-    icon: Download,
+    title: "Referrals",
+    href: "/partners",
+    icon: Users,
+  },
+  {
+    title: "Billing",
+    href: "/settings/billing",
+    icon: CreditCard,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
 ]
 
 interface MobileNavProps {
   user: User
   isTrial?: boolean
-  showProperties?: boolean
 }
 
-export function MobileNav({ user, isTrial, showProperties = true }: MobileNavProps) {
+export function MobileNav({ user, isTrial }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-
-  // Filter nav items based on user settings
-  const filteredNavItems = navItems.filter(item => {
-    if (item.href === '/properties' && !showProperties) return false
-    return true
-  })
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -130,7 +110,7 @@ export function MobileNav({ user, isTrial, showProperties = true }: MobileNavPro
 
         {/* Navigation */}
         <nav className="flex-1 space-y-2 px-6 overflow-y-auto">
-          {filteredNavItems.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             const Icon = item.icon
             return (
@@ -141,7 +121,7 @@ export function MobileNav({ user, isTrial, showProperties = true }: MobileNavPro
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
                   isActive
-                    ? "bg-foreground text-background"
+                    ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
@@ -180,24 +160,14 @@ export function MobileNav({ user, isTrial, showProperties = true }: MobileNavPro
             </div>
           </div>
 
-          {/* Settings & Sign Out */}
-          <div className="space-y-1">
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-destructive hover:bg-muted transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </div>
+          {/* Sign Out */}
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-destructive hover:bg-muted transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </div>
       </SheetContent>
     </Sheet>
