@@ -23,14 +23,14 @@ export const baseStyles = `
     justify-content: space-between;
     align-items: flex-start;
     padding-bottom: 20px;
-    border-bottom: 2px solid #15e49e;
+    border-bottom: 2px solid #00e3ec;
     margin-bottom: 30px;
   }
 
   .logo {
     font-size: 24px;
     font-weight: 700;
-    color: #15e49e;
+    color: #00e3ec;
   }
 
   .logo-sub {
@@ -94,7 +94,7 @@ export const baseStyles = `
   }
 
   .card-value.income {
-    color: #15e49e;
+    color: #00e3ec;
   }
 
   .card-value.expense {
@@ -160,7 +160,7 @@ export const baseStyles = `
   }
 
   .summary-row td {
-    border-top: 2px solid #15e49e;
+    border-top: 2px solid #00e3ec;
     padding-top: 12px;
     padding-bottom: 12px;
   }

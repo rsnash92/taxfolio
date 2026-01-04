@@ -99,13 +99,13 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
 
       {/* Lite Plan */}
       <div className={`rounded-xl border p-6 ${
-        isCurrentPlan("lite") ? "border-[#15e49e] bg-[#15e49e]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+        isCurrentPlan("lite") ? "border-[#00e3ec] bg-[#00e3ec]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
       }`}>
         <h3 className="text-lg font-semibold">Lite</h3>
         <div className="mt-2">
           {isTrial ? (
             <>
-              <span className="text-3xl font-bold text-[#15e49e]">£{LITE_DISCOUNTED}</span>
+              <span className="text-3xl font-bold text-[#00e3ec]">£{LITE_DISCOUNTED}</span>
               <span className="text-muted-foreground line-through ml-2">£{LITE_PRICE}</span>
               <span className="text-muted-foreground">/year</span>
             </>
@@ -118,7 +118,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         </div>
         {isTrial && (
           <div className="mt-1">
-            <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
+            <span className="text-xs font-medium text-[#00e3ec] bg-[#00e3ec]/10 px-2 py-0.5 rounded">
               10% off during trial
             </span>
           </div>
@@ -128,7 +128,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         <ul className="mt-6 space-y-3">
           {PLANS.lite.features.map((feature) => (
             <li key={feature} className="flex items-start text-sm">
-              <Check className="h-4 w-4 text-[#15e49e] mr-2 mt-0.5 flex-shrink-0" />
+              <Check className="h-4 w-4 text-[#00e3ec] mr-2 mt-0.5 flex-shrink-0" />
               {feature}
             </li>
           ))}
@@ -155,16 +155,16 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
 
       {/* Pro Plan */}
       <div className={`rounded-xl border p-6 relative ${
-        isCurrentPlan("pro") && !isLifetime ? "border-[#15e49e] bg-[#15e49e]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+        isCurrentPlan("pro") && !isLifetime ? "border-[#00e3ec] bg-[#00e3ec]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
       }`}>
-        <div className="absolute -top-3 right-4 px-2 py-1 bg-[#15e49e] text-black text-xs font-bold rounded">
+        <div className="absolute -top-3 right-4 px-2 py-1 bg-[#00e3ec] text-black text-xs font-bold rounded">
           MOST POPULAR
         </div>
         <h3 className="text-lg font-semibold">Pro</h3>
         <div className="mt-2">
           {isTrial ? (
             <>
-              <span className="text-3xl font-bold text-[#15e49e]">£{PRO_DISCOUNTED}</span>
+              <span className="text-3xl font-bold text-[#00e3ec]">£{PRO_DISCOUNTED}</span>
               <span className="text-muted-foreground line-through ml-2">£{PRO_PRICE}</span>
               <span className="text-muted-foreground">/year</span>
             </>
@@ -177,7 +177,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         </div>
         {isTrial && (
           <div className="mt-1">
-            <span className="text-xs font-medium text-[#15e49e] bg-[#15e49e]/10 px-2 py-0.5 rounded">
+            <span className="text-xs font-medium text-[#00e3ec] bg-[#00e3ec]/10 px-2 py-0.5 rounded">
               10% off during trial
             </span>
           </div>
@@ -187,7 +187,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
         <ul className="mt-6 space-y-3">
           {PLANS.pro.features.map((feature) => (
             <li key={feature} className="flex items-start text-sm">
-              <Check className="h-4 w-4 text-[#15e49e] mr-2 mt-0.5 flex-shrink-0" />
+              <Check className="h-4 w-4 text-[#00e3ec] mr-2 mt-0.5 flex-shrink-0" />
               {feature}
             </li>
           ))}
@@ -195,7 +195,7 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
 
         <div className="mt-6">
           <Button
-            className="w-full bg-[#15e49e] hover:bg-[#12c98a] text-black"
+            className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black"
             onClick={() => handleCheckout("pro")}
             disabled={loading === "pro" || (isCurrentPlan("pro") && !isLifetime) || isLifetime}
           >
@@ -207,12 +207,12 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
 
       {/* Lifetime Info (if already purchased) */}
       {isLifetime && (
-        <div className="md:col-span-2 rounded-xl border border-[#15e49e] bg-[#15e49e]/5 p-6">
+        <div className="md:col-span-2 rounded-xl border border-[#00e3ec] bg-[#00e3ec]/5 p-6">
           <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-[#15e49e]" />
+            <Zap className="h-5 w-5 text-[#00e3ec]" />
             <h3 className="text-lg font-semibold">Lifetime Pro</h3>
           </div>
-          <div className="mt-4 text-[#15e49e] font-medium">
+          <div className="mt-4 text-[#00e3ec] font-medium">
             You have lifetime access!
           </div>
           <p className="text-muted-foreground text-sm mt-2">

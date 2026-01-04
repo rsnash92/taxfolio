@@ -112,7 +112,7 @@ export default function AccountsPage() {
             We couldn&apos;t find any accounts. Please try connecting again.
           </p>
         </div>
-        <Button className="rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold" onClick={() => router.push("/onboarding/connect")}>
+        <Button className="rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold" onClick={() => router.push("/onboarding/connect")}>
           Try Again
         </Button>
       </div>
@@ -141,7 +141,7 @@ export default function AccountsPage() {
       {/* Continue Button */}
       <Button
         size="lg"
-        className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+        className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
         onClick={handleContinue}
         disabled={saving || selectedIds.length === 0}
       >

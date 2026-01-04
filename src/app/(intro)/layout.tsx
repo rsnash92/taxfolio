@@ -30,9 +30,9 @@ export default function IntroLayout({
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-blue-200 text-gray-900 relative overflow-hidden">
-      {/* Cloud overlay effect */}
-      <div className="absolute inset-0 bg-[url('/clouds-bg.png')] bg-cover bg-center opacity-40 pointer-events-none" />
+    <div className="min-h-screen bg-[#f8f9fc] text-gray-900 relative overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#00e3ec]/5 via-transparent to-violet-500/5 pointer-events-none" />
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-2xl">
         {children}
       </div>

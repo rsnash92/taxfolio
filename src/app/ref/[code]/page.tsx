@@ -81,7 +81,7 @@ export default async function ReferralLandingPage({
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           {/* Gift Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#15e49e]/10 px-4 py-2 text-[#15e49e]">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#00e3ec]/10 px-4 py-2 text-[#00e3ec]">
             <Gift className="h-5 w-5" />
             <span className="font-medium">
               You&apos;ve been invited!
@@ -90,7 +90,7 @@ export default async function ReferralLandingPage({
 
           {/* Main Headline */}
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Get <span className="text-[#15e49e]">£{discount} off</span> your
+            Get <span className="text-[#00e3ec]">£{discount} off</span> your
             <br />
             Self Assessment tax return
           </h1>
@@ -103,7 +103,7 @@ export default async function ReferralLandingPage({
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link href={`/signup?ref=${code}`}>
-              <Button size="lg" className="bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold px-8">
+              <Button size="lg" className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold px-8">
                 Claim your £{discount} discount
               </Button>
             </Link>
@@ -119,8 +119,8 @@ export default async function ReferralLandingPage({
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center space-y-3">
-                <div className="h-12 w-12 rounded-full bg-[#15e49e]/10 flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-[#15e49e]" />
+                <div className="h-12 w-12 rounded-full bg-[#00e3ec]/10 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-[#00e3ec]" />
                 </div>
                 <h3 className="font-semibold">Quick & Easy</h3>
                 <p className="text-sm text-muted-foreground">
@@ -133,8 +133,8 @@ export default async function ReferralLandingPage({
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center space-y-3">
-                <div className="h-12 w-12 rounded-full bg-[#15e49e]/10 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-[#15e49e]" />
+                <div className="h-12 w-12 rounded-full bg-[#00e3ec]/10 flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-[#00e3ec]" />
                 </div>
                 <h3 className="font-semibold">HMRC Approved</h3>
                 <p className="text-sm text-muted-foreground">
@@ -147,8 +147,8 @@ export default async function ReferralLandingPage({
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center space-y-3">
-                <div className="h-12 w-12 rounded-full bg-[#15e49e]/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6 text-[#15e49e]" />
+                <div className="h-12 w-12 rounded-full bg-[#00e3ec]/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-6 w-6 text-[#00e3ec]" />
                 </div>
                 <h3 className="font-semibold">AI-Powered</h3>
                 <p className="text-sm text-muted-foreground">

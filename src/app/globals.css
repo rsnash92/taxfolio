@@ -127,18 +127,18 @@
 
 /* Brand Colors */
 :root {
-  --brand: #15e49e;
+  --brand: #00e3ec;
   --brand-foreground: #000000;
 }
 
 /* Brand Button Styles */
 .btn-brand {
-  @apply bg-[#15e49e] text-black font-semibold rounded-full transition-all uppercase;
+  @apply bg-[#00e3ec] text-black font-semibold rounded-full transition-all uppercase;
   padding: 12px 25px;
 }
 
 .btn-brand:hover {
-  @apply bg-[#12c98a];
+  @apply bg-[#00c4d4];
 }
 
 .btn-brand-outline {
@@ -152,13 +152,13 @@
 
 /* Small button variant for header */
 .btn-brand-sm {
-  @apply bg-[#15e49e] text-black font-semibold rounded-full transition-all uppercase;
+  @apply bg-[#00e3ec] text-black font-semibold rounded-full transition-all uppercase;
   font-size: 0.8em;
   padding: 8px 20px;
 }
 
 .btn-brand-sm:hover {
-  @apply bg-[#12c98a];
+  @apply bg-[#00c4d4];
 }
 
 .btn-brand-outline-sm {

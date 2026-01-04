@@ -22,7 +22,7 @@ const kanit = Kanit({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#10b981',
+  themeColor: '#00e3ec',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

@@ -121,7 +121,7 @@ export function MobileNav({ user, isTrial }: MobileNavProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
                   isActive
-                    ? "border-l-2 border-[#15e49e] bg-[#15e49e]/10 text-foreground"
+                    ? "border-l-2 border-[#00e3ec] bg-[#00e3ec]/10 text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
@@ -138,7 +138,7 @@ export function MobileNav({ user, isTrial }: MobileNavProps) {
           {isTrial && (
             <Link href="/settings/billing" onClick={() => setOpen(false)}>
               <Button
-                className="w-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-medium"
+                className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium"
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -150,7 +150,7 @@ export function MobileNav({ user, isTrial }: MobileNavProps) {
           {/* User Info */}
           <div className="flex items-center gap-3 rounded-lg px-2 py-2">
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-[#15e49e]/20 text-[#15e49e]">
+              <AvatarFallback className="bg-[#00e3ec]/20 text-[#00e3ec]">
                 {initials}
               </AvatarFallback>
             </Avatar>

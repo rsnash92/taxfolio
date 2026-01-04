@@ -24,7 +24,7 @@ export function TaxSummaryCard({
       <CardContent className="pt-6 space-y-3">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Income</span>
-          <span className="text-[#15e49e] font-medium">{formatCurrency(income)}</span>
+          <span className="text-[#00e3ec] font-medium">{formatCurrency(income)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Expenses</span>

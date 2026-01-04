@@ -50,10 +50,10 @@ export default async function PersonalTaxPage() {
       </div>
 
       {/* Main CTA */}
-      <Card className="border-[#15e49e]/50 bg-[#15e49e]/5">
+      <Card className="border-[#00e3ec]/50 bg-[#00e3ec]/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#15e49e]" />
+            <FileText className="h-5 w-5 text-[#00e3ec]" />
             Prepare Your Tax Return
           </CardTitle>
           <CardDescription>
@@ -66,20 +66,20 @@ export default async function PersonalTaxPage() {
           </p>
           <ul className="text-sm text-muted-foreground space-y-2">
             <li className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-[#15e49e]" />
+              <Calculator className="h-4 w-4 text-[#00e3ec]" />
               Calculate your self-employment income and expenses
             </li>
             <li className="flex items-center gap-2">
-              <PoundSterling className="h-4 w-4 text-[#15e49e]" />
+              <PoundSterling className="h-4 w-4 text-[#00e3ec]" />
               Estimate your Income Tax and National Insurance
             </li>
             <li className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#15e49e]" />
+              <FileText className="h-4 w-4 text-[#00e3ec]" />
               Generate HMRC-ready figures for your tax return
             </li>
           </ul>
           <a href={assessmentUrl} target="_blank" rel="noopener noreferrer">
-            <Button className="bg-[#15e49e] hover:bg-[#12c98a] text-black mt-4">
+            <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black mt-4">
               Start Tax Return Wizard
               <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
@@ -158,7 +158,7 @@ export default async function PersonalTaxPage() {
               href="https://www.gov.uk/self-assessment-tax-returns"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 border rounded-lg hover:border-[#15e49e]/50 transition-colors"
+              className="p-4 border rounded-lg hover:border-[#00e3ec]/50 transition-colors"
             >
               <h3 className="font-medium mb-1">HMRC Self Assessment Guide</h3>
               <p className="text-sm text-muted-foreground">
@@ -169,7 +169,7 @@ export default async function PersonalTaxPage() {
               href="https://www.gov.uk/self-employed-national-insurance-rates"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 border rounded-lg hover:border-[#15e49e]/50 transition-colors"
+              className="p-4 border rounded-lg hover:border-[#00e3ec]/50 transition-colors"
             >
               <h3 className="font-medium mb-1">National Insurance Rates</h3>
               <p className="text-sm text-muted-foreground">
@@ -180,7 +180,7 @@ export default async function PersonalTaxPage() {
               href="https://www.gov.uk/expenses-if-youre-self-employed"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-4 border rounded-lg hover:border-[#15e49e]/50 transition-colors"
+              className="p-4 border rounded-lg hover:border-[#00e3ec]/50 transition-colors"
             >
               <h3 className="font-medium mb-1">Allowable Expenses</h3>
               <p className="text-sm text-muted-foreground">

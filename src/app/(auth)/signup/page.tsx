@@ -185,8 +185,8 @@ function SignUpForm() {
       <CardContent className="space-y-4">
         {/* Intro session notice */}
         {introSession && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#15e49e]/10 border border-[#15e49e]/20">
-            <Sparkles className="h-4 w-4 text-[#15e49e] flex-shrink-0" />
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#00e3ec]/10 border border-[#00e3ec]/20">
+            <Sparkles className="h-4 w-4 text-[#00e3ec] flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
               Your answers will be used to personalize your experience
             </p>
@@ -195,8 +195,8 @@ function SignUpForm() {
 
         {/* Referral code notice */}
         {referralCode && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#15e49e]/10 border border-[#15e49e]/20">
-            <Gift className="h-4 w-4 text-[#15e49e] flex-shrink-0" />
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#00e3ec]/10 border border-[#00e3ec]/20">
+            <Gift className="h-4 w-4 text-[#00e3ec] flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
               Referral code <span className="font-mono font-medium">{referralCode}</span> applied -
               you&apos;ll get £{REFERRAL_CONFIG.rewards.self_assessment.referredDiscount} off!
@@ -271,7 +271,7 @@ function SignUpForm() {
               Must be at least 6 characters
             </p>
           </div>
-          <Button type="submit" className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full bg-gray-900 hover:bg-gray-800 text-white font-semibold" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create account
           </Button>
@@ -280,7 +280,7 @@ function SignUpForm() {
       <CardFooter className="flex flex-col pt-2">
         <p className="text-sm text-muted-foreground text-center">
           Already have an account?{" "}
-          <Link href="/login" className="text-[#15e49e] hover:underline">
+          <Link href="/login" className="text-[#00e3ec] hover:underline">
             Sign in
           </Link>
         </p>

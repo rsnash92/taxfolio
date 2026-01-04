@@ -7,7 +7,8 @@ const DATA_KEY = 'taxfolio_intro_data';
 export interface IntroWizardData {
   sessionId: string;
   intent?: string;
-  incomeSource?: string;
+  incomeSource?: string; // Legacy single selection
+  incomeSources?: string[]; // New multi-select
   filingExperience?: string;
   situation?: string;
   email?: string;
@@ -135,7 +136,6 @@ export const INCOME_SOURCE_MAPPING: Record<string, string[]> = {
   'employed-side-income': ['employment', 'self-employment'],
   'director': ['employment', 'dividends'],
   'investor': ['dividends', 'interest', 'capital-gains'],
-  'multiple': [], // User will need to select their own
 };
 
 /**

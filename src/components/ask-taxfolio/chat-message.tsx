@@ -23,7 +23,7 @@ export function ChatMessage({ role, content, isLoading }: ChatMessageProps) {
       <div
         className={cn(
           "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser ? "bg-primary text-primary-foreground" : "bg-[#15e49e]/20 text-[#15e49e]"
+          isUser ? "bg-primary text-primary-foreground" : "bg-[#00e3ec]/20 text-[#00e3ec]"
         )}
       >
         {isUser ? (

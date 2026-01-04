@@ -92,7 +92,7 @@ export default async function PricingPage() {
             <ul className="mt-8 space-y-4">
               {PLANS.free.features.map((feature) => (
                 <li key={feature} className="flex items-start text-sm text-zinc-300">
-                  <Check className="h-5 w-5 text-[#15e49e] mr-3 flex-shrink-0" />
+                  <Check className="h-5 w-5 text-[#00e3ec] mr-3 flex-shrink-0" />
                   {feature}
                 </li>
               ))}
@@ -127,7 +127,7 @@ export default async function PricingPage() {
             <ul className="mt-8 space-y-4">
               {PLANS.lite.features.map((feature) => (
                 <li key={feature} className="flex items-start text-sm text-zinc-300">
-                  <Check className="h-5 w-5 text-[#15e49e] mr-3 flex-shrink-0" />
+                  <Check className="h-5 w-5 text-[#00e3ec] mr-3 flex-shrink-0" />
                   {feature}
                 </li>
               ))}
@@ -149,8 +149,8 @@ export default async function PricingPage() {
           </div>
 
           {/* Pro */}
-          <div className="rounded-xl border-2 border-[#15e49e] bg-zinc-900 p-8 relative">
-            <div className="absolute -top-3 right-4 px-3 py-1 bg-[#15e49e] text-black text-xs font-bold rounded">
+          <div className="rounded-xl border-2 border-[#00e3ec] bg-zinc-900 p-8 relative">
+            <div className="absolute -top-3 right-4 px-3 py-1 bg-[#00e3ec] text-black text-xs font-bold rounded">
               MOST POPULAR
             </div>
             <h3 className="text-xl font-semibold text-white">Pro</h3>
@@ -163,7 +163,7 @@ export default async function PricingPage() {
             <ul className="mt-8 space-y-4">
               {PLANS.pro.features.map((feature) => (
                 <li key={feature} className="flex items-start text-sm text-zinc-300">
-                  <Check className="h-5 w-5 text-[#15e49e] mr-3 flex-shrink-0" />
+                  <Check className="h-5 w-5 text-[#00e3ec] mr-3 flex-shrink-0" />
                   {feature}
                 </li>
               ))}

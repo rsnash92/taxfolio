@@ -20,7 +20,7 @@ export function AskButton() {
       <SheetTrigger asChild>
         <Button
           size="lg"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#15e49e] hover:bg-[#12c889] text-black z-50"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#00e3ec] hover:bg-[#12c889] text-black z-50"
         >
           {open ? (
             <X className="h-6 w-6" />
@@ -36,7 +36,7 @@ export function AskButton() {
       >
         <SheetHeader className="px-4 py-3 border-b shrink-0">
           <SheetTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-[#15e49e]" />
+            <MessageCircle className="h-5 w-5 text-[#00e3ec]" />
             Ask TaxFolio
           </SheetTitle>
         </SheetHeader>

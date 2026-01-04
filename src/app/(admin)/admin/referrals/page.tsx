@@ -190,7 +190,7 @@ export default async function AdminReferralsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#15e49e] font-medium">{referrer.count}</span>
+                  <span className="text-[#00e3ec] font-medium">{referrer.count}</span>
                   <span className="text-zinc-500 text-sm">conversions</span>
                 </div>
               </div>

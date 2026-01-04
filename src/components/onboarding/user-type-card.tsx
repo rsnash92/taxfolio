@@ -25,7 +25,7 @@ export function UserTypeCard({
         "w-full p-4 rounded-lg border text-left transition-all",
         "hover:bg-muted",
         selected
-          ? "border-[#15e49e] bg-[#15e49e]/10"
+          ? "border-[#00e3ec] bg-[#00e3ec]/10"
           : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
       )}
     >

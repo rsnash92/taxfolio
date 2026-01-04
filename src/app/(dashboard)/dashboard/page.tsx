@@ -47,10 +47,10 @@ export default async function DashboardPage() {
       </div>
 
       {/* Primary CTA - Go to Assessment */}
-      <Card className="border-[#15e49e]/50 bg-[#15e49e]/5">
+      <Card className="border-[#00e3ec]/50 bg-[#00e3ec]/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#15e49e]" />
+            <FileText className="h-5 w-5 text-[#00e3ec]" />
             Self Assessment Tax Return
           </CardTitle>
           <CardDescription>
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           <a href={assessmentUrl} target="_blank" rel="noopener noreferrer">
-            <Button className="bg-[#15e49e] hover:bg-[#12c98a] text-black">
+            <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black">
               Go to Tax Return Wizard
               <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       {/* Quick Links Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link href="/personal-tax">
-          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+          <Card className="hover:border-[#00e3ec]/50 transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Personal Tax</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
         </Link>
 
         <Link href="/mtd">
-          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+          <Card className="hover:border-[#00e3ec]/50 transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Making Tax Digital</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
         </Link>
 
         <Link href="/partners">
-          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+          <Card className="hover:border-[#00e3ec]/50 transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Referrals</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
         </Link>
 
         <Link href="/settings/billing">
-          <Card className="hover:border-[#15e49e]/50 transition-colors cursor-pointer h-full">
+          <Card className="hover:border-[#00e3ec]/50 transition-colors cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Billing</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />

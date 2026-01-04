@@ -15,7 +15,7 @@ export function ProcessingStep({ label, status }: ProcessingStepProps) {
     <div className="flex items-center gap-3">
       <div className="w-5 h-5 flex items-center justify-center">
         {status === 'complete' && (
-          <Check className="w-4 h-4 text-[#15e49e] animate-in fade-in zoom-in duration-300" />
+          <Check className="w-4 h-4 text-[#00e3ec] animate-in fade-in zoom-in duration-300" />
         )}
         {status === 'in_progress' && (
           <Loader2 className="w-4 h-4 text-primary animate-spin" />
@@ -27,7 +27,7 @@ export function ProcessingStep({ label, status }: ProcessingStepProps) {
       <span
         className={cn(
           "text-sm transition-colors",
-          status === 'complete' && "text-[#15e49e]",
+          status === 'complete' && "text-[#00e3ec]",
           status === 'in_progress' && "text-foreground",
           status === 'pending' && "text-muted-foreground"
         )}

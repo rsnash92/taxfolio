@@ -374,7 +374,7 @@ export default function AlternateHomePage() {
           <div className="text-center mt-10">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#12c98a] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#00c4d4] transition-colors"
             >
               GET STARTED FREE
             </Link>
@@ -596,7 +596,7 @@ export default function AlternateHomePage() {
               </ul>
               <Link
                 href="/signup"
-                className="block text-center px-6 py-3 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#12c98a] transition-colors"
+                className="block text-center px-6 py-3 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#00c4d4] transition-colors"
               >
                 Start Free Trial
               </Link>
@@ -720,7 +720,7 @@ export default function AlternateHomePage() {
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#12c98a] transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#00e3ec] text-black rounded-full font-semibold hover:bg-[#00c4d4] transition-colors"
               >
                 Start Free Trial
                 <ArrowRight className="w-5 h-5" />

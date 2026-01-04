@@ -27,7 +27,7 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
       {/* Success Message */}
       {params.success && (
-        <div className="p-4 bg-[#15e49e]/10 border border-[#15e49e]/20 rounded-lg text-[#15e49e] flex items-center gap-2">
+        <div className="p-4 bg-[#00e3ec]/10 border border-[#00e3ec]/20 rounded-lg text-[#00e3ec] flex items-center gap-2">
           <CheckCircle className="h-5 w-5" />
           {params.plan === "lifetime"
             ? "Welcome to TaxFolio! You now have lifetime Pro access."

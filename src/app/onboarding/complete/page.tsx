@@ -65,7 +65,7 @@ function CompleteContent() {
   if (skipped) {
     return (
       <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in duration-500">
-        <PartyPopper className="w-12 h-12 text-[#15e49e]" />
+        <PartyPopper className="w-12 h-12 text-[#00e3ec]" />
 
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">You&apos;re all set!</h1>
@@ -77,7 +77,7 @@ function CompleteContent() {
         <div className="w-full space-y-3">
           <Button
             size="lg"
-            className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+            className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
             onClick={() => router.push("/dashboard")}
           >
             Go to Dashboard
@@ -103,7 +103,7 @@ function CompleteContent() {
   return (
     <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in duration-500">
       {/* Celebration */}
-      <PartyPopper className="w-12 h-12 text-[#15e49e]" />
+      <PartyPopper className="w-12 h-12 text-[#00e3ec]" />
 
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">Your tax position is ready!</h1>
@@ -147,7 +147,7 @@ function CompleteContent() {
           <>
             <Button
               size="lg"
-              className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+              className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
               onClick={() => router.push("/transactions?status=pending")}
             >
               Review Transactions
@@ -163,7 +163,7 @@ function CompleteContent() {
         ) : (
           <Button
             size="lg"
-            className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+            className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
             onClick={() => router.push("/dashboard")}
           >
             Go to Dashboard

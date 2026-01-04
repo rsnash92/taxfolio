@@ -78,13 +78,13 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4 pt-2">
-          <Button type="submit" className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign in
           </Button>
           <p className="text-sm text-muted-foreground text-center">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-[#15e49e] hover:underline">
+            <Link href="/signup" className="text-[#00e3ec] hover:underline">
               Sign up
             </Link>
           </p>

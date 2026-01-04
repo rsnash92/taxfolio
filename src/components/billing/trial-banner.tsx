@@ -9,7 +9,7 @@ interface TrialBannerProps {
 
 export function TrialBanner({ daysLeft }: TrialBannerProps) {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-[#15e49e] px-4 py-1.5 flex items-center justify-center gap-2">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[#00e3ec] px-4 py-1.5 flex items-center justify-center gap-2">
       <Sparkles className="h-3.5 w-3.5 text-black" />
       <span className="text-xs font-medium text-black">
         {daysLeft} day{daysLeft === 1 ? "" : "s"} left in trial

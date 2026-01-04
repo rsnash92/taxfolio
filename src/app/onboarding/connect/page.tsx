@@ -34,7 +34,7 @@ export default function ConnectPage() {
       {/* Connect Button */}
       <Button
         size="lg"
-        className="w-full rounded-full bg-[#15e49e] hover:bg-[#12c98a] text-black font-semibold"
+        className="w-full rounded-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
         onClick={handleConnectBank}
         disabled={isConnecting}
       >
@@ -54,15 +54,15 @@ export default function ConnectPage() {
       {/* Trust badges */}
       <div className="space-y-3 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#15e49e]" />
+          <Shield className="w-4 h-4 text-[#00e3ec]" />
           <span>Bank-level 256-bit encryption</span>
         </div>
         <div className="flex items-center gap-2">
-          <Lock className="w-4 h-4 text-[#15e49e]" />
+          <Lock className="w-4 h-4 text-[#00e3ec]" />
           <span>Read-only access - we can&apos;t move money</span>
         </div>
         <div className="flex items-center gap-2">
-          <Settings className="w-4 h-4 text-[#15e49e]" />
+          <Settings className="w-4 h-4 text-[#00e3ec]" />
           <span>Disconnect anytime in settings</span>
         </div>
       </div>

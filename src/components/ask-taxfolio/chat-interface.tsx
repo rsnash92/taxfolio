@@ -208,8 +208,8 @@ export function ChatInterface({ transactionId, className }: ChatInterfaceProps) 
         <div className="p-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-            <div className="w-16 h-16 rounded-full bg-[#15e49e]/20 flex items-center justify-center mb-4">
-              <Bot className="w-8 h-8 text-[#15e49e]" />
+            <div className="w-16 h-16 rounded-full bg-[#00e3ec]/20 flex items-center justify-center mb-4">
+              <Bot className="w-8 h-8 text-[#00e3ec]" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Ask TaxFolio</h3>
             <p className="text-muted-foreground text-sm max-w-md mb-6">

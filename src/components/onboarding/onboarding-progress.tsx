@@ -21,9 +21,9 @@ export function OnboardingProgress({ currentStep, totalSteps = 5 }: OnboardingPr
             className={cn(
               "rounded-full transition-all duration-300",
               isCurrent
-                ? "w-3 h-3 bg-[#15e49e]"
+                ? "w-3 h-3 bg-[#00e3ec]"
                 : isComplete
-                ? "w-2 h-2 bg-[#15e49e]"
+                ? "w-2 h-2 bg-[#00e3ec]"
                 : "w-2 h-2 bg-zinc-700"
             )}
           />
