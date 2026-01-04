@@ -648,8 +648,8 @@ export default function IntroWizard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center mb-1">
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center">
           <Image
             src="/taxfolio.png"
             alt="TaxFolio"
