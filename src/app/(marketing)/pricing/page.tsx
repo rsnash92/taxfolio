@@ -24,7 +24,7 @@ export default async function PricingPage() {
           <div className="flex h-16 items-center justify-between">
             <Link href="/">
               <Image
-                src="/logo.webp"
+                src="/taxfolio.png"
                 alt="TaxFolio"
                 width={140}
                 height={32}

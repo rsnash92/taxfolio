@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -648,13 +649,14 @@ export default function IntroWizard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <div className="w-8 h-8 bg-[#00e3ec] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">#</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            TaxFolio
-          </h1>
+        <div className="flex items-center justify-center mb-1">
+          <Image
+            src="/taxfolio.png"
+            alt="TaxFolio"
+            width={180}
+            height={44}
+            className="h-11 w-auto"
+          />
         </div>
         <p className="text-gray-500">
           Self Assessment made simple

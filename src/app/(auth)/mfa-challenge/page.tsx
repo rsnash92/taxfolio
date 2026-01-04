@@ -56,7 +56,7 @@ export default function MFAChallengePage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Image
-            src="/logo.webp"
+            src="/taxfolio.png"
             alt="TaxFolio"
             width={140}
             height={32}

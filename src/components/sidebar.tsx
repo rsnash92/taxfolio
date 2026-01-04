@@ -144,7 +144,7 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
       <div className="px-6 pt-8 pb-6">
         <Link href="/dashboard" className="px-5">
           <Image
-            src="/logo.webp"
+            src="/taxfolio.png"
             alt="TaxFolio"
             width={120}
             height={28}

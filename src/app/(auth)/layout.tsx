@@ -11,7 +11,7 @@ export default function AuthLayout({
       {/* Logo */}
       <Link href="/" className="mb-8">
         <Image
-          src="/logo.webp"
+          src="/taxfolio.png"
           alt="TaxFolio"
           width={160}
           height={40}

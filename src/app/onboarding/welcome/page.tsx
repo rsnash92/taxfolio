@@ -11,7 +11,7 @@ export default function WelcomePage() {
     <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in duration-500">
       {/* Logo */}
       <Image
-        src="/logo.webp"
+        src="/taxfolio.png"
         alt="TaxFolio"
         width={90}
         height={24}

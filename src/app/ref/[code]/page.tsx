@@ -62,7 +62,7 @@ export default async function ReferralLandingPage({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <Image
-              src="/logo.webp"
+              src="/taxfolio.png"
               alt="TaxFolio"
               width={120}
               height={28}
