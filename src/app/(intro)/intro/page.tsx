@@ -653,9 +653,9 @@ export default function IntroWizard() {
           <Image
             src="/taxfolio.png"
             alt="TaxFolio"
-            width={180}
-            height={44}
-            className="h-11 w-auto"
+            width={130}
+            height={32}
+            className="h-8 w-auto"
           />
         </div>
         <p className="text-gray-500">
