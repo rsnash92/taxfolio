@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PageHeader } from "@/components/page-header"
 import { AskButton } from "@/components/ask-taxfolio"
+import { InactivityModal } from "@/components/InactivityModal"
 import { getSubscription } from "@/lib/subscription"
 
 export default async function DashboardLayout({
@@ -73,6 +74,9 @@ export default async function DashboardLayout({
 
       {/* Ask TaxFolio Floating Button */}
       <AskButton />
+
+      {/* Inactivity Timeout Modal */}
+      <InactivityModal />
     </div>
   )
 }
