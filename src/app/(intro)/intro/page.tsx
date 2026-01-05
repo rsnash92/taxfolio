@@ -337,6 +337,14 @@ export default function IntroWizard() {
         await linkIntroSession(data.user.id, introSession)
       }
 
+      // If we got a session, user is auto-confirmed - redirect to assessment wizard
+      if (data.session) {
+        toast.success("Account created! Redirecting...")
+        window.location.href = "https://assessment.taxfolio.io"
+        return
+      }
+
+      // Otherwise, email confirmation is required
       toast.success("Account created! Please check your email to verify your account.")
       setIsLogin(true) // Switch to login form
     } catch {
@@ -368,7 +376,8 @@ export default function IntroWizard() {
       }
 
       toast.success("Welcome back!")
-      router.push("/dashboard")
+      // Redirect to assessment wizard
+      window.location.href = "https://assessment.taxfolio.io"
     } catch {
       toast.error("An unexpected error occurred")
     } finally {
