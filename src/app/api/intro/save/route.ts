@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       sessionId,
       intent,
       incomeSource,
+      incomeSources, // New array format from wizard
       filingExperience,
       situation,
       email,
@@ -23,6 +24,14 @@ export async function POST(request: NextRequest) {
       startedAt,
       completedAt,
     } = body
+
+    // Handle both single incomeSource (legacy) and array incomeSources (new)
+    // Store as JSON array string for flexibility
+    const incomeSourcesValue = incomeSources
+      ? JSON.stringify(incomeSources)
+      : incomeSource
+        ? JSON.stringify([incomeSource])
+        : null
 
     if (!sessionId) {
       return NextResponse.json(
@@ -44,7 +53,8 @@ export async function POST(request: NextRequest) {
         {
           session_id: sessionId,
           intent,
-          income_source: incomeSource,
+          income_source: incomeSource, // Legacy single value
+          income_sources: incomeSourcesValue, // New JSON array
           filing_experience: filingExperience,
           situation,
           email,
