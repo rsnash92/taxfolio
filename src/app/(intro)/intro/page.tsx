@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { getSessionId, saveIntroData, getIntroData } from "@/lib/intro-storage"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   FileText,
   HelpCircle,
@@ -200,6 +201,7 @@ export default function IntroWizard() {
   const [incomeSources, setIncomeSources] = useState<string[]>([])
   const [experience, setExperience] = useState<string>('')
   const [isInitialized, setIsInitialized] = useState(false)
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
 
   // Auth form state
   const [isLogin, setIsLogin] = useState(false)
@@ -208,6 +210,22 @@ export default function IntroWizard() {
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Animation variants for slide transitions
+  const slideVariants = {
+    enter: (dir: 'forward' | 'backward') => ({
+      x: dir === 'forward' ? 50 : -50,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: 'forward' | 'backward') => ({
+      x: dir === 'forward' ? -50 : 50,
+      opacity: 0,
+    }),
+  }
 
   // Initialize session and load any existing data
   useEffect(() => {
@@ -235,6 +253,9 @@ export default function IntroWizard() {
     }
     stepData[step]()
 
+    // Set direction for animation
+    setDirection('forward')
+
     // Move to next step
     if (step === 3) {
       setStep('ready')
@@ -246,6 +267,9 @@ export default function IntroWizard() {
   }
 
   const handleBack = () => {
+    // Set direction for animation
+    setDirection('backward')
+
     if (step === 'ready') {
       setStep(3)
     } else if (step > 1) {
@@ -672,8 +696,23 @@ export default function IntroWizard() {
       </div>
 
       {/* Card */}
-      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg">
-        {renderStep()}
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg overflow-hidden">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: 'spring', stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 },
+            }}
+          >
+            {renderStep()}
+          </motion.div>
+        </AnimatePresence>
       </Card>
 
       {/* Navigation */}
