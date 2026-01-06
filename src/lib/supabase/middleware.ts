@@ -61,7 +61,6 @@ export async function updateSession(request: NextRequest) {
     '/mileage',
     '/home-office',
     '/mtd',
-    '/onboarding',
   ]
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)

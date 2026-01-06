@@ -22,7 +22,6 @@ export const urls = {
     billing: '/settings/billing',
     login: '/login',
     signup: '/signup',
-    onboarding: '/onboarding',
   },
 
   // Marketing URLs (external links to taxfolio.io)

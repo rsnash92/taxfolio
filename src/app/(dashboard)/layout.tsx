@@ -21,18 +21,6 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Check if user has completed onboarding
-  const { data: userData } = await supabase
-    .from("users")
-    .select("onboarding_completed")
-    .eq("id", user.id)
-    .single()
-
-  // If onboarding not completed, redirect to onboarding
-  if (!userData?.onboarding_completed) {
-    redirect("/onboarding/welcome")
-  }
-
   // Get subscription info for trial banner
   const subscription = await getSubscription(user.id)
 
