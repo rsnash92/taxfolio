@@ -7,7 +7,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       {/* Logo */}
       <Link href="/" className="mb-8">
         <Image
@@ -18,7 +18,7 @@ export default function AuthLayout({
           className="h-10 w-auto"
         />
       </Link>
-      <div className="w-full max-w-md px-4">
+      <div className="w-full max-w-md">
         {children}
       </div>
     </div>
