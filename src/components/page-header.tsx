@@ -41,12 +41,13 @@ function getTaxYearOptions(): string[] {
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/personal-tax": "Personal Tax",
   "/transactions": "Transactions",
   "/properties": "Properties",
   "/mileage": "Mileage",
   "/home-office": "Home Office",
   "/accounts": "Accounts",
-  "/mtd": "MTD Quarters",
+  "/mtd": "Making Tax Digital",
   "/export": "Export",
   "/ask": "Ask TaxFolio",
   "/settings": "Settings",
@@ -54,10 +55,16 @@ const pageTitles: Record<string, string> = {
   "/settings/security": "Security",
   "/settings/hmrc": "HMRC",
   "/connect-bank": "Connect Bank",
+  "/referrals": "Referrals",
   "/partners": "Partners",
   "/partners/apply": "Apply",
   "/partners/settings": "Partner Settings",
 }
+
+// Pages that render their own header and should hide the global one
+const pagesWithCustomHeader = [
+  "/personal-tax",
+]
 
 export function PageHeader() {
   const pathname = usePathname()
@@ -106,6 +113,11 @@ export function PageHeader() {
 
   // Get page title from pathname
   const title = pageTitles[pathname] || "Dashboard"
+
+  // Hide header on pages that render their own
+  if (pagesWithCustomHeader.includes(pathname)) {
+    return null
+  }
 
   return (
     <header className="flex items-center justify-between mb-6">
