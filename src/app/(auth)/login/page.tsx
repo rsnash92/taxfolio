@@ -61,7 +61,7 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-900">Email</Label>
             <Input
               id="email"
               type="email"
@@ -70,13 +70,13 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="h-11"
+              className="h-11 bg-white border-gray-200 text-gray-900"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-gray-900">Password</Label>
               <Link
                 href="/forgot-password"
                 className="text-sm text-[#00c4d4] hover:underline"
@@ -91,7 +91,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="h-11"
+              className="h-11 bg-white border-gray-200 text-gray-900"
             />
           </div>
 

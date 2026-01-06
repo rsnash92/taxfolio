@@ -281,7 +281,7 @@ function SignUpForm() {
 
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName" className="text-gray-900">Full Name</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -290,12 +290,12 @@ function SignUpForm() {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={loading}
-                className="h-11"
+                className="h-11 bg-white border-gray-200 text-gray-900"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-900">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -304,12 +304,12 @@ function SignUpForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="h-11"
+                className="h-11 bg-white border-gray-200 text-gray-900"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-gray-900">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -318,7 +318,7 @@ function SignUpForm() {
                 required
                 minLength={6}
                 disabled={loading}
-                className="h-11"
+                className="h-11 bg-white border-gray-200 text-gray-900"
               />
               <p className="text-xs text-gray-500">
                 Must be at least 6 characters
