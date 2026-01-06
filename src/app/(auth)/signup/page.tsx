@@ -256,12 +256,12 @@ function SignUpForm() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 border-gray-200"
+            className="w-full h-11 border-gray-200 bg-white text-gray-900 hover:bg-gray-50"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
           >
             {googleLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-gray-600" />
             ) : (
               <GoogleIcon className="mr-2 h-4 w-4" />
             )}
