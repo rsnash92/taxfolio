@@ -95,12 +95,12 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
     >
       {/* Logo */}
       <div className="px-6 pt-8 pb-6">
-        <Link href="/dashboard" className="px-5">
+        <Link href="/dashboard" className="block">
           <Image
-            src="/taxfolio-light.png"
-            alt="TaxFolio"
-            width={120}
-            height={28}
+            src="/taxfolio-logo-white.png"
+            alt="Taxfolio"
+            width={140}
+            height={26}
             className="h-7 w-auto"
           />
         </Link>
