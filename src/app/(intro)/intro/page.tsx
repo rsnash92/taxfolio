@@ -193,6 +193,8 @@ function OptionCard({
   )
 }
 
+const assessmentUrl = process.env.NEXT_PUBLIC_ASSESSMENT_URL || "https://assessment.taxfolio.io"
+
 export default function IntroWizard() {
   const router = useRouter()
   const supabase = createClient()
@@ -340,7 +342,7 @@ export default function IntroWizard() {
       // If we got a session, user is auto-confirmed - redirect to assessment wizard
       if (data.session) {
         toast.success("Account created! Redirecting...")
-        window.location.href = "https://assessment.taxfolio.io"
+        window.location.href = assessmentUrl
         return
       }
 
@@ -377,7 +379,7 @@ export default function IntroWizard() {
 
       toast.success("Welcome back!")
       // Redirect to assessment wizard
-      window.location.href = "https://assessment.taxfolio.io"
+      window.location.href = assessmentUrl
     } catch {
       toast.error("An unexpected error occurred")
     } finally {

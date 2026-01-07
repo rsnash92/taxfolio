@@ -175,3 +175,8 @@
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-kanit), sans-serif;
 }
+
+/* Content area background - matches assessment wizard */
+.bg-content-area {
+  background-color: color-mix(in oklab, var(--color-gray-100, #f3f4f6) 50%, transparent);
+}

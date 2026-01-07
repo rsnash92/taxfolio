@@ -52,8 +52,8 @@ export default function AlternateHomePage() {
               <Link href="#features" className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors">
                 Features
               </Link>
-              <Link href="#about" className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors">
-                About
+              <Link href="/resources" className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors">
+                Resources
               </Link>
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors">
                 Pricing

@@ -256,7 +256,7 @@ function SignUpForm() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 border-gray-200 bg-white text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900"
+            className="w-full h-11 border-gray-200 bg-white text-gray-900 hover:!bg-gray-900 hover:!text-white hover:!border-gray-900"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
           >

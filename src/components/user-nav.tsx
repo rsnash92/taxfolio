@@ -13,13 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, Settings, User as UserIcon, Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import { LogOut, Settings, User as UserIcon } from "lucide-react"
 
 export function UserNav({ user }: { user: User }) {
   const router = useRouter()
   const supabase = createClient()
-  const { theme, setTheme } = useTheme()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -61,14 +59,6 @@ export function UserNav({ user }: { user: User }) {
         <DropdownMenuItem onClick={() => router.push("/settings")}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-          {theme === "dark" ? (
-            <Sun className="mr-2 h-4 w-4" />
-          ) : (
-            <Moon className="mr-2 h-4 w-4" />
-          )}
-          <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

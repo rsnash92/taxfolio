@@ -44,9 +44,9 @@ export default async function DashboardLayout({
           {/* Spacer for mobile header */}
           <div className="h-14 lg:hidden" />
 
-          <div className="min-h-screen lg:p-4">
-            <div className="bg-muted/40 lg:rounded-2xl lg:min-h-[calc(100vh-2rem)]">
-              <div className="container mx-auto py-6 px-4 md:px-6">
+          <div className="min-h-screen">
+            <div className="bg-content-area min-h-screen">
+              <div className="container mx-auto py-6 px-6 md:px-10 lg:px-16">
                 <Suspense fallback={null}>
                   <PageHeader />
                 </Suspense>
