@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -27,8 +26,6 @@ import {
   CreditCard,
   FileText,
 } from "lucide-react"
-import { HMRCStatusBadge } from "@/components/hmrc/hmrc-status-badge"
-import { hasApproachingDeadline, getCurrentTaxYear } from "@/lib/hmrc/deadlines"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
   {
@@ -74,50 +71,6 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  // MTD status for badge
-  const [mtdStatus, setMtdStatus] = useState<{
-    isConnected: boolean
-    readyCount: number
-    hasUrgentDeadline: boolean
-  } | null>(null)
-
-  useEffect(() => {
-    async function fetchMTDStatus() {
-      try {
-        const taxYear = getCurrentTaxYear()
-        const [statusRes, mtdRes] = await Promise.all([
-          fetch('/api/hmrc/status'),
-          fetch(`/api/mtd/quarters?tax_year=${taxYear}`),
-        ])
-
-        const deadlineCheck = hasApproachingDeadline(taxYear)
-        let isConnected = false
-        let readyCount = 0
-
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          isConnected = statusData.connected
-        }
-
-        if (mtdRes.ok) {
-          const mtdData = await mtdRes.json()
-          readyCount = mtdData?.summary?.readyQuarters || 0
-        }
-
-        setMtdStatus({
-          isConnected,
-          readyCount,
-          hasUrgentDeadline: deadlineCheck.hasApproaching,
-        })
-      } catch (error) {
-        console.error('Failed to fetch MTD status:', error)
-      }
-    }
-
-    fetchMTDStatus()
-  }, [])
-
-
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -136,7 +89,7 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-screen w-72 flex-col bg-background",
+        "flex h-screen w-72 flex-col bg-gradient-to-b from-[#0f172a] to-[#1e293b]",
         className
       )}
     >
@@ -144,7 +97,7 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
       <div className="px-6 pt-8 pb-6">
         <Link href="/dashboard" className="px-5">
           <Image
-            src="/taxfolio.png"
+            src="/taxfolio-light.png"
             alt="TaxFolio"
             width={120}
             height={28}
@@ -158,29 +111,19 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
-          const showMTDBadge = item.href === '/mtd' && mtdStatus
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center justify-between rounded-xl px-5 py-3 text-base font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
                 isActive
-                  ? "border-l-2 border-[#00e3ec] bg-[#00e3ec]/10 text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-l-2 border-[#00e3ec] bg-white/10 text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
               )}
             >
-              <div className="flex items-center gap-3">
-                <Icon className="h-5 w-5" />
-                {item.title}
-              </div>
-              {showMTDBadge && (
-                <HMRCStatusBadge
-                  isConnected={mtdStatus.isConnected}
-                  readyCount={mtdStatus.readyCount}
-                  hasUrgentDeadline={mtdStatus.hasUrgentDeadline}
-                />
-              )}
+              <Icon className="h-5 w-5" />
+              {item.title}
             </Link>
           )
         })}
@@ -204,15 +147,15 @@ export function Sidebar({ user, className, isTrial }: SidebarProps) {
         {/* User Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted transition-colors">
+            <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 hover:bg-white/5 transition-colors">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-[#00e3ec]/20 text-[#00e3ec]">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden text-left">
-                <p className="truncate text-sm font-medium">{userName}</p>
-                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                <p className="truncate text-sm font-medium text-white">{userName}</p>
+                <p className="truncate text-xs text-gray-400">{userEmail}</p>
               </div>
             </button>
           </DropdownMenuTrigger>

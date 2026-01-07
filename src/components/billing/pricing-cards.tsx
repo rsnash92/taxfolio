@@ -1,39 +1,73 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Check, X, Zap, Loader2 } from "lucide-react"
-import { PLANS } from "@/lib/stripe"
+import { useState } from "react"
+import { Check, X, Loader2, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface PricingCardsProps {
   currentTier: string
   isLifetime: boolean
-  showLifetimeDeal?: boolean
   isTrial?: boolean
 }
 
-// Calculate discounted prices (10% off)
-const EARLY_BIRD_DISCOUNT = 0.10
-const LITE_PRICE = 69.99
-const PRO_PRICE = 129.99
-const LITE_DISCOUNTED = Math.round(LITE_PRICE * (1 - EARLY_BIRD_DISCOUNT) * 100) / 100
-const PRO_DISCOUNTED = Math.round(PRO_PRICE * (1 - EARLY_BIRD_DISCOUNT) * 100) / 100
+// Pricing configuration matching assessment wizard
+const PLANS = [
+  {
+    id: 'lite',
+    name: 'Lite',
+    price: 29,
+    description: 'Perfect for simple tax returns',
+    priceLabel: 'per return',
+    popular: false,
+    features: [
+      { text: '1 bank connection', included: true },
+      { text: '100 transactions/month', included: true },
+      { text: 'AI categorisation', included: true },
+      { text: 'Full SA103 breakdown', included: true },
+      { text: 'Direct HMRC submission', included: true },
+      { text: 'SA105 (Landlords)', included: false },
+      { text: 'MTD quarterly breakdown', included: false },
+      { text: 'Priority support', included: false },
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: 99,
+    description: 'Most comprehensive option',
+    priceLabel: 'per return',
+    popular: true,
+    features: [
+      { text: 'Unlimited bank connections', included: true },
+      { text: 'Unlimited transactions', included: true },
+      { text: 'AI categorisation', included: true },
+      { text: 'Full SA103 & SA105', included: true },
+      { text: 'Direct HMRC submission', included: true },
+      { text: 'MTD quarterly breakdown', included: true },
+      { text: 'Mileage tracker', included: true },
+      { text: 'Priority support', included: true },
+    ],
+  },
+  {
+    id: 'lifetime',
+    name: 'Lifetime',
+    price: 249,
+    description: 'Best value for ongoing filers',
+    priceLabel: 'one-time payment',
+    popular: false,
+    features: [
+      { text: 'Everything in Pro', included: true },
+      { text: 'All future updates', included: true },
+      { text: 'Lifetime access', included: true },
+      { text: 'No recurring fees', included: true, highlight: true },
+      { text: 'Best value!', included: true, highlight: true },
+    ],
+  },
+]
 
-export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true, isTrial = false }: PricingCardsProps) {
-  const [lifetimeRemaining, setLifetimeRemaining] = useState<number | null>(null)
+export function PricingCards({ currentTier, isLifetime, isTrial = false }: PricingCardsProps) {
   const [loading, setLoading] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (showLifetimeDeal) {
-      fetch("/api/stripe/lifetime-remaining")
-        .then(res => res.json())
-        .then(data => {
-          if (data.enabled) {
-            setLifetimeRemaining(data.remaining)
-          }
-        })
-    }
-  }, [showLifetimeDeal])
 
   const handleCheckout = async (plan: "lite" | "pro" | "lifetime") => {
     setLoading(plan)
@@ -59,167 +93,106 @@ export function PricingCards({ currentTier, isLifetime, showLifetimeDeal = true,
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Lifetime Deal - Show first if available */}
-      {showLifetimeDeal && lifetimeRemaining !== null && lifetimeRemaining > 0 && (
-        <div className="md:col-span-2 mb-4">
-          <div className="relative rounded-xl border-2 border-amber-500 bg-amber-500/10 p-6">
-            <div className="absolute -top-3 left-4 px-2 py-1 bg-amber-500 text-black text-xs font-bold rounded">
-              LAUNCH SPECIAL
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-amber-500" />
-                  Lifetime Pro Access
-                </h3>
-                <p className="text-amber-700 dark:text-amber-200 mt-1">
-                  Pay once, use forever. All Pro features included.
-                </p>
-                <p className="text-amber-600 dark:text-amber-400 text-sm mt-2 font-medium">
-                  Only {lifetimeRemaining} of 100 remaining!
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold">£49.99</div>
-                <div className="text-amber-700 dark:text-amber-200 text-sm">one-time payment</div>
-                <Button
-                  onClick={() => handleCheckout("lifetime")}
-                  disabled={loading === "lifetime" || isLifetime}
-                  className="mt-3 bg-amber-500 hover:bg-amber-400 text-black"
-                >
-                  {loading === "lifetime" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isLifetime ? "You have lifetime access" : loading === "lifetime" ? "Loading..." : "Get Lifetime Access"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      {PLANS.map((plan) => {
+        const isCurrent = isCurrentPlan(plan.id)
+        const isDisabled = isLifetime || isCurrent
 
-      {/* Lite Plan */}
-      <div className={`rounded-xl border p-6 ${
-        isCurrentPlan("lite") ? "border-[#00e3ec] bg-[#00e3ec]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-      }`}>
-        <h3 className="text-lg font-semibold">Lite</h3>
-        <div className="mt-2">
-          {isTrial ? (
-            <>
-              <span className="text-3xl font-bold text-[#00e3ec]">£{LITE_DISCOUNTED}</span>
-              <span className="text-muted-foreground line-through ml-2">£{LITE_PRICE}</span>
-              <span className="text-muted-foreground">/year</span>
-            </>
-          ) : (
-            <>
-              <span className="text-3xl font-bold">£{LITE_PRICE}</span>
-              <span className="text-muted-foreground">/year</span>
-            </>
-          )}
-        </div>
-        {isTrial && (
-          <div className="mt-1">
-            <span className="text-xs font-medium text-[#00e3ec] bg-[#00e3ec]/10 px-2 py-0.5 rounded">
-              10% off during trial
-            </span>
-          </div>
-        )}
-        <p className="text-muted-foreground text-sm mt-2">Perfect for simple freelancers</p>
-
-        <ul className="mt-6 space-y-3">
-          {PLANS.lite.features.map((feature) => (
-            <li key={feature} className="flex items-start text-sm">
-              <Check className="h-4 w-4 text-[#00e3ec] mr-2 mt-0.5 flex-shrink-0" />
-              {feature}
-            </li>
-          ))}
-          {PLANS.lite.notIncluded?.map((feature) => (
-            <li key={feature} className="flex items-start text-sm text-muted-foreground">
-              <X className="h-4 w-4 text-muted-foreground mr-2 mt-0.5 flex-shrink-0" />
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6">
-          <Button
-            variant={isCurrentPlan("lite") ? "outline" : "default"}
-            className="w-full"
-            onClick={() => handleCheckout("lite")}
-            disabled={loading === "lite" || isCurrentPlan("lite") || isLifetime}
+        return (
+          <div
+            key={plan.id}
+            className={cn(
+              'relative flex flex-col p-4 sm:p-6 rounded-2xl border-2 text-left transition-all bg-white',
+              isCurrent
+                ? 'border-[#00e3ec] ring-2 ring-[#00e3ec]/20'
+                : 'border-gray-200 hover:border-gray-300',
+              plan.popular && 'lg:scale-105 lg:shadow-lg lg:z-10'
+            )}
           >
-            {loading === "lite" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isCurrentPlan("lite") ? "Current Plan" : isLifetime ? "You have lifetime" : loading === "lite" ? "Loading..." : "Subscribe to Lite"}
-          </Button>
-        </div>
-      </div>
+            {/* Popular Badge */}
+            {plan.popular && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#00e3ec] to-[#00c4d4] text-white text-[10px] sm:text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+                MOST POPULAR
+              </span>
+            )}
 
-      {/* Pro Plan */}
-      <div className={`rounded-xl border p-6 relative ${
-        isCurrentPlan("pro") && !isLifetime ? "border-[#00e3ec] bg-[#00e3ec]/5" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-      }`}>
-        <div className="absolute -top-3 right-4 px-2 py-1 bg-[#00e3ec] text-black text-xs font-bold rounded">
-          MOST POPULAR
-        </div>
-        <h3 className="text-lg font-semibold">Pro</h3>
-        <div className="mt-2">
-          {isTrial ? (
-            <>
-              <span className="text-3xl font-bold text-[#00e3ec]">£{PRO_DISCOUNTED}</span>
-              <span className="text-muted-foreground line-through ml-2">£{PRO_PRICE}</span>
-              <span className="text-muted-foreground">/year</span>
-            </>
-          ) : (
-            <>
-              <span className="text-3xl font-bold">£{PRO_PRICE}</span>
-              <span className="text-muted-foreground">/year</span>
-            </>
-          )}
-        </div>
-        {isTrial && (
-          <div className="mt-1">
-            <span className="text-xs font-medium text-[#00e3ec] bg-[#00e3ec]/10 px-2 py-0.5 rounded">
-              10% off during trial
-            </span>
+            {/* Selection Indicator */}
+            {isCurrent && (
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#00e3ec] bg-[#00e3ec] flex items-center justify-center">
+                <Check className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+              </div>
+            )}
+
+            {/* Plan Name */}
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 pr-8">
+              {plan.name}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+              {plan.description}
+            </p>
+
+            {/* Price */}
+            <div className="mb-3 sm:mb-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  £{plan.price}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-500">
+                  {plan.priceLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Features */}
+            <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 flex-1">
+              {plan.features.map((feature, index) => {
+                const isHighlight = 'highlight' in feature && feature.highlight
+
+                return (
+                  <li key={index} className="flex items-start gap-2 text-xs sm:text-sm">
+                    {isHighlight ? (
+                      <Star className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 text-amber-400 fill-amber-400" />
+                    ) : feature.included ? (
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 text-[#00e3ec]" />
+                    ) : (
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-0.5 text-gray-300" />
+                    )}
+                    <span className={cn(
+                      feature.included ? 'text-gray-600' : 'text-gray-400'
+                    )}>
+                      {feature.text}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+
+            {/* CTA Button */}
+            <div className="mt-auto">
+              <Button
+                onClick={() => handleCheckout(plan.id as "lite" | "pro" | "lifetime")}
+                disabled={loading === plan.id || isDisabled}
+                className={cn(
+                  'w-full',
+                  plan.popular
+                    ? 'bg-[#00e3ec] hover:bg-[#00c4d4] text-black'
+                    : ''
+                )}
+                variant={plan.popular ? 'default' : 'outline'}
+              >
+                {loading === plan.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isCurrent
+                  ? 'Current Plan'
+                  : isLifetime
+                    ? 'You have lifetime'
+                    : loading === plan.id
+                      ? 'Loading...'
+                      : `Subscribe to ${plan.name}`}
+              </Button>
+            </div>
           </div>
-        )}
-        <p className="text-muted-foreground text-sm mt-2">For landlords & serious freelancers</p>
-
-        <ul className="mt-6 space-y-3">
-          {PLANS.pro.features.map((feature) => (
-            <li key={feature} className="flex items-start text-sm">
-              <Check className="h-4 w-4 text-[#00e3ec] mr-2 mt-0.5 flex-shrink-0" />
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6">
-          <Button
-            className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black"
-            onClick={() => handleCheckout("pro")}
-            disabled={loading === "pro" || (isCurrentPlan("pro") && !isLifetime) || isLifetime}
-          >
-            {loading === "pro" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isCurrentPlan("pro") && !isLifetime ? "Current Plan" : isLifetime ? "You have lifetime" : loading === "pro" ? "Loading..." : "Subscribe to Pro"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Lifetime Info (if already purchased) */}
-      {isLifetime && (
-        <div className="md:col-span-2 rounded-xl border border-[#00e3ec] bg-[#00e3ec]/5 p-6">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-[#00e3ec]" />
-            <h3 className="text-lg font-semibold">Lifetime Pro</h3>
-          </div>
-          <div className="mt-4 text-[#00e3ec] font-medium">
-            You have lifetime access!
-          </div>
-          <p className="text-muted-foreground text-sm mt-2">
-            All Pro features, forever. No recurring payments.
-          </p>
-        </div>
-      )}
+        )
+      })}
     </div>
   )
 }

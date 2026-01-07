@@ -1,276 +1,233 @@
-"use client"
-
-import { useEffect, useState, useCallback } from "react"
-import Cookies from "js-cookie"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CalendarDays, AlertCircle, CheckCircle2 } from "lucide-react"
-import { QuarterCard } from "@/components/mtd/quarter-card"
-import { FeatureGate } from "@/components/feature-gate"
-import { useSubscription } from "@/hooks/use-subscription"
-import { HMRCBannerWrapper } from "@/components/hmrc"
-import type { QuarterStatus } from "@/lib/mtd-utils"
-
-interface CategoryBreakdown {
-  code: string
-  name: string
-  type: string
-  hmrc_box: string | null
-  amount: number
-}
-
-interface QuarterData {
-  quarter: number
-  label: string
-  startDate: string
-  endDate: string
-  deadline: string
-  status: QuarterStatus
-  income: number
-  expenses: number
-  netProfit: number
-  transactionCounts: {
-    total: number
-    pending: number
-    confirmed: number
-  }
-  incomeBreakdown: CategoryBreakdown[]
-  expensesBreakdown: CategoryBreakdown[]
-}
-
-interface MTDData {
-  tax_year: string
-  quarters: QuarterData[]
-  summary: {
-    readyQuarters: number
-    totalQuarters: number
-    income: number
-    expenses: number
-    netProfit: number
-    totalTransactions: number
-    pendingTransactions: number
-    confirmedTransactions: number
-  }
-}
-
-const TAX_YEAR_COOKIE = "taxfolio_tax_year"
-
-function getCurrentTaxYear(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
-
-  if (month > 4 || (month === 4 && day >= 6)) {
-    return `${year}-${(year + 1).toString().slice(-2)}`
-  } else {
-    return `${year - 1}-${year.toString().slice(-2)}`
-  }
-}
-
-function getTaxYearFromCookie(): string {
-  if (typeof window !== "undefined") {
-    return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
-  }
-  return getCurrentTaxYear()
-}
+import { CalendarDays, CheckCircle2, Clock, FileText, Building2, Landmark } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function MTDPage() {
-  const { canAccessFeature, loading: subscriptionLoading } = useSubscription()
-  const [taxYear, setTaxYear] = useState(getTaxYearFromCookie)
-  const [data, setData] = useState<MTDData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const hasAccess = canAccessFeature('mtd_quarters')
-
-  // Sync tax year from cookie when it changes
-  useEffect(() => {
-    const checkCookie = () => {
-      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
-      if (cookieYear && cookieYear !== taxYear) {
-        setTaxYear(cookieYear)
-      }
-    }
-    window.addEventListener("focus", checkCookie)
-    return () => window.removeEventListener("focus", checkCookie)
-  }, [taxYear])
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`/api/mtd/quarters?tax_year=${taxYear}`)
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to fetch data")
-      }
-      const result = await res.json()
-      setData(result)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data")
-    } finally {
-      setLoading(false)
-    }
-  }, [taxYear])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  const formatCurrency = (amount: number) =>
-    `£${amount.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-
-  const progressPercentage = data ? (data.summary.readyQuarters / 4) * 100 : 0
-
-  // Show loading state while checking subscription
-  if (subscriptionLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-4 w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
-    <FeatureGate
-      feature="mtd_quarters"
-      title="MTD Quarterly Tracking"
-      description="Track and prepare your quarterly submissions for Making Tax Digital. Upgrade to Pro to unlock this feature."
-      hasAccess={hasAccess}
-    >
-      <div className="space-y-6">
-        {/* HMRC Connection Banner */}
-        <HMRCBannerWrapper taxYear={taxYear} />
-
-        {/* Error State */}
-        {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-          <div className="grid gap-4 md:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-5 w-32" />
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] rounded-2xl p-8 text-white">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-[#00e3ec]/20 rounded-xl flex items-center justify-center shrink-0">
+            <Landmark className="h-6 w-6 text-[#00e3ec]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Making Tax Digital</h1>
+            <p className="text-gray-300 max-w-2xl">
+              Making Tax Digital (MTD) for Income Tax Self Assessment is HMRC&apos;s initiative to digitise the UK tax system.
+              Instead of one annual tax return, you&apos;ll submit quarterly updates throughout the year.
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Data State */}
-      {!loading && data && (
-        <>
-          {/* Progress Overview */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <CalendarDays className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle>Year Progress</CardTitle>
-                  <CardDescription>
-                    {data.summary.readyQuarters} of 4 quarters ready for submission
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Progress value={progressPercentage} className="h-2" />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Total Income</p>
-                  <p className="font-medium text-green-600">{formatCurrency(data.summary.income)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total Expenses</p>
-                  <p className="font-medium text-red-600">{formatCurrency(data.summary.expenses)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Net Profit</p>
-                  <p className="font-medium">{formatCurrency(data.summary.netProfit)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Transactions</p>
-                  <p className="font-medium">
-                    {data.summary.confirmedTransactions} confirmed
-                    {data.summary.pendingTransactions > 0 && (
-                      <span className="text-amber-600 ml-1">
-                        ({data.summary.pendingTransactions} pending)
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Status Messages */}
-          {data.summary.readyQuarters === 4 && data.summary.pendingTransactions === 0 && (
-            <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
-                All quarters are ready for HMRC submission. Export each quarter as needed.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {data.summary.pendingTransactions > 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                You have {data.summary.pendingTransactions} pending transactions across all quarters.
-                Review and confirm them before submitting to HMRC.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Quarter Cards */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {data.quarters.map((quarter) => (
-              <QuarterCard key={quarter.quarter} data={quarter} taxYear={taxYear} />
-            ))}
-          </div>
-
-          {/* Info Note */}
-          <p className="text-xs text-muted-foreground text-center">
-            MTD for Income Tax Self Assessment is mandatory from April 2026 for qualifying businesses.
-            These quarterly breakdowns help you prepare for quarterly submissions to HMRC.
-          </p>
-        </>
-        )}
       </div>
-    </FeatureGate>
+
+      {/* Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-[#00e3ec]" />
+            When does MTD apply to you?
+          </CardTitle>
+          <CardDescription>
+            MTD for Income Tax is being rolled out in phases based on your income
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-semibold text-sm">
+                  2026
+                </div>
+                <div className="w-0.5 h-full bg-gray-200 mt-2" />
+              </div>
+              <div className="pb-6">
+                <h3 className="font-semibold text-gray-900">April 2026</h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  Mandatory for self-employed individuals and landlords with annual income over <strong>£50,000</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-sm">
+                  2027
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">April 2027</h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  Extended to those with annual income over <strong>£30,000</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* What MTD Means */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-[#00e3ec]" />
+            What does MTD mean for you?
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Quarterly Updates</h3>
+              <p className="text-gray-600 text-sm">
+                You&apos;ll need to submit income and expense summaries to HMRC every quarter,
+                not just once a year. This gives HMRC a real-time view of your tax position.
+              </p>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-[#00e3ec] mt-0.5 shrink-0" />
+                  Q1: 6 April – 5 July (deadline: 7 August)
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-[#00e3ec] mt-0.5 shrink-0" />
+                  Q2: 6 July – 5 October (deadline: 7 November)
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-[#00e3ec] mt-0.5 shrink-0" />
+                  Q3: 6 October – 5 January (deadline: 7 February)
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-[#00e3ec] mt-0.5 shrink-0" />
+                  Q4: 6 January – 5 April (deadline: 7 May)
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Compatible Software Required</h3>
+              <p className="text-gray-600 text-sm">
+                You&apos;ll need to use HMRC-recognised software to keep digital records and submit
+                your quarterly updates. Spreadsheets alone won&apos;t be accepted.
+              </p>
+              <div className="bg-[#00e3ec]/10 border border-[#00e3ec]/20 rounded-lg p-4">
+                <p className="text-sm text-[#00a8b0] font-medium">
+                  Taxfolio is HMRC-recognised software and will be fully MTD-compatible when quarterly submissions go live in April 2026.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* How TaxFolio is Preparing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-[#00e3ec]" />
+            How Taxfolio is preparing
+          </CardTitle>
+          <CardDescription>
+            We&apos;re building MTD features so you&apos;ll be ready when quarterly submissions begin
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 bg-[#00e3ec]/10 rounded-lg flex items-center justify-center mb-3">
+                <CheckCircle2 className="h-4 w-4 text-[#00e3ec]" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">Bank Connections</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Connect your accounts to automatically import transactions
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 bg-[#00e3ec]/10 rounded-lg flex items-center justify-center mb-3">
+                <CheckCircle2 className="h-4 w-4 text-[#00e3ec]" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">AI Categorisation</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Automatically categorise income and expenses for HMRC
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 bg-[#00e3ec]/10 rounded-lg flex items-center justify-center mb-3">
+                <CheckCircle2 className="h-4 w-4 text-[#00e3ec]" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">Quarterly Tracking</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                View your income and expenses broken down by quarter
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
+                <Clock className="h-4 w-4 text-amber-600" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">Direct HMRC Submission</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Coming April 2026 – submit quarters directly to HMRC
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
+                <Clock className="h-4 w-4 text-amber-600" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">End of Period Statement</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Coming April 2026 – finalise your annual position
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
+                <Clock className="h-4 w-4 text-amber-600" />
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm">Final Declaration</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Coming April 2026 – submit your annual tax calculation
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Get Started */}
+      <Card className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] border-0">
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-white">
+              <h3 className="text-xl font-semibold mb-2">Start preparing now</h3>
+              <p className="text-gray-300 text-sm">
+                Get your records in order and your bank accounts connected.
+                When MTD goes live, you&apos;ll be ready.
+              </p>
+            </div>
+            <Link href="/personal-tax">
+              <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
+                <FileText className="h-4 w-4 mr-2" />
+                Continue your tax return
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Learn More */}
+      <p className="text-xs text-gray-500 text-center">
+        Learn more about Making Tax Digital on the{" "}
+        <a
+          href="https://www.gov.uk/government/publications/making-tax-digital-for-income-tax-self-assessment/making-tax-digital-for-income-tax-self-assessment"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#00c4d4] hover:underline"
+        >
+          official HMRC guidance page
+        </a>
+      </p>
+    </div>
   )
 }

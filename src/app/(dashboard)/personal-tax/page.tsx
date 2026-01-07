@@ -25,23 +25,18 @@ import { FileText, Upload, ArrowRight } from "lucide-react"
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
 function getCurrentTaxYear(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
-
-  if (month > 4 || (month === 4 && day >= 6)) {
-    return `${year}-${(year + 1).toString().slice(-2)}`
-  } else {
-    return `${year - 1}-${year.toString().slice(-2)}`
-  }
+  // Return the most recent filing year (previous tax year)
+  // Since we don't show the current tax year (2025-26), default to 2024-25
+  const year = new Date().getFullYear() - 1
+  return `${year}-${(year + 1).toString().slice(-2)}`
 }
 
 function getTaxYearOptions(): string[] {
   const currentYear = new Date().getFullYear()
   const years: string[] = []
-  // Show current year and previous 2 years
-  for (let i = 0; i < 3; i++) {
+  // Start from previous year (i=1) to exclude current tax year (2025-26)
+  // Most users are filing for 2024-25 and earlier
+  for (let i = 1; i < 4; i++) {
     const startYear = currentYear - i
     years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
   }
@@ -68,7 +63,10 @@ export default function PersonalTaxPage() {
       if (urlYear && taxYearOptions.includes(urlYear)) {
         return urlYear
       }
-      return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && taxYearOptions.includes(cookieYear)) {
+        return cookieYear
+      }
     }
     return getCurrentTaxYear()
   })
@@ -89,6 +87,11 @@ export default function PersonalTaxPage() {
       const savedYear = Cookies.get(TAX_YEAR_COOKIE)
       if (savedYear && taxYearOptions.includes(savedYear)) {
         setTaxYear(savedYear)
+      } else {
+        // Cookie has invalid value, reset to default
+        const defaultYear = getCurrentTaxYear()
+        setTaxYear(defaultYear)
+        Cookies.set(TAX_YEAR_COOKIE, defaultYear, { expires: 365 })
       }
     }
   }, [searchParams, taxYearOptions])
@@ -104,14 +107,6 @@ export default function PersonalTaxPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Personal Tax (SA100)</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your personal tax filings here.
-        </p>
-      </div>
-
       {/* Progress Card */}
       <Card className="overflow-hidden">
         <CardContent className="p-0">
@@ -153,7 +148,7 @@ export default function PersonalTaxPage() {
               </p>
 
               {/* CTA Button */}
-              <a href={assessmentUrl} target="_blank" rel="noopener noreferrer">
+              <a href={`${assessmentUrl}?tax_year=${taxYear}`} target="_blank" rel="noopener noreferrer">
                 <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium">
                   Continue tax return
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -184,13 +179,13 @@ export default function PersonalTaxPage() {
         </CardContent>
       </Card>
 
-      {/* Personal Tax Files */}
+      {/* Your Tax Documents */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="text-lg font-semibold">Personal Tax Files</CardTitle>
+            <CardTitle className="text-lg font-semibold">Your Tax Documents</CardTitle>
             <CardDescription className="mt-1">
-              Files and assets that have been attached to this self assessment.
+              Store P60s, receipts and other documents here for your own records. These are not submitted to HMRC.
             </CardDescription>
           </div>
           <Button variant="outline" className="gap-2 shrink-0">

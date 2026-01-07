@@ -22,12 +22,10 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
   const transactionUsage = await checkLimit(user.id, "transactionsPerMonth")
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-white">Billing & Subscription</h1>
-
+    <div className="space-y-8">
       {/* Success Message */}
       {params.success && (
-        <div className="p-4 bg-[#00e3ec]/10 border border-[#00e3ec]/20 rounded-lg text-[#00e3ec] flex items-center gap-2">
+        <div className="p-4 bg-[#00e3ec]/10 border border-[#00e3ec]/20 rounded-lg text-[#00c4d4] flex items-center gap-2">
           <CheckCircle className="h-5 w-5" />
           {params.plan === "lifetime"
             ? "Welcome to TaxFolio! You now have lifetime Pro access."
@@ -37,15 +35,15 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
       )}
 
       {params.canceled && (
-        <div className="p-4 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300 flex items-center gap-2">
+        <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg text-gray-600 flex items-center gap-2">
           <XCircle className="h-5 w-5" />
           Checkout was canceled. No charges were made.
         </div>
       )}
 
       {/* Current Plan */}
-      <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="p-6 bg-white border border-gray-200 rounded-xl">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
           Current Plan
         </h2>
@@ -53,28 +51,28 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-xl font-bold text-white">
+              <p className="text-xl font-bold text-gray-900">
                 {subscription.isLifetime ? "Lifetime Pro" :
                   subscription.isTrial ? "Free Trial" :
                     subscription.tier === "pro" ? "Pro" :
                       subscription.tier === "lite" ? "Lite" : "Free"}
               </p>
               {subscription.isLifetime && (
-                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded">
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-xs font-medium rounded">
                   LIFETIME
                 </span>
               )}
             </div>
 
             {subscription.isTrial && subscription.daysLeftInTrial !== null && (
-              <p className="text-sm text-amber-400 mt-1 flex items-center gap-1">
+              <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 {subscription.daysLeftInTrial} days left in trial
               </p>
             )}
 
             {!subscription.isLifetime && subscription.currentPeriodEnd && (
-              <p className="text-sm text-zinc-400 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {subscription.cancelAtPeriodEnd
                   ? `Cancels on ${subscription.currentPeriodEnd.toLocaleDateString("en-GB")}`
                   : `Renews on ${subscription.currentPeriodEnd.toLocaleDateString("en-GB")}`
@@ -91,8 +89,8 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
       {/* Usage */}
       {!subscription.isLifetime && subscription.tier !== "pro" && (
-        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <h2 className="text-lg font-semibold text-white mb-4">Usage</h2>
+        <div className="p-6 bg-white border border-gray-200 rounded-xl">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage</h2>
           <div className="space-y-4">
             <UsageMeter
               label="Bank Connections"
@@ -110,14 +108,13 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
 
       {/* Pricing Cards */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Zap className="h-5 w-5" />
           {subscription.isLifetime ? "Your Plan" : subscription.isTrial ? "Choose a Plan" : "Upgrade"}
         </h2>
         <PricingCards
           currentTier={subscription.tier}
           isLifetime={subscription.isLifetime}
-          showLifetimeDeal={!subscription.isLifetime}
           isTrial={subscription.isTrial}
         />
       </div>

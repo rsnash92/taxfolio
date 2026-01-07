@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useTheme } from "next-themes"
 import Cookies from "js-cookie"
-import { Bell, Moon, Sun } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -17,22 +16,18 @@ import {
 const TAX_YEAR_COOKIE = "taxfolio_tax_year"
 
 function getCurrentTaxYear(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
-
-  if (month > 4 || (month === 4 && day >= 6)) {
-    return `${year}-${(year + 1).toString().slice(-2)}`
-  } else {
-    return `${year - 1}-${year.toString().slice(-2)}`
-  }
+  // Return the most recent filing year (previous tax year)
+  // Since we don't show the current tax year (2025-26), default to 2024-25
+  const year = new Date().getFullYear() - 1
+  return `${year}-${(year + 1).toString().slice(-2)}`
 }
 
 function getTaxYearOptions(): string[] {
   const currentYear = new Date().getFullYear()
   const years: string[] = []
-  for (let i = 0; i < 4; i++) {
+  // Start from previous year (i=1) to exclude current tax year (2025-26)
+  // Most users are filing for 2024-25 and earlier
+  for (let i = 1; i < 4; i++) {
     const startYear = currentYear - i
     years.push(`${startYear}-${(startYear + 1).toString().slice(-2)}`)
   }
@@ -62,15 +57,12 @@ const pageTitles: Record<string, string> = {
 }
 
 // Pages that render their own header and should hide the global one
-const pagesWithCustomHeader = [
-  "/personal-tax",
-]
+const pagesWithCustomHeader: string[] = []
 
 export function PageHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { theme, setTheme } = useTheme()
   const taxYearOptions = getTaxYearOptions()
 
   const [taxYear, setTaxYear] = useState<string>(() => {
@@ -80,7 +72,10 @@ export function PageHeader() {
       if (urlYear && taxYearOptions.includes(urlYear)) {
         return urlYear
       }
-      return Cookies.get(TAX_YEAR_COOKIE) || getCurrentTaxYear()
+      const cookieYear = Cookies.get(TAX_YEAR_COOKIE)
+      if (cookieYear && taxYearOptions.includes(cookieYear)) {
+        return cookieYear
+      }
     }
     return getCurrentTaxYear()
   })
@@ -95,6 +90,11 @@ export function PageHeader() {
       const savedYear = Cookies.get(TAX_YEAR_COOKIE)
       if (savedYear && taxYearOptions.includes(savedYear)) {
         setTaxYear(savedYear)
+      } else {
+        // Cookie has invalid value, reset to default
+        const defaultYear = getCurrentTaxYear()
+        setTaxYear(defaultYear)
+        Cookies.set(TAX_YEAR_COOKIE, defaultYear, { expires: 365 })
       }
     }
   }, [searchParams, taxYearOptions])
@@ -121,23 +121,9 @@ export function PageHeader() {
 
   return (
     <header className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
 
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="bg-card border-border"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-
         <Button variant="outline" size="icon" className="bg-card border-border">
           <Bell className="h-4 w-4" />
           <span className="sr-only">Notifications</span>
