@@ -32,6 +32,13 @@ export const EVENTS = {
   // Re-engagement
   INACTIVE_7_DAYS: 'inactive_7_days',
   INACTIVE_30_DAYS: 'inactive_30_days',
+
+  // HMRC
+  HMRC_CONNECTED: 'hmrc_connected',
+  HMRC_CONNECTION_EXPIRING: 'hmrc_connection_expiring',
+  HMRC_SUBMISSION_SUCCESS: 'hmrc_submission_success',
+  HMRC_SUBMISSION_FAILED: 'hmrc_submission_failed',
+  TAX_DEADLINE_APPROACHING: 'tax_deadline_approaching',
 } as const
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS]
@@ -315,4 +322,111 @@ export async function updateTransactionCount(
   transactionCount: number
 ): Promise<void> {
   await updateContact(email, { transactionCount })
+}
+
+// =============================================================================
+// HMRC Event Tracking
+// =============================================================================
+
+/**
+ * Track HMRC connection success
+ */
+export async function trackHmrcConnected(
+  email: string,
+  userId: string,
+  expiresAt: Date
+): Promise<void> {
+  await sendEvent({
+    email,
+    userId,
+    eventName: EVENTS.HMRC_CONNECTED,
+    eventProperties: {
+      connectedAt: new Date().toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    },
+  })
+}
+
+/**
+ * Track HMRC connection expiring (call from cron job 7 days before expiry)
+ */
+export async function trackHmrcConnectionExpiring(
+  email: string,
+  userId: string,
+  expiresAt: Date,
+  daysUntilExpiry: number
+): Promise<void> {
+  await sendEvent({
+    email,
+    userId,
+    eventName: EVENTS.HMRC_CONNECTION_EXPIRING,
+    eventProperties: {
+      expiresAt: expiresAt.toISOString(),
+      daysUntilExpiry,
+    },
+  })
+}
+
+/**
+ * Track successful HMRC submission
+ */
+export async function trackHmrcSubmissionSuccess(
+  email: string,
+  userId: string,
+  taxYear: string,
+  submissionReference: string
+): Promise<void> {
+  await sendEvent({
+    email,
+    userId,
+    eventName: EVENTS.HMRC_SUBMISSION_SUCCESS,
+    eventProperties: {
+      taxYear,
+      submissionReference,
+      submittedAt: new Date().toISOString(),
+    },
+  })
+}
+
+/**
+ * Track failed HMRC submission
+ */
+export async function trackHmrcSubmissionFailed(
+  email: string,
+  userId: string,
+  taxYear: string,
+  errorMessage: string
+): Promise<void> {
+  await sendEvent({
+    email,
+    userId,
+    eventName: EVENTS.HMRC_SUBMISSION_FAILED,
+    eventProperties: {
+      taxYear,
+      errorMessage,
+      failedAt: new Date().toISOString(),
+    },
+  })
+}
+
+/**
+ * Track tax deadline approaching (call from cron job 14/7/3 days before deadline)
+ */
+export async function trackTaxDeadlineApproaching(
+  email: string,
+  userId: string,
+  deadlineDate: string,
+  daysUntilDeadline: number,
+  taxYear: string
+): Promise<void> {
+  await sendEvent({
+    email,
+    userId,
+    eventName: EVENTS.TAX_DEADLINE_APPROACHING,
+    eventProperties: {
+      deadlineDate,
+      daysUntilDeadline,
+      taxYear,
+    },
+  })
 }

@@ -21,6 +21,12 @@ const TRANSACTIONAL_IDS = {
   SUBSCRIPTION_CANCELLED: process.env.LOOPS_SUBSCRIPTION_CANCELLED_ID || '',
   TRIAL_ENDING: process.env.LOOPS_TRIAL_ENDING_ID || '',
   PAYMENT_FAILED: process.env.LOOPS_PAYMENT_FAILED_ID || '',
+  // HMRC emails
+  HMRC_CONNECTED: process.env.LOOPS_HMRC_CONNECTED_ID || '',
+  HMRC_CONNECTION_EXPIRING: process.env.LOOPS_HMRC_CONNECTION_EXPIRING_ID || '',
+  HMRC_SUBMISSION_SUCCESS: process.env.LOOPS_HMRC_SUBMISSION_SUCCESS_ID || '',
+  HMRC_SUBMISSION_FAILED: process.env.LOOPS_HMRC_SUBMISSION_FAILED_ID || '',
+  TAX_DEADLINE_REMINDER: process.env.LOOPS_TAX_DEADLINE_REMINDER_ID || '',
 }
 
 /**
@@ -228,6 +234,154 @@ export async function sendPaymentFailedEmail(
       firstName: data.firstName || 'there',
       amount: data.amount,
       updatePaymentUrl: data.updatePaymentUrl,
+    },
+  })
+}
+
+// =============================================================================
+// HMRC Emails
+// =============================================================================
+
+/**
+ * Send HMRC connected confirmation email
+ */
+export async function sendHmrcConnectedEmail(
+  email: string,
+  data: {
+    firstName: string
+    expiresAt: string
+  }
+): Promise<void> {
+  if (!TRANSACTIONAL_IDS.HMRC_CONNECTED) {
+    console.warn('[loops] HMRC connected email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email,
+    transactionalId: TRANSACTIONAL_IDS.HMRC_CONNECTED,
+    dataVariables: {
+      firstName: data.firstName || 'there',
+      expiresAt: data.expiresAt,
+      dashboardUrl: 'https://app.taxfolio.io/dashboard',
+      hmrcSettingsUrl: 'https://app.taxfolio.io/settings/hmrc',
+    },
+  })
+}
+
+/**
+ * Send HMRC connection expiring warning
+ */
+export async function sendHmrcConnectionExpiringEmail(
+  email: string,
+  data: {
+    firstName: string
+    expiresAt: string
+    daysUntilExpiry: number
+  }
+): Promise<void> {
+  if (!TRANSACTIONAL_IDS.HMRC_CONNECTION_EXPIRING) {
+    console.warn('[loops] HMRC connection expiring email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email,
+    transactionalId: TRANSACTIONAL_IDS.HMRC_CONNECTION_EXPIRING,
+    dataVariables: {
+      firstName: data.firstName || 'there',
+      expiresAt: data.expiresAt,
+      daysUntilExpiry: data.daysUntilExpiry.toString(),
+      reconnectUrl: 'https://app.taxfolio.io/settings/hmrc',
+    },
+  })
+}
+
+/**
+ * Send HMRC submission success email
+ */
+export async function sendHmrcSubmissionSuccessEmail(
+  email: string,
+  data: {
+    firstName: string
+    taxYear: string
+    submissionReference: string
+    submittedAt: string
+  }
+): Promise<void> {
+  if (!TRANSACTIONAL_IDS.HMRC_SUBMISSION_SUCCESS) {
+    console.warn('[loops] HMRC submission success email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email,
+    transactionalId: TRANSACTIONAL_IDS.HMRC_SUBMISSION_SUCCESS,
+    dataVariables: {
+      firstName: data.firstName || 'there',
+      taxYear: data.taxYear,
+      submissionReference: data.submissionReference,
+      submittedAt: data.submittedAt,
+      dashboardUrl: 'https://app.taxfolio.io/dashboard',
+    },
+  })
+}
+
+/**
+ * Send HMRC submission failed email
+ */
+export async function sendHmrcSubmissionFailedEmail(
+  email: string,
+  data: {
+    firstName: string
+    taxYear: string
+    errorMessage: string
+  }
+): Promise<void> {
+  if (!TRANSACTIONAL_IDS.HMRC_SUBMISSION_FAILED) {
+    console.warn('[loops] HMRC submission failed email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email,
+    transactionalId: TRANSACTIONAL_IDS.HMRC_SUBMISSION_FAILED,
+    dataVariables: {
+      firstName: data.firstName || 'there',
+      taxYear: data.taxYear,
+      errorMessage: data.errorMessage,
+      dashboardUrl: 'https://app.taxfolio.io/dashboard',
+      supportEmail: 'support@taxfolio.io',
+    },
+  })
+}
+
+/**
+ * Send tax deadline reminder email
+ */
+export async function sendTaxDeadlineReminderEmail(
+  email: string,
+  data: {
+    firstName: string
+    deadlineDate: string
+    daysUntilDeadline: number
+    taxYear: string
+  }
+): Promise<void> {
+  if (!TRANSACTIONAL_IDS.TAX_DEADLINE_REMINDER) {
+    console.warn('[loops] Tax deadline reminder email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email,
+    transactionalId: TRANSACTIONAL_IDS.TAX_DEADLINE_REMINDER,
+    dataVariables: {
+      firstName: data.firstName || 'there',
+      deadlineDate: data.deadlineDate,
+      daysUntilDeadline: data.daysUntilDeadline.toString(),
+      taxYear: data.taxYear,
+      dashboardUrl: 'https://app.taxfolio.io/dashboard',
     },
   })
 }

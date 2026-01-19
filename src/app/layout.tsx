@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Kanit } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
@@ -68,6 +69,25 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="TaxFolio" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Google Analytics - Cross-subdomain tracking */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-EBEZRRW7GY"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EBEZRRW7GY', {
+              cookie_domain: 'taxfolio.io',
+              cookie_flags: 'SameSite=None;Secure',
+              linker: {
+                domains: ['taxfolio.io', 'app.taxfolio.io', 'intro.taxfolio.io']
+              }
+            });
+          `}
+        </Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} antialiased`}
