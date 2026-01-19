@@ -83,7 +83,7 @@ export default function RootLayout({
               cookie_domain: 'taxfolio.io',
               cookie_flags: 'SameSite=None;Secure',
               linker: {
-                domains: ['taxfolio.io', 'app.taxfolio.io', 'intro.taxfolio.io']
+                domains: ['taxfolio.io', 'app.taxfolio.io', 'intro.taxfolio.io', 'assessment.taxfolio.io']
               }
             });
           `}
