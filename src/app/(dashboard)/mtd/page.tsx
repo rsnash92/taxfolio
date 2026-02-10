@@ -195,19 +195,40 @@ export default function MTDPage() {
         </CardContent>
       </Card>
 
-      {/* Get Started */}
+      {/* Quarterly Submissions */}
       <Card className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] border-0">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-white">
-              <h3 className="text-xl font-semibold mb-2">Start preparing now</h3>
+              <h3 className="text-xl font-semibold mb-2">Quarterly Submissions</h3>
               <p className="text-gray-300 text-sm">
+                View your filing obligations and submit quarterly updates to HMRC.
+                Connect your HMRC account to get started.
+              </p>
+            </div>
+            <Link href="/mtd/quarterly">
+              <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
+                <CalendarDays className="h-4 w-4 mr-2" />
+                View Quarterly Submissions
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Get Started */}
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Start preparing now</h3>
+              <p className="text-gray-600 text-sm">
                 Get your records in order and your bank accounts connected.
                 When MTD goes live, you&apos;ll be ready.
               </p>
             </div>
             <Link href="/personal-tax">
-              <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
+              <Button variant="outline" className="whitespace-nowrap">
                 <FileText className="h-4 w-4 mr-2" />
                 Continue your tax return
               </Button>
