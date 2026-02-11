@@ -1,0 +1,9 @@
+# TaxFolio Security Policy
+# https://securitytxt.org/
+
+Contact: mailto:security@taxfolio.uk
+Contact: mailto:support@taxfolio.uk
+Expires: 2027-02-11T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://taxfolio.io/.well-known/security.txt
+Policy: https://taxfolio.io/security

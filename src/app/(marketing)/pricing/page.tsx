@@ -231,6 +231,9 @@ export default async function PricingPage() {
               <Link href="/terms" className="hover:text-white transition-colors">
                 Terms of Service
               </Link>
+              <Link href="/security" className="hover:text-white transition-colors">
+                Security
+              </Link>
             </div>
           </div>
         </div>

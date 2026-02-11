@@ -66,6 +66,9 @@ export function LegalLayout({ title, lastUpdated, children }: LegalLayoutProps) 
               <Link href="/cookies" className="hover:text-white transition-colors">
                 Cookie Policy
               </Link>
+              <Link href="/security" className="hover:text-white transition-colors">
+                Security
+              </Link>
             </div>
           </div>
         </div>
