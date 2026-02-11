@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const fromDate = searchParams.get('fromDate') || undefined;
     const toDate = searchParams.get('toDate') || undefined;
-    const onlyOpenItems = searchParams.get('onlyOpenItems') === 'true';
+    const onlyOpenItems = searchParams.get('onlyOpenItems') !== 'false'; // default true
     const includeEstimatedCharges = searchParams.get('includeEstimatedCharges') === 'true';
 
     const fraudHeaders = extractFraudHeadersFromRequest(request.headers);

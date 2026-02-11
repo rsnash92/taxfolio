@@ -41,6 +41,8 @@ export const HMRC_ERROR_MESSAGES: Record<string, string> = {
   RULE_INSOLVENT_TRADER: 'Submissions cannot be made for an insolvent trader.',
   RULE_BUSINESS_INCOME_PERIOD_RESTRICTION:
     'You cannot submit income for this period due to restrictions on your account.',
+  RULE_INCONSISTENT_QUERY_PARAMS:
+    'The query parameters are inconsistent. Please check the date range and filter options.',
 
   // Resource errors
   MATCHING_RESOURCE_NOT_FOUND:
