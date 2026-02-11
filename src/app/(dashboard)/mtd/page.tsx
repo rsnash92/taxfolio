@@ -1,11 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarDays, CheckCircle2, Clock, FileText, Building2, Landmark } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock, FileText, Building2, Landmark, Wallet, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { ItsaStatusBanner } from "@/components/mtd/ItsaStatusBanner"
 
 export default function MTDPage() {
   return (
     <div className="space-y-8">
+      {/* ITSA Status Banner */}
+      <ItsaStatusBanner />
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] rounded-2xl p-8 text-white">
         <div className="flex items-start gap-4">
@@ -210,6 +214,46 @@ export default function MTDPage() {
               <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
                 <CalendarDays className="h-4 w-4 mr-2" />
                 View Quarterly Submissions
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tax Account */}
+      <Card className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] border-0">
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-white">
+              <h3 className="text-xl font-semibold mb-2">Tax Account</h3>
+              <p className="text-gray-300 text-sm">
+                View your Self Assessment balance, outstanding charges, and payment history.
+              </p>
+            </div>
+            <Link href="/mtd/account">
+              <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
+                <Wallet className="h-4 w-4 mr-2" />
+                View Tax Account
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Annual Income Summary */}
+      <Card className="bg-gradient-to-r from-[#0f172a] to-[#1e293b] border-0">
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-white">
+              <h3 className="text-xl font-semibold mb-2">Annual Income Summary</h3>
+              <p className="text-gray-300 text-sm">
+                View your year-to-date income, expenses, and profit by business.
+              </p>
+            </div>
+            <Link href="/mtd/income-summary">
+              <Button className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium whitespace-nowrap">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Annual Summary
               </Button>
             </Link>
           </div>

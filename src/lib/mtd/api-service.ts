@@ -9,6 +9,9 @@ import type {
   HmrcApiError,
   FraudPreventionHeaders,
   TaxYear,
+  SaBalanceAndTransactionsResponse,
+  ItsaStatusResponse,
+  BissSummaryResponse,
 } from '@/types/mtd';
 import { httpStatusToErrorCode, getErrorMessage } from './errors';
 import { getApiVersion, usesCumulativePeriodSummaries } from './quarters';
@@ -28,6 +31,9 @@ const HMRC_ENVIRONMENT = process.env.HMRC_ENVIRONMENT || 'sandbox';
 const OBLIGATIONS_API_VERSION = '3.0';
 const BUSINESS_DETAILS_API_VERSION = '2.0';
 const CALCULATIONS_API_VERSION = '5.0';
+const SA_ACCOUNTS_API_VERSION = '4.0';
+const INDIVIDUAL_DETAILS_API_VERSION = '2.0';
+const BISS_API_VERSION = '3.0';
 
 /**
  * MTD API Service - handles all communication with HMRC MTD APIs
@@ -467,6 +473,102 @@ export class MtdApiService {
       CALCULATIONS_API_VERSION,
       undefined,
       testScenario
+    );
+  }
+
+  // ============ SELF ASSESSMENT ACCOUNTS ============
+
+  /**
+   * Retrieve SA balance and transactions
+   * Uses Self Assessment Accounts API v4.0
+   */
+  async getBalanceAndTransactions(
+    nino: string,
+    params?: {
+      docNumber?: string;
+      fromDate?: string;
+      toDate?: string;
+      onlyOpenItems?: boolean;
+      includeEstimatedCharges?: boolean;
+    }
+  ): Promise<SaBalanceAndTransactionsResponse> {
+    let path = `/accounts/self-assessment/${nino}/balance-and-transactions`;
+
+    const queryParams = new URLSearchParams();
+    if (params?.docNumber) queryParams.append('docNumber', params.docNumber);
+    if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+    if (params?.toDate) queryParams.append('toDate', params.toDate);
+    if (params?.onlyOpenItems) queryParams.append('onlyOpenItems', 'true');
+    if (params?.includeEstimatedCharges) queryParams.append('includeEstimatedCharges', 'true');
+
+    const qs = queryParams.toString();
+    if (qs) path += `?${qs}`;
+
+    return this.request<SaBalanceAndTransactionsResponse>(
+      'GET',
+      path,
+      SA_ACCOUNTS_API_VERSION
+    );
+  }
+
+  /**
+   * Retrieve charge history by transaction ID
+   * Uses Self Assessment Accounts API v4.0
+   */
+  async getChargeHistory(
+    nino: string,
+    transactionId: string
+  ): Promise<{ chargeHistoryDetails: Array<{ taxYear: string; transactionId: string; transactionDate: string; description: string; totalAmount: number; changeDate: string; changeReason?: string }> }> {
+    return this.request(
+      'GET',
+      `/accounts/self-assessment/${nino}/charges/transactionId/${transactionId}`,
+      SA_ACCOUNTS_API_VERSION
+    );
+  }
+
+  // ============ INDIVIDUAL DETAILS ============
+
+  /**
+   * Retrieve ITSA status for a customer
+   * Uses Self Assessment Individual Details API v2.0
+   */
+  async getItsaStatus(
+    nino: string,
+    taxYear: TaxYear,
+    params?: { futureYears?: boolean; history?: boolean }
+  ): Promise<ItsaStatusResponse> {
+    let path = `/individuals/person/itsa-status/${nino}/${taxYear}`;
+
+    const queryParams = new URLSearchParams();
+    if (params?.futureYears) queryParams.append('futureYears', 'true');
+    if (params?.history) queryParams.append('history', 'true');
+
+    const qs = queryParams.toString();
+    if (qs) path += `?${qs}`;
+
+    return this.request<ItsaStatusResponse>(
+      'GET',
+      path,
+      INDIVIDUAL_DETAILS_API_VERSION
+    );
+  }
+
+  // ============ BUSINESS INCOME SOURCE SUMMARY ============
+
+  /**
+   * Retrieve business income source summary
+   * Uses Business Income Source Summary API v3.0
+   */
+  async getBusinessIncomeSummary(
+    nino: string,
+    typeOfBusiness: 'self-employment' | 'uk-property' | 'foreign-property',
+    taxYear: TaxYear,
+    businessId: string
+  ): Promise<BissSummaryResponse> {
+    return this.request<BissSummaryResponse>(
+      'GET',
+      `/individuals/self-assessment/income-summary/${nino}/${typeOfBusiness}/${taxYear}/${businessId}`,
+      BISS_API_VERSION
     );
   }
 

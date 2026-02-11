@@ -419,3 +419,93 @@ export const UK_PROPERTY_EXPENSE_CATEGORIES: ExpenseCategoryDisplay[] = [
   { key: 'travelCosts', label: 'Travel Costs', description: 'Car, van, and travel costs for property business', icon: 'car' },
   { key: 'other', label: 'Other Expenses', description: 'Other allowable property expenses', icon: 'more-horizontal' },
 ];
+
+// ============ SELF ASSESSMENT ACCOUNTS ============
+
+export interface SaBalanceDetails {
+  payableAmount: number;
+  payableDueDate?: string;
+  pendingChargeDueAmount: number;
+  pendingChargeDueDate?: string;
+  overdueAmount: number;
+  totalBalance: number;
+  totalCredit: number;
+  availableCredit: number;
+  allocatedCredit: number;
+  unallocatedCredit: number;
+  firstPendingAmountRequested?: number;
+  secondPendingAmountRequested?: number;
+}
+
+export interface SaDocumentDetail {
+  taxYear: string;
+  documentId: string;
+  documentDate: string;
+  documentText?: string;
+  documentDueDate: string;
+  documentDescription: string;
+  originalAmount: number;
+  outstandingAmount: number;
+  isChargeEstimate?: boolean;
+  isCodedOut?: boolean;
+  effectiveDateOfPayment?: string;
+}
+
+export interface SaBalanceAndTransactionsResponse {
+  balanceDetails: SaBalanceDetails;
+  documentDetails?: SaDocumentDetail[];
+}
+
+// ============ SELF ASSESSMENT INDIVIDUAL DETAILS ============
+
+export type ItsaStatus =
+  | 'No Status'
+  | 'MTD Mandated'
+  | 'MTD Voluntary'
+  | 'Annual'
+  | 'Non Digital'
+  | 'Digitally Exempt'
+  | 'Dormant'
+  | 'MTD Exempt';
+
+export interface ItsaStatusDetail {
+  submittedOn: string;
+  status: ItsaStatus;
+  statusReason: string;
+  businessIncome2YearsPrior?: number;
+}
+
+export interface ItsaTaxYearStatus {
+  taxYear: string;
+  itsaStatusDetails: ItsaStatusDetail[];
+}
+
+export interface ItsaStatusResponse {
+  itsaStatuses: ItsaTaxYearStatus[];
+}
+
+// ============ BUSINESS INCOME SOURCE SUMMARY ============
+
+export interface BissTotal {
+  income: number;
+  expenses: number;
+  additions?: number;
+  deductions?: number;
+  accountingAdjustments?: number;
+}
+
+export interface BissProfit {
+  net: number;
+  taxable: number;
+}
+
+export interface BissLoss {
+  net: number;
+  taxable: number;
+}
+
+export interface BissSummaryResponse {
+  total: BissTotal;
+  profit: BissProfit;
+  loss: BissLoss;
+}
