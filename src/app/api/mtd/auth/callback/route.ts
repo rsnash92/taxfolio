@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { exchangeCode } from '@/lib/mtd/api-service';
 
 const REDIRECT_URI =
   process.env.NEXT_PUBLIC_APP_URL + '/api/mtd/auth/callback';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+// Use service role client - the callback is a redirect from HMRC so the user's
+// session cookies may not be available, and RLS would block the operations
+function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 /**
  * GET /api/mtd/auth/callback
@@ -43,7 +52,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Verify state nonce in database
     const { data: authState, error: stateError } = await supabase
@@ -54,6 +63,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (stateError || !authState) {
+      console.error('[MTD Callback] State verification failed:', stateError);
       return NextResponse.redirect(
         `${APP_URL}/mtd?error=${encodeURIComponent('Invalid authorization state')}`
       );
@@ -67,18 +77,34 @@ export async function GET(request: NextRequest) {
       .eq('state_nonce', nonce);
 
     // Exchange code for tokens
+    console.log('[MTD Callback] Exchanging code for tokens, userId:', userId);
     const tokens = await exchangeCode(code, REDIRECT_URI);
+    console.log('[MTD Callback] Got tokens, scope:', tokens.scope, 'expiresAt:', tokens.expiresAt);
 
-    // Store tokens securely in database (using existing hmrc_tokens table)
-    await supabase.from('hmrc_tokens').upsert({
-      user_id: userId,
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken,
-      expires_at: new Date(tokens.expiresAt).toISOString(),
-      token_type: tokens.tokenType,
-      scope: tokens.scope,
-      updated_at: new Date().toISOString(),
-    });
+    // Store tokens securely in database (using service role to bypass RLS)
+    const { error: upsertError } = await supabase.from('hmrc_tokens').upsert(
+      {
+        user_id: userId,
+        access_token: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        expires_at: new Date(tokens.expiresAt).toISOString(),
+        token_type: tokens.tokenType,
+        scope: tokens.scope,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
+
+    if (upsertError) {
+      console.error('[MTD Callback] Failed to store tokens:', upsertError);
+      return NextResponse.redirect(
+        `${APP_URL}/mtd?error=${encodeURIComponent('Failed to save HMRC connection: ' + upsertError.message)}`
+      );
+    }
+
+    console.log('[MTD Callback] Tokens stored successfully for user:', userId);
 
     // Redirect to MTD dashboard with success
     return NextResponse.redirect(`${APP_URL}/mtd?connected=true`);

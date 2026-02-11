@@ -88,6 +88,11 @@ export class MtdApiService {
 
     const response = await fetch(url, options);
 
+    // Handle 204 No Content (success with no body, e.g. cumulative PUT)
+    if (response.status === 204) {
+      return {} as T;
+    }
+
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
     if (!contentType?.includes('application/json')) {
@@ -193,20 +198,43 @@ export class MtdApiService {
 
   /**
    * Create or amend self-employment cumulative period summary (TY 2025-26 onwards)
+   * Transforms internal data format to HMRC v5.0 schema:
+   *   { periodDates, periodIncome, periodExpenses, periodDisallowableExpenses }
    */
   async createAmendSelfEmploymentCumulative(
     nino: string,
     businessId: string,
     taxYear: TaxYear,
-    data: SelfEmploymentPeriodData
+    data: SelfEmploymentPeriodData,
+    periodDates?: PeriodDates
   ): Promise<void> {
     const apiVersion = getApiVersion(taxYear, 'self-employment');
     const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
+
+    // Transform from internal format { incomes, expenses }
+    // to HMRC v5.0 format { periodDates, periodIncome, periodExpenses }
+    const hmrcBody: Record<string, unknown> = {};
+
+    if (periodDates) {
+      hmrcBody.periodDates = {
+        periodStartDate: periodDates.periodStartDate,
+        periodEndDate: periodDates.periodEndDate,
+      };
+    }
+
+    if (data.incomes) {
+      hmrcBody.periodIncome = data.incomes;
+    }
+
+    if (data.expenses) {
+      hmrcBody.periodExpenses = data.expenses;
+    }
+
     await this.request<void>(
       'PUT',
       `/individuals/business/self-employment/${nino}/${businessId}/cumulative/${taxYear}`,
       apiVersion,
-      data,
+      hmrcBody,
       testScenario
     );
   }
@@ -440,6 +468,109 @@ export class MtdApiService {
       undefined,
       testScenario
     );
+  }
+
+  // ============ SANDBOX HELPERS ============
+
+  /**
+   * Check if running in sandbox mode
+   */
+  static get isSandbox(): boolean {
+    return HMRC_ENVIRONMENT === 'sandbox';
+  }
+
+  /**
+   * Create a test business via the Self Assessment Test Support API (v1.0).
+   * Endpoint: POST /individuals/self-assessment-test-support/business/{nino}
+   * This is separate from the Self-Employment Business API - it's specifically
+   * for creating test businesses in the sandbox environment.
+   */
+  async createTestBusiness(
+    nino: string,
+    data: {
+      typeOfBusiness: 'self-employment' | 'uk-property' | 'foreign-property';
+      tradingName?: string;
+      firstAccountingPeriodStartDate?: string;
+      firstAccountingPeriodEndDate?: string;
+      accountingType?: 'CASH' | 'ACCRUALS';
+      commencementDate?: string;
+      businessAddressLineOne?: string;
+      businessAddressPostcode?: string;
+      businessAddressCountryCode?: string;
+      latencyDetails?: {
+        latencyEndDate: string;
+        taxYear1: string;
+        latencyIndicator1: 'A' | 'Q';
+        taxYear2: string;
+        latencyIndicator2: 'A' | 'Q';
+      };
+    }
+  ): Promise<{ businessId: string }> {
+    // Test Support API uses v1.0 and doesn't need Gov-Test-Scenario header
+    return this.request<{ businessId: string }>(
+      'POST',
+      `/individuals/self-assessment-test-support/business/${nino}`,
+      '1.0',
+      data
+    );
+  }
+
+  /**
+   * Delete stateful test data via the Test Support API.
+   * Useful for resetting sandbox state.
+   */
+  async deleteStatefulTestData(nino?: string): Promise<void> {
+    const path = nino
+      ? `/individuals/self-assessment-test-support/vendor-state?nino=${nino}`
+      : '/individuals/self-assessment-test-support/vendor-state';
+    await this.request<void>('DELETE', path, '1.0');
+  }
+
+  /**
+   * Get or create a self-employment business for sandbox testing.
+   * In sandbox, OPEN obligations return fake business IDs that don't exist
+   * in STATEFUL mode. This finds or creates a real STATEFUL business
+   * via the Self Assessment Test Support API.
+   */
+  async getOrCreateSandboxBusinessId(nino: string): Promise<string> {
+    // Try to find an existing self-employment business
+    try {
+      const result = await this.listBusinesses(nino);
+      const businesses = (result as any).listOfBusinesses || (result as any).businesses || [];
+      const seBusiness = businesses.find(
+        (b: any) => b.typeOfBusiness === 'self-employment'
+      );
+      if (seBusiness) {
+        console.log('[MTD Sandbox] Found existing business:', seBusiness.businessId);
+        return seBusiness.businessId;
+      }
+    } catch (err) {
+      console.log('[MTD Sandbox] No existing businesses found, creating one...', err);
+    }
+
+    // Create a new test self-employment business via Test Support API
+    console.log('[MTD Sandbox] Creating test self-employment business...');
+    const created = await this.createTestBusiness(nino, {
+      typeOfBusiness: 'self-employment',
+      tradingName: 'TaxFolio Test Business',
+      firstAccountingPeriodStartDate: '2023-04-06',
+      firstAccountingPeriodEndDate: '2024-04-05',
+      accountingType: 'CASH',
+      commencementDate: '2020-01-01',
+      businessAddressLineOne: '1 Test Street',
+      businessAddressPostcode: 'AB1 2CD',
+      businessAddressCountryCode: 'GB',
+      latencyDetails: {
+        latencyEndDate: '2025-04-05',
+        taxYear1: '2023-24',
+        latencyIndicator1: 'Q',
+        taxYear2: '2024-25',
+        latencyIndicator2: 'Q',
+      },
+    });
+
+    console.log('[MTD Sandbox] Created test business:', created.businessId);
+    return created.businessId;
   }
 
   // ============ SUBMISSION HELPER ============

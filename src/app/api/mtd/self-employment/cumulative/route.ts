@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
+import { MtdApiService, createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
 import { extractFraudHeadersFromRequest } from '@/lib/mtd/fraud-headers';
 import { parseHmrcError } from '@/lib/mtd/errors';
-import type { HmrcApiError, OAuthTokens, SelfEmploymentPeriodData, TaxYear } from '@/types/mtd';
+import type { HmrcApiError, OAuthTokens, SelfEmploymentPeriodData, PeriodDates, TaxYear } from '@/types/mtd';
 
 /**
  * Helper to get authenticated API service
@@ -139,9 +139,10 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { businessId, taxYear, data } = body as {
+    const { businessId, taxYear, periodDates, data } = body as {
       businessId: string;
       taxYear: TaxYear;
+      periodDates?: PeriodDates;
       data: SelfEmploymentPeriodData;
     };
 
@@ -166,11 +167,19 @@ export async function PUT(request: NextRequest) {
     }
 
     const apiService = await getAuthenticatedService(supabase, user.id, request);
+
+    // In sandbox, OPEN obligations have fake business IDs that don't exist in STATEFUL mode.
+    // Resolve to a real STATEFUL business ID for the submission.
+    const resolvedBusinessId = MtdApiService.isSandbox
+      ? await apiService.getOrCreateSandboxBusinessId(userProfile.nino)
+      : businessId;
+
     await apiService.createAmendSelfEmploymentCumulative(
       userProfile.nino,
-      businessId,
+      resolvedBusinessId,
       taxYear,
-      data
+      data,
+      periodDates
     );
 
     // Store submission record

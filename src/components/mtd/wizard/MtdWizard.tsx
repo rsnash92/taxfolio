@@ -122,6 +122,10 @@ export function MtdWizard({
           body = {
             businessId: state.businessId,
             taxYear: state.taxYear,
+            periodDates: {
+              periodStartDate: state.obligation.periodStartDate,
+              periodEndDate: state.obligation.periodEndDate,
+            },
             data: state.selfEmploymentData,
           };
         } else {
@@ -142,6 +146,10 @@ export function MtdWizard({
           body = {
             businessId: state.businessId,
             taxYear: state.taxYear,
+            periodDates: {
+              periodStartDate: state.obligation.periodStartDate,
+              periodEndDate: state.obligation.periodEndDate,
+            },
             data: state.ukPropertyData,
           };
         } else {

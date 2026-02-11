@@ -1,9 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
+import { MtdApiService, createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
 import { extractFraudHeadersFromRequest } from '@/lib/mtd/fraud-headers';
 import { parseHmrcError } from '@/lib/mtd/errors';
-import type { HmrcApiError, OAuthTokens } from '@/types/mtd';
+import type { HmrcApiError, HmrcObligationsResponse, OAuthTokens } from '@/types/mtd';
+
+/**
+ * In sandbox, HMRC's OPEN scenario returns canned obligations from 2018-19.
+ * Transform these to 2025-26 dates so the cumulative API (v5.0) is used,
+ * since the period API (v4.0) is not available in sandbox.
+ */
+function transformSandboxObligationDates(obligations: HmrcObligationsResponse): HmrcObligationsResponse {
+  if (!MtdApiService.isSandbox || !obligations.obligations) return obligations;
+
+  // Current tax year: 2025-26 (Apr 6 2025 to Apr 5 2026)
+  const quarterDates = [
+    { start: '2025-04-06', end: '2025-07-05', due: '2025-08-05' },
+    { start: '2025-07-06', end: '2025-10-05', due: '2025-11-05' },
+    { start: '2025-10-06', end: '2026-01-05', due: '2026-02-05' },
+    { start: '2026-01-06', end: '2026-04-05', due: '2026-05-05' },
+  ];
+
+  return {
+    obligations: obligations.obligations.map((biz) => ({
+      ...biz,
+      obligationDetails: biz.obligationDetails.map((obl, idx) => ({
+        ...obl,
+        periodStartDate: quarterDates[idx % 4].start,
+        periodEndDate: quarterDates[idx % 4].end,
+        dueDate: quarterDates[idx % 4].due,
+      })),
+    })),
+  };
+}
 
 /**
  * GET /api/mtd/obligations
@@ -93,10 +122,11 @@ export async function GET(request: NextRequest) {
     const apiService = createApiService(accessToken, fraudHeaders);
 
     try {
-      const obligations = await apiService.getObligations(userProfile.nino, {
+      const rawObligations = await apiService.getObligations(userProfile.nino, {
         taxYear,
         status,
       });
+      const obligations = transformSandboxObligationDates(rawObligations);
       return NextResponse.json(obligations);
     } catch (apiError) {
       // Handle "no obligations found" gracefully - return empty array

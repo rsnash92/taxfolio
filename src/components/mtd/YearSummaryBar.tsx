@@ -17,15 +17,21 @@ export function YearSummaryBar({
   ytdExpenses,
 }: YearSummaryBarProps) {
   // Filter obligations to current tax year only for the summary
-  const currentYearObligations = obligations.filter((o) => {
-    // Parse the tax year (e.g., "2025-26") to get the start year
-    const [startYear] = taxYear.split('-').map(Number);
-    const taxYearStart = new Date(startYear, 3, 6); // April 6
-    const taxYearEnd = new Date(startYear + 1, 3, 5); // April 5 next year
+  // In sandbox mode, show all obligations since HMRC returns historical test data
+  const isSandbox = process.env.NEXT_PUBLIC_HMRC_ENVIRONMENT === 'sandbox' ||
+    process.env.NEXT_PUBLIC_APP_URL?.includes('localhost');
 
-    const periodStart = new Date(o.periodStartDate);
-    return periodStart >= taxYearStart && periodStart <= taxYearEnd;
-  });
+  const currentYearObligations = isSandbox
+    ? obligations
+    : obligations.filter((o) => {
+        // Parse the tax year (e.g., "2025-26") to get the start year
+        const [startYear] = taxYear.split('-').map(Number);
+        const taxYearStart = new Date(startYear, 3, 6); // April 6
+        const taxYearEnd = new Date(startYear + 1, 3, 5); // April 5 next year
+
+        const periodStart = new Date(o.periodStartDate);
+        return periodStart >= taxYearStart && periodStart <= taxYearEnd;
+      });
 
   const totalObligations = currentYearObligations.length;
   const fulfilledObligations = currentYearObligations.filter(
@@ -73,13 +79,13 @@ export function YearSummaryBar({
           </div>
           <div className="flex items-end gap-2">
             <span className="text-2xl font-bold text-white">
-              {Math.round((fulfilledObligations / totalObligations) * 100)}%
+              {totalObligations > 0 ? Math.round((fulfilledObligations / totalObligations) * 100) : 0}%
             </span>
             <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden mb-1">
               <div
                 className="h-full bg-cyan-400 rounded-full transition-all duration-500"
                 style={{
-                  width: `${(fulfilledObligations / totalObligations) * 100}%`,
+                  width: `${totalObligations > 0 ? (fulfilledObligations / totalObligations) * 100 : 0}%`,
                 }}
               />
             </div>

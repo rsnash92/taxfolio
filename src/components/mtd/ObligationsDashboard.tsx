@@ -75,7 +75,16 @@ export function ObligationsDashboard({ onSelectObligation }: ObligationsDashboar
   };
 
   // Get the minimum date for relevant obligations (start of previous tax year)
+  // In sandbox mode, HMRC returns historical test data from 2018 — bypass filter
+  const isSandbox = process.env.NEXT_PUBLIC_HMRC_ENVIRONMENT === 'sandbox' ||
+    process.env.NEXT_PUBLIC_APP_URL?.includes('localhost');
+
   const minRelevantDate = useMemo(() => {
+    // In sandbox, show all obligations so we can test with HMRC's historical data
+    if (isSandbox) {
+      return new Date(2000, 0, 1);
+    }
+
     // Current tax year starts April 6
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -90,7 +99,7 @@ export function ObligationsDashboard({ onSelectObligation }: ObligationsDashboar
       : new Date(currentYear - 1, 3, 6); // April 6 one year ago
 
     return prevTaxYearStart;
-  }, []);
+  }, [isSandbox]);
 
   // Process obligations into display format
   const obligations = useMemo((): ObligationWithDisplayStatus[] => {

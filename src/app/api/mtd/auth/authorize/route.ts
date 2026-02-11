@@ -32,12 +32,20 @@ export async function GET(request: NextRequest) {
     ).toString('base64');
 
     // Store the state in the database for verification
-    await supabase.from('mtd_auth_states').upsert({
+    const { error: stateError } = await supabase.from('mtd_auth_states').upsert({
       user_id: user.id,
       state_nonce: nonce,
       created_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min expiry
     });
+
+    if (stateError) {
+      console.error('[MTD Auth] Failed to store auth state:', stateError);
+      return NextResponse.json(
+        { error: 'Failed to initiate authorization: ' + stateError.message },
+        { status: 500 }
+      );
+    }
 
     // Build the HMRC authorization URL
     const authUrl = getAuthUrl(REDIRECT_URI, state);

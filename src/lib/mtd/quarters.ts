@@ -288,8 +288,8 @@ export function getApiVersion(
 ): string {
   // For 2025-26 onwards, use the latest API versions with cumulative support
   if (usesCumulativePeriodSummaries(taxYear)) {
-    return apiType === 'self-employment' ? '4.0' : '5.0';
+    return '5.0';
   }
   // For earlier years, use older API versions
-  return apiType === 'self-employment' ? '3.0' : '4.0';
+  return apiType === 'self-employment' ? '4.0' : '4.0';
 }

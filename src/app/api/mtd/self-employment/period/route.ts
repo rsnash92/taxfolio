@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
+import { MtdApiService, createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
 import { extractFraudHeadersFromRequest } from '@/lib/mtd/fraud-headers';
 import { parseHmrcError } from '@/lib/mtd/errors';
 import type { HmrcApiError, OAuthTokens, SelfEmploymentPeriodData, PeriodDates, TaxYear } from '@/types/mtd';
@@ -165,9 +165,24 @@ export async function POST(request: NextRequest) {
     }
 
     const apiService = await getAuthenticatedService(supabase, user.id, request);
+
+    // In sandbox, OPEN obligations have fake business IDs that don't exist in STATEFUL mode.
+    // Resolve to a real STATEFUL business ID for the submission.
+    console.log('[SE Period] isSandbox:', MtdApiService.isSandbox, '| NINO:', userProfile.nino, '| original businessId:', businessId, '| taxYear:', taxYear);
+    let resolvedBusinessId = businessId;
+    if (MtdApiService.isSandbox) {
+      try {
+        resolvedBusinessId = await apiService.getOrCreateSandboxBusinessId(userProfile.nino);
+        console.log('[SE Period] Resolved sandbox businessId:', resolvedBusinessId);
+      } catch (sandboxErr) {
+        console.error('[SE Period] Sandbox business resolution failed:', sandboxErr);
+        // Fall through and try with original ID
+      }
+    }
+
     const result = await apiService.createSelfEmploymentPeriodSummary(
       userProfile.nino,
-      businessId,
+      resolvedBusinessId,
       taxYear,
       periodDates,
       data
