@@ -99,8 +99,10 @@ export async function GET(request: NextRequest) {
       );
       return NextResponse.json(result);
     } catch (apiError) {
-      if ((apiError as HmrcApiError).code === 'MATCHING_RESOURCE_NOT_FOUND' ||
-          (apiError as HmrcApiError).code === 'RULE_NO_INCOME_SUBMISSIONS_EXIST') {
+      const code = (apiError as HmrcApiError).code;
+      if (code === 'MATCHING_RESOURCE_NOT_FOUND' ||
+          code === 'RULE_NO_INCOME_SUBMISSIONS_EXIST' ||
+          code === 'NOT_FOUND') {
         return NextResponse.json({
           total: { income: 0, expenses: 0 },
           profit: { net: 0, taxable: 0 },
@@ -110,16 +112,17 @@ export async function GET(request: NextRequest) {
       throw apiError;
     }
   } catch (error) {
-    console.error('Income summary fetch error:', error);
-    if ((error as HmrcApiError).code) {
-      const parsed = parseHmrcError(error as HmrcApiError);
+    const hmrcError = error as HmrcApiError;
+    console.error('Income summary fetch error:', JSON.stringify({ code: hmrcError.code, message: hmrcError.message, errors: hmrcError.errors }, null, 2));
+    if (hmrcError.code) {
+      const parsed = parseHmrcError(hmrcError);
       return NextResponse.json(
-        { error: parsed.message, code: parsed.code, details: parsed.details },
+        { error: parsed.message, code: parsed.code, hmrcCode: hmrcError.code, details: parsed.details },
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { error: 'Failed to fetch income summary' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch income summary' },
       { status: 500 }
     );
   }

@@ -15,6 +15,7 @@ export default function TaxAccountPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<SaBalanceAndTransactionsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -49,6 +50,7 @@ export default function TaxAccountPage() {
         if (!res.ok) {
           const body = await res.json();
           setError(body.error || 'Failed to fetch account data');
+          setErrorCode(body.hmrcCode || body.code || null);
           setIsLoading(false);
           return;
         }
@@ -114,8 +116,11 @@ export default function TaxAccountPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm">
+          <p className="text-red-700">{error}</p>
+          {errorCode && (
+            <p className="text-red-400 text-xs mt-1">Error code: {errorCode}</p>
+          )}
         </div>
       )}
 

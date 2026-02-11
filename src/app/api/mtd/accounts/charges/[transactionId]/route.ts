@@ -85,16 +85,17 @@ export async function GET(
     const result = await apiService.getChargeHistory(userProfile.nino, transactionId);
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Charge history fetch error:', error);
-    if ((error as HmrcApiError).code) {
-      const parsed = parseHmrcError(error as HmrcApiError);
+    const hmrcError = error as HmrcApiError;
+    console.error('Charge history fetch error:', JSON.stringify({ code: hmrcError.code, message: hmrcError.message, errors: hmrcError.errors }, null, 2));
+    if (hmrcError.code) {
+      const parsed = parseHmrcError(hmrcError);
       return NextResponse.json(
-        { error: parsed.message, code: parsed.code },
+        { error: parsed.message, code: parsed.code, hmrcCode: hmrcError.code },
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { error: 'Failed to fetch charge history' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch charge history' },
       { status: 500 }
     );
   }
