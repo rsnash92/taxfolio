@@ -423,16 +423,16 @@ export const UK_PROPERTY_EXPENSE_CATEGORIES: ExpenseCategoryDisplay[] = [
 // ============ SELF ASSESSMENT ACCOUNTS ============
 
 export interface SaBalanceDetails {
-  payableAmount: number;
+  payableAmount?: number;
   payableDueDate?: string;
-  pendingChargeDueAmount: number;
+  pendingChargeDueAmount?: number;
   pendingChargeDueDate?: string;
-  overdueAmount: number;
-  totalBalance: number;
-  totalCredit: number;
-  availableCredit: number;
-  allocatedCredit: number;
-  unallocatedCredit: number;
+  overdueAmount?: number;
+  totalBalance?: number;
+  totalCredit?: number;
+  availableCredit?: number;
+  allocatedCredit?: number;
+  unallocatedCredit?: number;
   firstPendingAmountRequested?: number;
   secondPendingAmountRequested?: number;
 }

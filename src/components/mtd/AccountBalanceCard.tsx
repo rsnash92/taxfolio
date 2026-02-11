@@ -16,12 +16,18 @@ const formatCurrency = (amount: number) =>
   }).format(amount);
 
 export function AccountBalanceCard({ balance }: AccountBalanceCardProps) {
+  const overdue = balance.overdueAmount ?? 0;
+  const payable = balance.payableAmount ?? 0;
+  const pending = balance.pendingChargeDueAmount ?? 0;
+  const credit = balance.availableCredit ?? balance.totalCredit ?? 0;
+  const total = balance.totalBalance ?? 0;
+
   return (
     <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white">Account Balance</h2>
         <span className="text-2xl font-bold text-white">
-          {formatCurrency(balance.totalBalance)}
+          {formatCurrency(total)}
         </span>
       </div>
 
@@ -34,8 +40,8 @@ export function AccountBalanceCard({ balance }: AccountBalanceCardProps) {
               Overdue
             </span>
           </div>
-          <span className={`text-2xl font-bold ${balance.overdueAmount > 0 ? 'text-red-400' : 'text-white'}`}>
-            {formatCurrency(balance.overdueAmount)}
+          <span className={`text-2xl font-bold ${overdue > 0 ? 'text-red-400' : 'text-white'}`}>
+            {formatCurrency(overdue)}
           </span>
         </div>
 
@@ -48,7 +54,7 @@ export function AccountBalanceCard({ balance }: AccountBalanceCardProps) {
             </span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(balance.payableAmount)}
+            {formatCurrency(payable)}
           </span>
           {balance.payableDueDate && (
             <p className="text-xs text-slate-400 mt-1">
@@ -66,7 +72,7 @@ export function AccountBalanceCard({ balance }: AccountBalanceCardProps) {
             </span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(balance.pendingChargeDueAmount)}
+            {formatCurrency(pending)}
           </span>
         </div>
 
@@ -79,7 +85,7 @@ export function AccountBalanceCard({ balance }: AccountBalanceCardProps) {
             </span>
           </div>
           <span className="text-2xl font-bold text-green-400">
-            {formatCurrency(balance.availableCredit)}
+            {formatCurrency(credit)}
           </span>
         </div>
       </div>
