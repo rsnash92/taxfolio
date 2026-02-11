@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { MtdApiService, createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
-import { extractFraudHeadersFromRequest } from '@/lib/mtd/fraud-headers';
+import { extractFraudHeadersFromRequest, addServerSideFraudHeaders } from '@/lib/mtd/fraud-headers';
 import { parseHmrcError } from '@/lib/mtd/errors';
 import type { HmrcApiError, OAuthTokens, SelfEmploymentPeriodData, PeriodDates, TaxYear } from '@/types/mtd';
 
@@ -43,7 +43,11 @@ async function getAuthenticatedService(supabase: Awaited<ReturnType<typeof creat
     }).eq('user_id', userId);
   }
 
-  const fraudHeaders = extractFraudHeadersFromRequest(request.headers);
+  const clientFraudHeaders = extractFraudHeadersFromRequest(request.headers) || {};
+  if (!clientFraudHeaders['Gov-Client-User-IDs']) {
+    clientFraudHeaders['Gov-Client-User-IDs'] = `taxfolio=${encodeURIComponent(userId)}`;
+  }
+  const fraudHeaders = addServerSideFraudHeaders(request.headers, clientFraudHeaders);
   return createApiService(accessToken, fraudHeaders);
 }
 

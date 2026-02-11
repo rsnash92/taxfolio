@@ -345,6 +345,7 @@ export interface HmrcApiError {
 // ============ FRAUD PREVENTION HEADERS ============
 
 export interface FraudPreventionHeaders {
+  // Client headers (collected browser-side, forwarded via request)
   'Gov-Client-Connection-Method': string;
   'Gov-Client-Device-ID': string;
   'Gov-Client-User-IDs': string;
@@ -352,8 +353,16 @@ export interface FraudPreventionHeaders {
   'Gov-Client-Window-Size': string;
   'Gov-Client-Browser-Plugins': string;
   'Gov-Client-Screens': string;
-  'Gov-Client-User-Agent': string;
+  'Gov-Client-Browser-JS-User-Agent': string;
   'Gov-Vendor-Version': string;
+  'Gov-Vendor-Product-Name': string;
+  // Server-side headers (added by API routes from request context)
+  'Gov-Client-Public-IP': string;
+  'Gov-Client-Public-IP-Timestamp': string;
+  'Gov-Client-Public-Port': string;
+  'Gov-Vendor-Public-IP': string;
+  'Gov-Vendor-Forwarded': string;
+  // Optional headers
   'Gov-Vendor-License-IDs'?: string;
   'Gov-Client-Local-IPs'?: string;
   'Gov-Client-Local-IPs-Timestamp'?: string;

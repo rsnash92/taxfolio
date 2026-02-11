@@ -79,13 +79,14 @@ export function collectDeviceInfo(): ClientDeviceInfo {
 }
 
 /**
- * Build HMRC fraud prevention headers from device info
- * These are legally required for production MTD API calls
+ * Build HMRC fraud prevention headers from device info (client-side portion).
+ * For WEB_APP_VIA_SERVER, Gov-Client-User-Agent is NOT used.
+ * Instead, Gov-Client-Browser-JS-User-Agent carries the browser's navigator.userAgent.
  */
 export function buildFraudPreventionHeaders(
   deviceInfo: ClientDeviceInfo,
   userId?: string
-): FraudPreventionHeaders {
+): Partial<FraudPreventionHeaders> {
   // Format plugins for HMRC (URL encoded, comma separated)
   const pluginsFormatted = deviceInfo.plugins
     .map((p) => encodeURIComponent(p))
@@ -97,7 +98,7 @@ export function buildFraudPreventionHeaders(
   // Build window size string
   const windowSize = `width=${deviceInfo.windowWidth}&height=${deviceInfo.windowHeight}`;
 
-  const headers: FraudPreventionHeaders = {
+  const headers: Partial<FraudPreventionHeaders> = {
     'Gov-Client-Connection-Method': 'WEB_APP_VIA_SERVER',
     'Gov-Client-Device-ID': deviceInfo.deviceId || 'unknown',
     'Gov-Client-User-IDs': userId
@@ -107,11 +108,62 @@ export function buildFraudPreventionHeaders(
     'Gov-Client-Window-Size': windowSize,
     'Gov-Client-Browser-Plugins': pluginsFormatted || '',
     'Gov-Client-Screens': screenInfo,
-    'Gov-Client-User-Agent': encodeURIComponent(deviceInfo.userAgent),
+    'Gov-Client-Browser-JS-User-Agent': encodeURIComponent(deviceInfo.userAgent),
     'Gov-Vendor-Version': `TaxFolio=${TAXFOLIO_VERSION}`,
+    'Gov-Vendor-Product-Name': 'TaxFolio',
   };
 
   return headers;
+}
+
+/**
+ * Add server-side fraud prevention headers that require request context.
+ * These include client public IP (from X-Forwarded-For), timestamps,
+ * and vendor (server) IP information.
+ *
+ * Call this in API routes and merge with client-sent headers before forwarding to HMRC.
+ */
+export function addServerSideFraudHeaders(
+  headers: Headers,
+  existingFraudHeaders: Partial<FraudPreventionHeaders>
+): FraudPreventionHeaders {
+  const result = { ...existingFraudHeaders };
+
+  // Client public IP — extracted from proxy headers (Vercel sets X-Forwarded-For)
+  const forwardedFor = headers.get('x-forwarded-for');
+  const clientIp = forwardedFor
+    ? forwardedFor.split(',')[0].trim()
+    : headers.get('x-real-ip') || '';
+
+  if (clientIp) {
+    result['Gov-Client-Public-IP'] = clientIp;
+    result['Gov-Client-Public-IP-Timestamp'] = new Date().toISOString();
+  }
+
+  // Client public port — Vercel doesn't expose this, but we can try
+  // X-Forwarded-Port or leave empty (HMRC allows omission for private networks)
+  const clientPort = headers.get('x-forwarded-port') || '';
+  if (clientPort) {
+    result['Gov-Client-Public-Port'] = clientPort;
+  }
+
+  // Vendor (server) public IP — use env var set in Vercel deployment
+  const serverIp = process.env.VENDOR_PUBLIC_IP || '';
+  if (serverIp) {
+    result['Gov-Vendor-Public-IP'] = serverIp;
+  }
+
+  // Gov-Vendor-Forwarded — describes the network hops (by=server, for=client)
+  if (clientIp) {
+    const byPart = serverIp ? `by=${serverIp}` : '';
+    const forPart = `for=${clientIp}`;
+    result['Gov-Vendor-Forwarded'] = [byPart, forPart].filter(Boolean).join('&');
+  }
+
+  // Ensure Gov-Client-User-IDs is populated (use Supabase user ID if not set from client)
+  // This is handled at the route level — just ensure it's not empty here
+
+  return result as FraudPreventionHeaders;
 }
 
 /**
@@ -127,8 +179,10 @@ export function validateFraudHeaders(
     'Gov-Client-Timezone',
     'Gov-Client-Window-Size',
     'Gov-Client-Screens',
-    'Gov-Client-User-Agent',
+    'Gov-Client-Browser-JS-User-Agent',
     'Gov-Vendor-Version',
+    'Gov-Vendor-Product-Name',
+    'Gov-Client-User-IDs',
   ];
 
   const missing: string[] = [];
@@ -175,11 +229,12 @@ export function deserializeDeviceInfo(serialized: string): ClientDeviceInfo {
 }
 
 /**
- * Extract fraud headers from request for API route forwarding
+ * Extract fraud headers from request for API route forwarding.
+ * Reads all Gov-Client-* and Gov-Vendor-* headers sent by the client.
  */
 export function extractFraudHeadersFromRequest(
   headers: Headers
-): FraudPreventionHeaders | undefined {
+): Partial<FraudPreventionHeaders> | undefined {
   const headerKeys: (keyof FraudPreventionHeaders)[] = [
     'Gov-Client-Connection-Method',
     'Gov-Client-Device-ID',
@@ -188,8 +243,9 @@ export function extractFraudHeadersFromRequest(
     'Gov-Client-Window-Size',
     'Gov-Client-Browser-Plugins',
     'Gov-Client-Screens',
-    'Gov-Client-User-Agent',
+    'Gov-Client-Browser-JS-User-Agent',
     'Gov-Vendor-Version',
+    'Gov-Vendor-Product-Name',
     'Gov-Vendor-License-IDs',
     'Gov-Client-Local-IPs',
     'Gov-Client-Local-IPs-Timestamp',
@@ -206,7 +262,7 @@ export function extractFraudHeadersFromRequest(
     }
   }
 
-  return hasAny ? (result as FraudPreventionHeaders) : undefined;
+  return hasAny ? result : undefined;
 }
 
 /**

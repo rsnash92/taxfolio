@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { MtdApiService, createApiService, refreshToken, needsRefresh } from '@/lib/mtd/api-service';
-import { extractFraudHeadersFromRequest } from '@/lib/mtd/fraud-headers';
+import { extractFraudHeadersFromRequest, addServerSideFraudHeaders } from '@/lib/mtd/fraud-headers';
 import { parseHmrcError } from '@/lib/mtd/errors';
 import type { HmrcApiError, HmrcObligationsResponse, OAuthTokens } from '@/types/mtd';
 
@@ -116,7 +116,11 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as 'Open' | 'Fulfilled' | undefined;
 
     // Extract fraud prevention headers
-    const fraudHeaders = extractFraudHeadersFromRequest(request.headers);
+    const clientFraudHeaders = extractFraudHeadersFromRequest(request.headers) || {};
+    if (!clientFraudHeaders['Gov-Client-User-IDs']) {
+      clientFraudHeaders['Gov-Client-User-IDs'] = `taxfolio=${encodeURIComponent(user.id)}`;
+    }
+    const fraudHeaders = addServerSideFraudHeaders(request.headers, clientFraudHeaders);
 
     // Create API service and fetch obligations
     const apiService = createApiService(accessToken, fraudHeaders);
