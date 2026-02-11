@@ -6,11 +6,12 @@ import { parseHmrcError } from '@/lib/mtd/errors';
 import type { HmrcApiError, HmrcObligationsResponse, OAuthTokens } from '@/types/mtd';
 
 /**
- * In sandbox, HMRC's OPEN scenario returns canned obligations from 2018-19.
- * Transform these to 2025-26 dates so the cumulative API (v5.0) is used,
- * since the period API (v4.0) is not available in sandbox.
+ * In sandbox, HMRC's OPEN scenario returns canned obligations from 2018-19
+ * for every business type (SE, UK Property, Foreign Property).
+ * Transform dates to 2025-26 so the cumulative API (v5.0) is used,
+ * and keep only the first business to avoid a cluttered demo view.
  */
-function transformSandboxObligationDates(obligations: HmrcObligationsResponse): HmrcObligationsResponse {
+function transformSandboxObligations(obligations: HmrcObligationsResponse): HmrcObligationsResponse {
   if (!MtdApiService.isSandbox || !obligations.obligations) return obligations;
 
   // Current tax year: 2025-26 (Apr 6 2025 to Apr 5 2026)
@@ -21,16 +22,20 @@ function transformSandboxObligationDates(obligations: HmrcObligationsResponse): 
     { start: '2026-01-06', end: '2026-04-05', due: '2026-05-05' },
   ];
 
+  // Keep only the first business type (typically Self-Employment)
+  const firstBiz = obligations.obligations[0];
+  if (!firstBiz) return { obligations: [] };
+
   return {
-    obligations: obligations.obligations.map((biz) => ({
-      ...biz,
-      obligationDetails: biz.obligationDetails.map((obl, idx) => ({
+    obligations: [{
+      ...firstBiz,
+      obligationDetails: firstBiz.obligationDetails.map((obl, idx) => ({
         ...obl,
         periodStartDate: quarterDates[idx % 4].start,
         periodEndDate: quarterDates[idx % 4].end,
         dueDate: quarterDates[idx % 4].due,
       })),
-    })),
+    }],
   };
 }
 
@@ -130,7 +135,7 @@ export async function GET(request: NextRequest) {
         taxYear,
         status,
       });
-      const obligations = transformSandboxObligationDates(rawObligations);
+      const obligations = transformSandboxObligations(rawObligations);
       return NextResponse.json(obligations);
     } catch (apiError) {
       // Handle "no obligations found" gracefully - return empty array
