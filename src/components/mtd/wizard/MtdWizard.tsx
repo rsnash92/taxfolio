@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { WizardProgress } from './WizardProgress';
 import { SubmissionSuccess } from './shared/SubmissionSuccess';
+import { DataSourceStep } from './shared/DataSourceStep';
 import {
   SeIncomeReview,
   SeExpenseReview,
@@ -34,8 +35,8 @@ interface MtdWizardProps {
   onSuccess: () => void;
 }
 
-function getInitialStep(businessType: string): MtdWizardStep {
-  return businessType === 'uk-property' ? 'prop-income-review' : 'se-income-review';
+function getInitialStep(): MtdWizardStep {
+  return 'data-source';
 }
 
 export function MtdWizard({
@@ -57,7 +58,7 @@ export function MtdWizard({
   })();
 
   const [state, setState] = useState<MtdWizardState>({
-    step: getInitialStep(obligation.businessType),
+    step: getInitialStep(),
     businessId: obligation.businessId,
     businessType: obligation.businessType,
     businessName: obligation.businessName,
@@ -75,6 +76,9 @@ export function MtdWizard({
   const updateState = useCallback((updates: Partial<MtdWizardState>) => {
     setState((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  // Navigation handlers
+  const goToDataSource = () => updateState({ step: 'data-source' });
 
   // Navigation handlers for self-employment
   const goToSeIncomeReview = () => updateState({ step: 'se-income-review' });
@@ -216,6 +220,24 @@ export function MtdWizard({
       );
     }
 
+    // Data source step (shared)
+    if (state.step === 'data-source') {
+      return (
+        <DataSourceStep
+          state={state}
+          onUpdateState={updateState}
+          onNext={() => {
+            if (state.businessType === 'uk-property') {
+              goToPropIncomeReview();
+            } else {
+              goToSeIncomeReview();
+            }
+          }}
+          onBack={onClose}
+        />
+      );
+    }
+
     // Self-employment steps
     if (state.businessType === 'self-employment') {
       switch (state.step) {
@@ -225,7 +247,7 @@ export function MtdWizard({
               state={state}
               onUpdateState={updateState}
               onNext={goToSeExpenseReview}
-              onBack={onClose}
+              onBack={goToDataSource}
             />
           );
         case 'se-expense-review':
@@ -266,7 +288,7 @@ export function MtdWizard({
               state={state}
               onUpdateState={updateState}
               onNext={goToPropExpenseReview}
-              onBack={onClose}
+              onBack={goToDataSource}
             />
           );
         case 'prop-expense-review':

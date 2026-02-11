@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ObligationsDashboard, MtdWizard } from '@/components/mtd';
 import type { ObligationWithDisplayStatus, MtdTransaction } from '@/types/mtd';
@@ -9,6 +9,7 @@ import { ExternalLink } from 'lucide-react';
 
 export default function QuarterlySubmissionsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedObligation, setSelectedObligation] = useState<ObligationWithDisplayStatus | null>(null);
@@ -38,6 +39,32 @@ export default function QuarterlySubmissionsPage() {
 
     checkConnection();
   }, [router]);
+
+  // Handle TrueLayer bank connection callback
+  useEffect(() => {
+    const bankConnected = searchParams.get('bank_connected');
+    const bankError = searchParams.get('bank_error');
+
+    if (bankConnected === 'true') {
+      // Restore wizard context from sessionStorage after bank redirect
+      const savedContext = sessionStorage.getItem('mtd-wizard-context');
+      if (savedContext) {
+        sessionStorage.removeItem('mtd-wizard-context');
+        // The wizard will be restored when the user selects the obligation again
+        // The bank connection is now stored in a cookie and will be detected
+        // by the BankConnectFlow component
+        setSuccessMessage('Bank connected successfully! Select a quarter to continue.');
+      }
+      // Clean up URL
+      router.replace('/mtd/quarterly');
+    }
+
+    if (bankError) {
+      setSuccessMessage(null);
+      console.error('[Quarterly] Bank connection error:', bankError);
+      router.replace('/mtd/quarterly');
+    }
+  }, [searchParams, router]);
 
   const handleConnect = () => {
     window.location.href = '/api/mtd/auth/authorize';

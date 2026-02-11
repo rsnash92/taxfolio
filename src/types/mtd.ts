@@ -201,9 +201,61 @@ export interface TaxCalculationResult {
   totalTaxAndNicsDue: number;
 }
 
+// ============ DATA SOURCE ============
+
+export type DataSourceType =
+  | 'bank'       // TrueLayer Open Banking
+  | 'csv'        // Spreadsheet CSV upload
+  | 'quickbooks' // Coming Soon
+  | 'xero'       // Coming Soon
+  | 'nrla'       // Coming Soon
+  | 'manual';    // Manual entry / "I don't track"
+
+export interface CsvColumnMapping {
+  date: string;        // Column header for date
+  description: string; // Column header for description
+  amount: string;      // Column header for amount (single column, +/-)
+  credit?: string;     // OR separate credit column
+  debit?: string;      // OR separate debit column
+}
+
+// ============ TRUELAYER ============
+
+export interface TrueLayerAccount {
+  account_id: string;
+  account_type: string;
+  display_name: string;
+  currency: string;
+  provider_id?: string;
+  account_number_last4?: string;
+  sort_code?: string;
+}
+
+export interface TrueLayerTransaction {
+  transaction_id: string;
+  timestamp: string;
+  description: string;
+  amount: number;
+  currency: string;
+  transaction_type: string;
+  transaction_category: string;
+  merchant_name?: string;
+}
+
+export interface BankConnection {
+  id: string;
+  provider_id: string;
+  bank_name: string;
+  status: string;
+  created_at: string;
+  accounts: TrueLayerAccount[];
+}
+
 // ============ WIZARD STATE ============
 
 export type MtdWizardStep =
+  // Data source step (shared)
+  | 'data-source'
   // Self-employment steps
   | 'se-income-review'
   | 'se-expense-review'
@@ -234,6 +286,10 @@ export interface MtdWizardState {
   // Transaction data from bank feeds
   transactions: MtdTransaction[];
   excludedTransactionIds: string[];
+
+  // Data source tracking
+  dataSource?: DataSourceType;
+  bankConnectionId?: string;
 
   // Submission state
   useConsolidatedExpenses: boolean;

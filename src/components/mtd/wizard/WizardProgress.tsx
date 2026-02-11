@@ -19,6 +19,7 @@ interface Step {
 }
 
 const SELF_EMPLOYMENT_STEPS: Step[] = [
+  { id: 'data-source', label: 'Data Source' },
   { id: 'se-income-review', label: 'Income' },
   { id: 'se-expense-review', label: 'Expenses' },
   { id: 'se-summary', label: 'Summary' },
@@ -26,6 +27,7 @@ const SELF_EMPLOYMENT_STEPS: Step[] = [
 ];
 
 const UK_PROPERTY_STEPS: Step[] = [
+  { id: 'data-source', label: 'Data Source' },
   { id: 'prop-income-review', label: 'Income' },
   { id: 'prop-expense-review', label: 'Expenses' },
   { id: 'prop-summary', label: 'Summary' },
