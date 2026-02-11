@@ -359,7 +359,7 @@ export interface FraudPreventionHeaders {
   // Server-side headers (added by API routes from request context)
   'Gov-Client-Public-IP': string;
   'Gov-Client-Public-IP-Timestamp': string;
-  'Gov-Client-Public-Port': string;
+  'Gov-Client-Public-Port'?: string;
   'Gov-Vendor-Public-IP': string;
   'Gov-Vendor-Forwarded': string;
   // Optional headers

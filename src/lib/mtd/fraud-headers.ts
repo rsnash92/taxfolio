@@ -140,24 +140,22 @@ export function addServerSideFraudHeaders(
     result['Gov-Client-Public-IP-Timestamp'] = new Date().toISOString();
   }
 
-  // Client public port — Vercel doesn't expose this, but we can try
-  // X-Forwarded-Port or leave empty (HMRC allows omission for private networks)
-  const clientPort = headers.get('x-forwarded-port') || '';
-  if (clientPort) {
-    result['Gov-Client-Public-Port'] = clientPort;
-  }
+  // Client public port — not available via HTTP headers in web apps.
+  // X-Forwarded-Port is the server port (443), not the client's source port.
+  // HMRC allows omission when running over a web application.
 
-  // Vendor (server) public IP — use env var set in Vercel deployment
-  const serverIp = process.env.VENDOR_PUBLIC_IP || '';
+  // Vendor (server) public IP — extracted from X-Vercel-Ip or env var
+  const serverIp = headers.get('x-vercel-ip')
+    || process.env.VENDOR_PUBLIC_IP
+    || clientIp  // fallback: use the edge node IP visible to the client
+    || '';
   if (serverIp) {
     result['Gov-Vendor-Public-IP'] = serverIp;
   }
 
   // Gov-Vendor-Forwarded — describes the network hops (by=server, for=client)
-  if (clientIp) {
-    const byPart = serverIp ? `by=${serverIp}` : '';
-    const forPart = `for=${clientIp}`;
-    result['Gov-Vendor-Forwarded'] = [byPart, forPart].filter(Boolean).join('&');
+  if (clientIp && serverIp) {
+    result['Gov-Vendor-Forwarded'] = `by=${serverIp}&for=${clientIp}`;
   }
 
   // Ensure Gov-Client-User-IDs is populated (use Supabase user ID if not set from client)
