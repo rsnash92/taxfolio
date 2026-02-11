@@ -108,7 +108,7 @@ export function buildFraudPreventionHeaders(
     'Gov-Client-Window-Size': windowSize,
     'Gov-Client-Browser-Plugins': pluginsFormatted || '',
     'Gov-Client-Screens': screenInfo,
-    'Gov-Client-Browser-JS-User-Agent': encodeURIComponent(deviceInfo.userAgent),
+    'Gov-Client-Browser-JS-User-Agent': deviceInfo.userAgent,
     'Gov-Vendor-Version': `TaxFolio=${TAXFOLIO_VERSION}`,
     'Gov-Vendor-Product-Name': 'TaxFolio',
   };
