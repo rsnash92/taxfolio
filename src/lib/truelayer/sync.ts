@@ -89,9 +89,11 @@ export async function syncTransactions(
     categoryByCode.set(cat.code, cat.id)
   }
 
-  // 6. Fetch transactions for current tax year
+  // 6. Fetch transactions for current tax year (cap end date at today)
   const taxYear = getCurrentTaxYear()
-  const { start: fromDate, end: toDate } = getTaxYearDates(taxYear)
+  const { start: fromDate, end: taxYearEnd } = getTaxYearDates(taxYear)
+  const today = new Date().toISOString().split('T')[0]
+  const toDate = taxYearEnd > today ? today : taxYearEnd
 
   let synced = 0
   let skipped = 0

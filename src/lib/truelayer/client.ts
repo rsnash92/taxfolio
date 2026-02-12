@@ -98,8 +98,12 @@ export async function getTransactions(
   from: string,
   to: string
 ) {
+  // TrueLayer requires ISO 8601 datetime format
+  const fromISO = from.includes('T') ? from : `${from}T00:00:00Z`;
+  const toISO = to.includes('T') ? to : `${to}T23:59:59Z`;
+
   const response = await fetch(
-    `${TRUELAYER_CONFIG.apiUrl}/data/v1/accounts/${accountId}/transactions?from=${from}&to=${to}`,
+    `${TRUELAYER_CONFIG.apiUrl}/data/v1/accounts/${accountId}/transactions?from=${fromISO}&to=${toISO}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
     }
