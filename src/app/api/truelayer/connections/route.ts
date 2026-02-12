@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (dbConnection) {
       const { data: dbAccounts } = await supabase
         .from('accounts')
-        .select('external_account_id, name, type')
+        .select('id, external_account_id, name, type, is_visible')
         .eq('bank_connection_id', dbConnection.id);
 
       return NextResponse.json({
@@ -37,10 +37,12 @@ export async function GET(request: NextRequest) {
             last_synced_at: dbConnection.last_synced_at,
             persisted: true,
             accounts: (dbAccounts || []).map((a) => ({
+              id: a.id,
               account_id: a.external_account_id,
               account_type: a.type || 'TRANSACTION',
               display_name: a.name || 'Account',
               currency: 'GBP',
+              is_visible: a.is_visible ?? true,
             })),
           },
         ],

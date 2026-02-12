@@ -69,14 +69,15 @@ export async function syncTransactions(
     }
   }
 
-  // 4. Get accounts linked to this connection
+  // 4. Get selected accounts linked to this connection
   const { data: accounts } = await supabase
     .from('accounts')
     .select('id, external_account_id')
     .eq('bank_connection_id', connection.id)
+    .eq('is_visible', true)
 
   if (!accounts || accounts.length === 0) {
-    return { synced: 0, skipped: 0, errors: ['No accounts linked to bank connection'] }
+    return { synced: 0, skipped: 0, errors: ['No selected accounts to sync'] }
   }
 
   // 5. Load categories for mapping
@@ -89,11 +90,12 @@ export async function syncTransactions(
     categoryByCode.set(cat.code, cat.id)
   }
 
-  // 6. Fetch transactions for current tax year (cap end date at today)
+  // 6. Build date range chunks (max 89 days each to stay within TrueLayer limits)
   const taxYear = getCurrentTaxYear()
   const { start: fromDate, end: taxYearEnd } = getTaxYearDates(taxYear)
   const today = new Date().toISOString().split('T')[0]
   const toDate = taxYearEnd > today ? today : taxYearEnd
+  const dateChunks = buildDateChunks(fromDate, toDate, 89)
 
   let synced = 0
   let skipped = 0
@@ -101,19 +103,23 @@ export async function syncTransactions(
 
   for (const account of accounts) {
     try {
-      const response = await getTransactions(
-        accessToken,
-        account.external_account_id,
-        fromDate,
-        toDate,
-      )
+      const txList: TrueLayerTransaction[] = []
 
-      if (response.error) {
-        errors.push(`Account ${account.external_account_id}: ${response.error}`)
-        continue
+      for (const chunk of dateChunks) {
+        const response = await getTransactions(
+          accessToken,
+          account.external_account_id,
+          chunk.from,
+          chunk.to,
+        )
+
+        if (response.error) {
+          errors.push(`Account ${account.external_account_id}: ${response.error} (${chunk.from} to ${chunk.to})`)
+          continue
+        }
+
+        txList.push(...(response.results || []))
       }
-
-      const txList: TrueLayerTransaction[] = response.results || []
 
       for (const tx of txList) {
         const externalId = tx.transaction_id || `tl-${account.external_account_id}-${tx.timestamp}`
@@ -176,6 +182,28 @@ export async function syncTransactions(
     .eq('id', connection.id)
 
   return { synced, skipped, errors }
+}
+
+function buildDateChunks(from: string, to: string, maxDays: number): { from: string; to: string }[] {
+  const chunks: { from: string; to: string }[] = []
+  let cursor = new Date(from)
+  const end = new Date(to)
+
+  while (cursor < end) {
+    const chunkEnd = new Date(cursor)
+    chunkEnd.setDate(chunkEnd.getDate() + maxDays)
+    if (chunkEnd > end) chunkEnd.setTime(end.getTime())
+
+    chunks.push({
+      from: cursor.toISOString().split('T')[0],
+      to: chunkEnd.toISOString().split('T')[0],
+    })
+
+    cursor = new Date(chunkEnd)
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return chunks
 }
 
 function computeTaxYear(dateStr: string): string {

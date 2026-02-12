@@ -24,7 +24,7 @@ export default function SettingsPage() {
     id: string
     bank_name: string
     last_synced_at: string | null
-    accounts: { account_id: string; display_name: string; account_type: string }[]
+    accounts: { id: string; account_id: string; display_name: string; account_type: string; is_visible: boolean }[]
   } | null>(null)
   const [bankLoading, setBankLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -150,6 +150,43 @@ export default function SettingsPage() {
       toast.error("Failed to disconnect")
     } finally {
       setDisconnecting(false)
+    }
+  }
+
+  const handleToggleAccount = async (accountId: string, currentVisible: boolean) => {
+    if (!bankConnection) return
+    // Optimistic update
+    setBankConnection({
+      ...bankConnection,
+      accounts: bankConnection.accounts.map((a) =>
+        a.id === accountId ? { ...a, is_visible: !currentVisible } : a
+      ),
+    })
+    try {
+      const res = await fetch(`/api/truelayer/accounts/${accountId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_visible: !currentVisible }),
+      })
+      const data = await res.json()
+      if (!data.ok) {
+        // Revert on failure
+        setBankConnection({
+          ...bankConnection,
+          accounts: bankConnection.accounts.map((a) =>
+            a.id === accountId ? { ...a, is_visible: currentVisible } : a
+          ),
+        })
+        toast.error("Failed to update account")
+      }
+    } catch {
+      setBankConnection({
+        ...bankConnection,
+        accounts: bankConnection.accounts.map((a) =>
+          a.id === accountId ? { ...a, is_visible: currentVisible } : a
+        ),
+      })
+      toast.error("Failed to update account")
     }
   }
 
@@ -319,10 +356,17 @@ export default function SettingsPage() {
 
               {bankConnection.accounts.length > 0 && (
                 <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <p className="text-xs text-muted-foreground mb-2">Toggle which accounts to sync</p>
                   <ul className="space-y-2">
                     {bankConnection.accounts.map((acct) => (
                       <li key={acct.account_id} className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-gray-700">{acct.display_name}</span>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={acct.is_visible}
+                            onCheckedChange={() => handleToggleAccount(acct.id, acct.is_visible)}
+                          />
+                          <span className={acct.is_visible ? "font-medium text-gray-700" : "font-medium text-gray-400"}>{acct.display_name}</span>
+                        </div>
                         <span className="text-xs text-muted-foreground capitalize">{acct.account_type.toLowerCase()}</span>
                       </li>
                     ))}
