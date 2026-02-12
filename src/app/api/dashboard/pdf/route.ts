@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateDashboardPDF, DashboardReportData } from '@/lib/pdf/dashboard-report'
+import { calculateEstimatedTax } from '@/lib/tax/calculator'
 
 interface TransactionData {
   amount: number
@@ -95,26 +96,11 @@ export async function GET(request: NextRequest) {
 
     const useOfHomeAmount = useOfHome?.annual_allowance || 0
 
-    // Calculate tax
-    const netProfit = totalIncome - totalExpenses - mileageDeduction - useOfHomeAmount
-    const taxableProfit = Math.max(0, netProfit)
-
-    const personalAllowance = 12570
-    const taxableIncome = Math.max(0, taxableProfit - personalAllowance)
-
-    const incomeTax =
-      Math.min(taxableIncome, 37700) * 0.2 +
-      Math.max(0, Math.min(taxableIncome - 37700, 87440)) * 0.4 +
-      Math.max(0, taxableIncome - 125140) * 0.45
-
-    const class2NI = taxableProfit > personalAllowance ? 3.45 * 52 : 0
-    const class4NI =
-      Math.max(0, Math.min(taxableProfit, 50270) - personalAllowance) * 0.06 +
-      Math.max(0, taxableProfit - 50270) * 0.02
+    // Calculate tax using shared calculator
+    const taxBreakdown = calculateEstimatedTax(totalIncome, totalExpenses, mileageDeduction, useOfHomeAmount)
+    const { incomeTax, class2NI, class4NI, totalTaxDue, effectiveTaxRate } = taxBreakdown
     const nationalInsurance = class2NI + class4NI
-
-    const totalTaxDue = Math.round((incomeTax + nationalInsurance) * 100) / 100
-    const effectiveTaxRate = taxableProfit > 0 ? (totalTaxDue / taxableProfit) * 100 : 0
+    const netProfit = totalIncome - totalExpenses - mileageDeduction - useOfHomeAmount
 
     // Sort expenses by category
     const sortedCategories = Object.entries(expensesByCategory)

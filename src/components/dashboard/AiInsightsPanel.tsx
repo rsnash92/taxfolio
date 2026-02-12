@@ -2,6 +2,16 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { EmptyState } from './EmptyState';
+import { Sparkles } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import type { NudgeData, YtdSummaryData } from '@/types/dashboard';
+
+interface AiInsightsPanelProps {
+  hasBankConnection: boolean;
+  nudge: NudgeData | null;
+  ytdSummary: YtdSummaryData;
+}
 
 interface Insight {
   icon: string;
@@ -9,28 +19,6 @@ interface Insight {
   action: string;
   type: 'warning' | 'opportunity' | 'info';
 }
-
-// TODO: Replace with AI-generated insights based on user's financial data
-const MOCK_INSIGHTS: Insight[] = [
-  {
-    icon: '⚠️',
-    text: 'Your fuel expenses are 34% higher than Q2 — want me to check those?',
-    action: 'Review fuel',
-    type: 'warning',
-  },
-  {
-    icon: '🎯',
-    text: "You haven't claimed the £312 capital allowance on equipment bought in Oct",
-    action: 'Claim now',
-    type: 'opportunity',
-  },
-  {
-    icon: '📊',
-    text: 'Year-to-date tax estimate: £7,844 — down £420 from this time last year',
-    action: 'See breakdown',
-    type: 'info',
-  },
-];
 
 function getBorderColor(type: Insight['type']) {
   switch (type) {
@@ -43,7 +31,88 @@ function getBorderColor(type: Insight['type']) {
   }
 }
 
-export function AiInsightsPanel() {
+function generateInsights(nudge: NudgeData | null, ytd: YtdSummaryData): Insight[] {
+  const insights: Insight[] = [];
+
+  // Warning: uncategorised transactions
+  if (nudge && nudge.uncategorisedCount > 0) {
+    insights.push({
+      icon: '⚠️',
+      text: `You have ${nudge.uncategorisedCount} uncategorised transaction${nudge.uncategorisedCount !== 1 ? 's' : ''} — review them to keep your records accurate`,
+      action: 'Review now',
+      type: 'warning',
+    });
+  }
+
+  // Info: tax estimate
+  if (ytd.estimatedTax > 0) {
+    const yoyText = ytd.yoyChange !== null
+      ? ytd.yoyChange < 0
+        ? ` — down ${formatCurrency(Math.abs(ytd.yoyChange))} from last year`
+        : ` — up ${formatCurrency(ytd.yoyChange)} from last year`
+      : '';
+    insights.push({
+      icon: '📊',
+      text: `Year-to-date tax estimate: ${formatCurrency(ytd.estimatedTax)}${yoyText}`,
+      action: 'See breakdown',
+      type: 'info',
+    });
+  }
+
+  // Opportunity: if expenses are low relative to income
+  if (ytd.totalIncome > 0 && ytd.totalExpenses / ytd.totalIncome < 0.15) {
+    insights.push({
+      icon: '🎯',
+      text: 'Your expense-to-income ratio is below 15% — are you claiming all allowable business expenses?',
+      action: 'Review expenses',
+      type: 'opportunity',
+    });
+  }
+
+  return insights.slice(0, 3);
+}
+
+export function AiInsightsPanel({ hasBankConnection, nudge, ytdSummary }: AiInsightsPanelProps) {
+  if (!hasBankConnection) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+      >
+        <EmptyState
+          icon={<Sparkles className="h-6 w-6 text-gray-400" />}
+          title="AI Insights"
+          description="Connect your bank to unlock AI-powered insights about your spending and tax savings."
+          action={{ label: 'Connect Bank', href: '/api/truelayer/auth/authorize' }}
+        />
+      </motion.div>
+    );
+  }
+
+  const insights = generateInsights(nudge, ytdSummary);
+
+  if (insights.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+      >
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          AI Insights
+        </h3>
+        <Card className="py-3">
+          <CardContent className="px-4 py-0">
+            <p className="text-xs text-gray-400">
+              No insights yet. Add more transactions to unlock AI analysis.
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -55,7 +124,7 @@ export function AiInsightsPanel() {
       </h3>
 
       <div className="space-y-2.5">
-        {MOCK_INSIGHTS.map((insight, i) => (
+        {insights.map((insight, i) => (
           <Card
             key={i}
             className={`py-3 border-l-4 ${getBorderColor(insight.type)} cursor-pointer hover:shadow-md transition-shadow`}

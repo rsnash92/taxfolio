@@ -4,24 +4,22 @@ import { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { NudgeData } from '@/types/dashboard';
 
-// TODO: Replace mock data with dynamic data based on user state
-// (uncategorised transactions count, upcoming deadlines, submission readiness)
-const MOCK_NUDGE = {
-  headline: 'Q3 ready for review',
-  highlight: '8 transactions',
-  highlightSuffix: 'need your input',
-  subtext: 'AI categorised 94% automatically · Estimated 3 min to complete',
-  action: 'Review now',
-};
+interface AiNudgeBannerProps {
+  nudge: NudgeData | null;
+}
 
 const SESSION_KEY = 'dashboard-nudge-dismissed';
 
-export function AiNudgeBanner() {
+export function AiNudgeBanner({ nudge }: AiNudgeBannerProps) {
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem(SESSION_KEY) === 'true';
   });
+
+  // Don't render if no nudge data or nothing to review
+  if (!nudge || nudge.uncategorisedCount === 0) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -45,18 +43,20 @@ export function AiNudgeBanner() {
 
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900">
-                {MOCK_NUDGE.headline} ·{' '}
-                <span className="text-amber-600">{MOCK_NUDGE.highlight}</span>{' '}
-                {MOCK_NUDGE.highlightSuffix}
+                Transactions ready for review ·{' '}
+                <span className="text-amber-600">{nudge.uncategorisedCount} transaction{nudge.uncategorisedCount !== 1 ? 's' : ''}</span>{' '}
+                need your input
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">{MOCK_NUDGE.subtext}</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                AI categorised {nudge.aiCategorisedPercent}% automatically
+              </p>
             </div>
 
             <Button
               size="sm"
               className="shrink-0 bg-[#00e3ec] text-black hover:bg-[#00c4d4] font-semibold hidden sm:inline-flex"
             >
-              {MOCK_NUDGE.action}
+              Review now
             </Button>
 
             <button

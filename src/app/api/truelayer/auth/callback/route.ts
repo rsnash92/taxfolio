@@ -62,10 +62,56 @@ export async function GET(request: NextRequest) {
     const accountsRes = await getAccounts(tokens.access_token);
     const accounts = accountsRes.results || [];
 
-    // Clear state cookie and redirect back to wizard
-    const response = NextResponse.redirect(
-      `${APP_URL}/mtd/quarterly?bank_connected=true`
-    );
+    // Persist bank connection to Supabase
+    const bankName = accounts[0]?.provider?.display_name || 'Connected Bank';
+    const tokenBlob = JSON.stringify({
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresAt: Date.now() + (tokens.expires_in || 3600) * 1000,
+    });
+
+    const { data: bankConn } = await supabase
+      .from('bank_connections')
+      .upsert(
+        {
+          user_id: user.id,
+          plaid_item_id: `truelayer-${user.id}`,
+          plaid_access_token: tokenBlob,
+          institution_name: bankName,
+          institution_id: 'truelayer',
+          status: 'active',
+          last_synced_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      )
+      .select('id')
+      .single();
+
+    // Persist accounts to Supabase
+    if (bankConn) {
+      for (const a of accounts) {
+        await supabase.from('accounts').upsert(
+          {
+            user_id: user.id,
+            bank_connection_id: bankConn.id,
+            plaid_account_id: a.account_id,
+            name: a.display_name || 'Account',
+            type: a.account_type || 'TRANSACTION',
+            is_business_account: false,
+          },
+          { onConflict: 'plaid_account_id' },
+        );
+      }
+    }
+
+    // Determine redirect: dashboard if came from dashboard, otherwise MTD wizard
+    const wizardContext = request.cookies.get('mtd-wizard-context')?.value;
+    const redirectUrl = wizardContext
+      ? `${APP_URL}/mtd/quarterly?bank_connected=true`
+      : `${APP_URL}/dashboard?bank_connected=true`;
+
+    // Clear state cookie and redirect
+    const response = NextResponse.redirect(redirectUrl);
     response.cookies.delete('truelayer_oauth_state');
 
     // Store bank connection data in cookie

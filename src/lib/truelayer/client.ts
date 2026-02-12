@@ -68,6 +68,30 @@ export async function getAccounts(accessToken: string) {
   return response.json();
 }
 
+export async function refreshAccessToken(refreshToken: string) {
+  const response = await fetch(`${TRUELAYER_CONFIG.authUrl}/connect/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: TRUELAYER_CONFIG.clientId,
+      client_secret: TRUELAYER_CONFIG.clientSecret,
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error_description || 'Token refresh failed');
+  }
+
+  return response.json() as Promise<{
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  }>;
+}
+
 export async function getTransactions(
   accessToken: string,
   accountId: string,
