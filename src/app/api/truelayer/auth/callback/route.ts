@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
             name: a.display_name || 'Account',
             type: a.account_type || 'TRANSACTION',
             is_business_account: false,
+            is_visible: true,
           },
           { onConflict: 'external_account_id' },
         );

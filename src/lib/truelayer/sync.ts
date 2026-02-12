@@ -70,11 +70,24 @@ export async function syncTransactions(
   }
 
   // 4. Get selected accounts linked to this connection
-  const { data: accounts } = await supabase
+  // Try filtering by is_visible; fall back to all accounts if column doesn't exist
+  let accounts: { id: string; external_account_id: string }[] | null = null
+  const { data: filtered, error: filtErr } = await supabase
     .from('accounts')
     .select('id, external_account_id')
     .eq('bank_connection_id', connection.id)
     .eq('is_visible', true)
+
+  if (filtErr) {
+    // Column doesn't exist yet — sync all accounts
+    const { data: all } = await supabase
+      .from('accounts')
+      .select('id, external_account_id')
+      .eq('bank_connection_id', connection.id)
+    accounts = all
+  } else {
+    accounts = filtered
+  }
 
   if (!accounts || accounts.length === 0) {
     return { synced: 0, skipped: 0, errors: ['No selected accounts to sync'] }

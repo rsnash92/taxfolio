@@ -21,10 +21,23 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (dbConnection) {
-      const { data: dbAccounts } = await supabase
+      // Try with is_visible column; fall back without it if column doesn't exist yet
+      let dbAccounts: { id: string; external_account_id: string; name: string; type: string; is_visible?: boolean }[] | null = null;
+      const { data: withVisible, error: visErr } = await supabase
         .from('accounts')
         .select('id, external_account_id, name, type, is_visible')
         .eq('bank_connection_id', dbConnection.id);
+
+      if (visErr) {
+        // Column probably doesn't exist yet — query without it
+        const { data: withoutVisible } = await supabase
+          .from('accounts')
+          .select('id, external_account_id, name, type')
+          .eq('bank_connection_id', dbConnection.id);
+        dbAccounts = withoutVisible;
+      } else {
+        dbAccounts = withVisible;
+      }
 
       return NextResponse.json({
         connections: [
