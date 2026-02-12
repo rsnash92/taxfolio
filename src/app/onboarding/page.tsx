@@ -7,8 +7,6 @@ export interface OnboardingData {
   aboutYou: {
     businessType: string
     incomeBracket: string
-    utr?: string
-    nino?: string
   } | null
   hmrcConnected: boolean
   hmrcSkipped: boolean

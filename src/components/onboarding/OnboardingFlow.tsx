@@ -45,7 +45,6 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
       const updated = { ...data, hmrcConnected: true, currentStep: 3 };
       setData(updated);
       saveProgress({ hmrcConnected: true, currentStep: 3 });
-      // Clean URL
       router.replace('/onboarding', { scroll: false });
     } else if (bankConnected && !data.bankConnected) {
       const updated = { ...data, bankConnected: true, currentStep: 4 };
@@ -55,6 +54,10 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const goToStep = (step: number) => {
+    setData((d) => ({ ...d, currentStep: step }));
+  };
+
   const handleAboutYou = async (aboutYou: NonNullable<OnboardingData['aboutYou']>) => {
     const updated = { ...data, aboutYou, currentStep: 2 };
     setData(updated);
@@ -62,7 +65,6 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
   };
 
   const handleHmrcConnect = () => {
-    // Set cookie so callback knows to redirect back to onboarding
     document.cookie = 'onboarding-context=hmrc; path=/; max-age=600; SameSite=Lax';
     window.location.href = '/api/mtd/auth/authorize';
   };
@@ -105,6 +107,7 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             connected={data.hmrcConnected}
             onConnect={handleHmrcConnect}
             onSkip={handleHmrcSkip}
+            onBack={() => goToStep(1)}
             saving={saving}
           />
         );
@@ -114,6 +117,7 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             connected={data.bankConnected}
             onConnect={handleBankConnect}
             onSkip={handleBankSkip}
+            onBack={() => goToStep(2)}
             saving={saving}
           />
         );
@@ -125,6 +129,7 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             bankConnected={data.bankConnected}
             bankSkipped={data.bankSkipped}
             onComplete={handleComplete}
+            onBack={() => goToStep(3)}
             saving={saving}
           />
         );

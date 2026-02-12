@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default async function OnboardingLayout({
@@ -19,9 +20,15 @@ export default async function OnboardingLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-2xl px-6 py-4">
-          <Link href="/" className="text-lg font-bold text-gray-900">
-            TaxFolio
+        <div className="mx-auto max-w-2xl px-6 py-4 flex justify-center">
+          <Link href="/">
+            <Image
+              src="/taxfolio.png"
+              alt="Taxfolio"
+              width={120}
+              height={28}
+              priority
+            />
           </Link>
         </div>
       </header>

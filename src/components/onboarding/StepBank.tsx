@@ -2,12 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Building2, Receipt, Tags, Zap } from 'lucide-react';
+import { Building2, Receipt, Tags, Zap, ArrowLeft } from 'lucide-react';
 
 interface StepBankProps {
   connected: boolean;
   onConnect: () => void;
   onSkip: () => void;
+  onBack: () => void;
   saving: boolean;
 }
 
@@ -26,7 +27,7 @@ const BENEFITS = [
   },
 ];
 
-export function StepBank({ connected, onConnect, onSkip, saving }: StepBankProps) {
+export function StepBank({ connected, onConnect, onSkip, onBack, saving }: StepBankProps) {
   if (connected) {
     return (
       <motion.div
@@ -90,7 +91,7 @@ export function StepBank({ connected, onConnect, onSkip, saving }: StepBankProps
 
         <div className="rounded-md bg-gray-50 px-4 py-3 mb-6">
           <p className="text-xs text-gray-500">
-            Open Banking is regulated by the FCA. TaxFolio has read-only access &mdash; we can never move your money.
+            Open Banking is regulated by the FCA. Taxfolio has read-only access &mdash; we can never move your money.
           </p>
         </div>
 
@@ -102,14 +103,24 @@ export function StepBank({ connected, onConnect, onSkip, saving }: StepBankProps
         </Button>
       </div>
 
-      <button
-        type="button"
-        onClick={onSkip}
-        disabled={saving}
-        className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-      >
-        {saving ? 'Saving...' : "I'll do this later"}
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          disabled={saving}
+          className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : "I'll do this later"}
+        </button>
+      </div>
     </motion.div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Check, ArrowRight, ShieldCheck, Building2, User } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, ShieldCheck, Building2, User } from 'lucide-react';
 
 interface StepCompleteProps {
   hmrcConnected: boolean;
@@ -10,6 +10,7 @@ interface StepCompleteProps {
   bankConnected: boolean;
   bankSkipped: boolean;
   onComplete: () => void;
+  onBack: () => void;
   saving: boolean;
 }
 
@@ -19,6 +20,7 @@ export function StepComplete({
   bankConnected,
   bankSkipped,
   onComplete,
+  onBack,
   saving,
 }: StepCompleteProps) {
   const items = [
@@ -59,7 +61,7 @@ export function StepComplete({
         You&apos;re all set!
       </h1>
       <p className="text-sm text-gray-500 mb-8">
-        Your TaxFolio account is ready. Here&apos;s a summary of your setup:
+        Your Taxfolio account is ready. Here&apos;s a summary of your setup:
       </p>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 mb-8 text-left">
@@ -105,7 +107,7 @@ export function StepComplete({
       <Button
         onClick={onComplete}
         disabled={saving}
-        className="bg-[#00e3ec] text-black hover:bg-[#00c4d4] font-semibold"
+        className="w-full bg-[#00e3ec] text-black hover:bg-[#00c4d4] font-semibold"
       >
         {saving ? 'Saving...' : (
           <>
@@ -114,6 +116,17 @@ export function StepComplete({
           </>
         )}
       </Button>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </button>
+      </div>
     </motion.div>
   );
 }

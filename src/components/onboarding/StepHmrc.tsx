@@ -2,12 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { ShieldCheck, FileText, Clock, BarChart3 } from 'lucide-react';
+import { ShieldCheck, FileText, Clock, BarChart3, ArrowLeft } from 'lucide-react';
 
 interface StepHmrcProps {
   connected: boolean;
   onConnect: () => void;
   onSkip: () => void;
+  onBack: () => void;
   saving: boolean;
 }
 
@@ -22,11 +23,11 @@ const BENEFITS = [
   },
   {
     icon: BarChart3,
-    text: 'Submit directly to HMRC from TaxFolio',
+    text: 'Submit directly to HMRC from Taxfolio',
   },
 ];
 
-export function StepHmrc({ connected, onConnect, onSkip, saving }: StepHmrcProps) {
+export function StepHmrc({ connected, onConnect, onSkip, onBack, saving }: StepHmrcProps) {
   if (connected) {
     return (
       <motion.div
@@ -65,7 +66,7 @@ export function StepHmrc({ connected, onConnect, onSkip, saving }: StepHmrcProps
         Connect to HMRC
       </h1>
       <p className="text-sm text-gray-500 mb-8">
-        Link your Government Gateway account to unlock the full power of TaxFolio.
+        Link your Government Gateway account to unlock the full power of Taxfolio.
       </p>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 mb-6">
@@ -90,7 +91,7 @@ export function StepHmrc({ connected, onConnect, onSkip, saving }: StepHmrcProps
 
         <div className="rounded-md bg-gray-50 px-4 py-3 mb-6">
           <p className="text-xs text-gray-500">
-            You&apos;ll be redirected to HMRC&apos;s Government Gateway to sign in securely. TaxFolio never sees your HMRC password.
+            You&apos;ll be redirected to HMRC&apos;s Government Gateway to sign in securely. Taxfolio never sees your HMRC password.
           </p>
         </div>
 
@@ -102,14 +103,24 @@ export function StepHmrc({ connected, onConnect, onSkip, saving }: StepHmrcProps
         </Button>
       </div>
 
-      <button
-        type="button"
-        onClick={onSkip}
-        disabled={saving}
-        className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-      >
-        {saving ? 'Saving...' : "I'll do this later"}
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          disabled={saving}
+          className="text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : "I'll do this later"}
+        </button>
+      </div>
     </motion.div>
   );
 }
