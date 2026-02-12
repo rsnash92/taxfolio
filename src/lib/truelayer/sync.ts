@@ -31,7 +31,7 @@ export async function syncTransactions(
   // 1. Read bank connection from Supabase
   const { data: connection, error: connError } = await supabase
     .from('bank_connections')
-    .select('id, plaid_access_token, last_synced_at')
+    .select('id, access_token_blob, last_synced_at')
     .eq('user_id', userId)
     .eq('status', 'active')
     .single()
@@ -43,7 +43,7 @@ export async function syncTransactions(
   // 2. Parse token blob
   let tokens: TokenBlob
   try {
-    tokens = JSON.parse(connection.plaid_access_token)
+    tokens = JSON.parse(connection.access_token_blob)
   } catch {
     return { synced: 0, skipped: 0, errors: ['Invalid token data in bank connection'] }
   }
@@ -61,7 +61,7 @@ export async function syncTransactions(
       }
       await supabase
         .from('bank_connections')
-        .update({ plaid_access_token: JSON.stringify(newTokenBlob) })
+        .update({ access_token_blob: JSON.stringify(newTokenBlob) })
         .eq('id', connection.id)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Token refresh failed'
@@ -72,7 +72,7 @@ export async function syncTransactions(
   // 4. Get accounts linked to this connection
   const { data: accounts } = await supabase
     .from('accounts')
-    .select('id, plaid_account_id')
+    .select('id, external_account_id')
     .eq('bank_connection_id', connection.id)
 
   if (!accounts || accounts.length === 0) {
@@ -101,26 +101,26 @@ export async function syncTransactions(
     try {
       const response = await getTransactions(
         accessToken,
-        account.plaid_account_id,
+        account.external_account_id,
         fromDate,
         toDate,
       )
 
       if (response.error) {
-        errors.push(`Account ${account.plaid_account_id}: ${response.error}`)
+        errors.push(`Account ${account.external_account_id}: ${response.error}`)
         continue
       }
 
       const txList: TrueLayerTransaction[] = response.results || []
 
       for (const tx of txList) {
-        const externalId = tx.transaction_id || `tl-${account.plaid_account_id}-${tx.timestamp}`
+        const externalId = tx.transaction_id || `tl-${account.external_account_id}-${tx.timestamp}`
 
         // Check if already exists
         const { data: existing } = await supabase
           .from('transactions')
           .select('id')
-          .eq('plaid_transaction_id', externalId)
+          .eq('external_transaction_id', externalId)
           .maybeSingle()
 
         if (existing) {
@@ -143,7 +143,7 @@ export async function syncTransactions(
         const { error: insertError } = await supabase.from('transactions').insert({
           user_id: userId,
           account_id: account.id,
-          plaid_transaction_id: externalId,
+          external_transaction_id: externalId,
           date: txDate,
           description,
           amount,
@@ -163,7 +163,7 @@ export async function syncTransactions(
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
-      errors.push(`Account ${account.plaid_account_id}: ${msg}`)
+      errors.push(`Account ${account.external_account_id}: ${msg}`)
     }
   }
 

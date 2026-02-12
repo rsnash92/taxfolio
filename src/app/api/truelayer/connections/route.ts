@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (dbConnection) {
       const { data: dbAccounts } = await supabase
         .from('accounts')
-        .select('plaid_account_id, name, type')
+        .select('external_account_id, name, type')
         .eq('bank_connection_id', dbConnection.id);
 
       return NextResponse.json({
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             last_synced_at: dbConnection.last_synced_at,
             persisted: true,
             accounts: (dbAccounts || []).map((a) => ({
-              account_id: a.plaid_account_id,
+              account_id: a.external_account_id,
               account_type: a.type || 'TRANSACTION',
               display_name: a.name || 'Account',
               currency: 'GBP',

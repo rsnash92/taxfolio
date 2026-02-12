@@ -210,7 +210,7 @@ export default async function PricingPage() {
               <h3 className="font-semibold text-white mb-2">Is my data secure?</h3>
               <p className="text-zinc-400 text-sm">
                 Yes. We use bank-level encryption and never store your bank credentials.
-                Open Banking connections are handled by Plaid, a trusted financial data provider.
+                Open Banking connections are handled by TrueLayer, a trusted financial data provider.
               </p>
             </div>
           </div>

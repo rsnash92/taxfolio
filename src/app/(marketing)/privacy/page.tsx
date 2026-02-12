@@ -40,9 +40,9 @@ export default function PrivacyPolicyPage() {
           <li>Support correspondence</li>
         </ul>
 
-        <h3 className="text-lg font-medium text-white mb-3 mt-6">3.2 Financial Data via Open Banking (Plaid)</h3>
+        <h3 className="text-lg font-medium text-white mb-3 mt-6">3.2 Financial Data via Open Banking (TrueLayer)</h3>
         <p className="text-zinc-300 mb-4">
-          When you connect your bank accounts through our Open Banking integration powered by Plaid, we access:
+          When you connect your bank accounts through our Open Banking integration powered by TrueLayer, we access:
         </p>
         <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
           <li>Account information (account type, institution name, account balances)</li>
@@ -50,7 +50,7 @@ export default function PrivacyPolicyPage() {
           <li>Account holder name for verification purposes</li>
         </ul>
         <p className="text-zinc-300 mb-4">
-          We only access data necessary to provide our tax categorisation services. We do not access your bank login credentials - Plaid handles authentication securely. You can revoke access at any time through your TaxFolio settings or directly with your bank.
+          We only access data necessary to provide our tax categorisation services. We do not access your bank login credentials - TrueLayer handles authentication securely. You can revoke access at any time through your TaxFolio settings or directly with your bank.
         </p>
 
         <h3 className="text-lg font-medium text-white mb-3 mt-6">3.3 Payment Information (Stripe)</h3>
@@ -117,7 +117,7 @@ export default function PrivacyPolicyPage() {
 
         <h3 className="text-lg font-medium text-white mb-3 mt-6">5.1 Service Providers</h3>
         <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
-          <li><strong>Plaid Inc.</strong> - Open Banking connectivity (processes bank connection data)</li>
+          <li><strong>TrueLayer Ltd.</strong> - Open Banking connectivity (processes bank connection data)</li>
           <li><strong>Stripe Inc.</strong> - Payment processing (processes payment data)</li>
           <li><strong>Supabase Inc.</strong> - Database and authentication services</li>
           <li><strong>Anthropic</strong> - AI processing for transaction categorisation (anonymised data only)</li>

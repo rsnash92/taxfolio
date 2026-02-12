@@ -75,14 +75,14 @@ export async function GET(request: NextRequest) {
       .upsert(
         {
           user_id: user.id,
-          plaid_item_id: `truelayer-${user.id}`,
-          plaid_access_token: tokenBlob,
+          provider_item_id: `truelayer-${user.id}`,
+          access_token_blob: tokenBlob,
           institution_name: bankName,
           institution_id: 'truelayer',
           status: 'active',
           last_synced_at: new Date().toISOString(),
         },
-        { onConflict: 'plaid_item_id' },
+        { onConflict: 'provider_item_id' },
       )
       .select('id')
       .single();
@@ -98,12 +98,12 @@ export async function GET(request: NextRequest) {
           {
             user_id: user.id,
             bank_connection_id: bankConn.id,
-            plaid_account_id: a.account_id,
+            external_account_id: a.account_id,
             name: a.display_name || 'Account',
             type: a.account_type || 'TRANSACTION',
             is_business_account: false,
           },
-          { onConflict: 'plaid_account_id' },
+          { onConflict: 'external_account_id' },
         );
         if (acctError) {
           console.error('[TrueLayer Callback] Account upsert error:', acctError);

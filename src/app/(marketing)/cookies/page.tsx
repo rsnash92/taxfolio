@@ -158,7 +158,7 @@ export default function CookiePolicyPage() {
         <ul className="list-disc list-inside text-zinc-300 space-y-2">
           <li><strong>Stripe</strong> - Payment processing and fraud prevention</li>
           <li><strong>Google Analytics</strong> - Website analytics (if enabled)</li>
-          <li><strong>Plaid</strong> - Open Banking connection (during bank linking only)</li>
+          <li><strong>TrueLayer</strong> - Open Banking connection (during bank linking only)</li>
         </ul>
         <p className="text-zinc-300 mt-4">
           Please refer to each provider&apos;s privacy policy for more information about their cookies.

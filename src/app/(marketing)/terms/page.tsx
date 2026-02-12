@@ -68,18 +68,18 @@ export default function TermsOfServicePage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold text-white mb-4">5. Open Banking and Plaid</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">5. Open Banking and TrueLayer</h2>
         <p className="text-zinc-300 mb-4">
-          TaxFolio uses Plaid Inc. to connect to your bank accounts via Open Banking. By using this feature, you:
+          TaxFolio uses TrueLayer Ltd. to connect to your bank accounts via Open Banking. By using this feature, you:
         </p>
         <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
-          <li>Authorise Plaid to access your bank account information on your behalf</li>
-          <li>Acknowledge that Plaid&apos;s services are subject to Plaid&apos;s own terms and privacy policy</li>
+          <li>Authorise TrueLayer to access your bank account information on your behalf</li>
+          <li>Acknowledge that TrueLayer&apos;s services are subject to TrueLayer&apos;s own terms and privacy policy</li>
           <li>Understand that we receive transaction and account data, not your bank login credentials</li>
           <li>Can revoke access at any time through your TaxFolio settings or directly with your bank</li>
         </ul>
         <p className="text-zinc-300">
-          We are not responsible for the availability or accuracy of data provided through Plaid or any issues with Plaid&apos;s services.
+          We are not responsible for the availability or accuracy of data provided through TrueLayer or any issues with TrueLayer&apos;s services.
         </p>
       </section>
 

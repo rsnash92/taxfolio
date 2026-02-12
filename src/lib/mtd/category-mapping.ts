@@ -4,7 +4,7 @@ import type {
 } from '@/types/mtd';
 
 /**
- * Map Plaid/AI transaction categories to HMRC MTD Self-Employment expense categories
+ * Map Bank/AI transaction categories to HMRC MTD Self-Employment expense categories
  */
 export const selfEmploymentCategoryMapping: Record<
   string,
@@ -148,7 +148,7 @@ export const selfEmploymentCategoryMapping: Record<
 };
 
 /**
- * Map Plaid/AI transaction categories to HMRC MTD UK Property expense categories
+ * Map Bank/AI transaction categories to HMRC MTD UK Property expense categories
  */
 export const ukPropertyCategoryMapping: Record<
   string,

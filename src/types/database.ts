@@ -36,8 +36,8 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          plaid_item_id: string
-          plaid_access_token: string
+          provider_item_id: string
+          access_token_blob: string
           institution_name: string | null
           institution_id: string | null
           status: string
@@ -47,8 +47,8 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
-          plaid_item_id: string
-          plaid_access_token: string
+          provider_item_id: string
+          access_token_blob: string
           institution_name?: string | null
           institution_id?: string | null
           status?: string
@@ -58,8 +58,8 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
-          plaid_item_id?: string
-          plaid_access_token?: string
+          provider_item_id?: string
+          access_token_blob?: string
           institution_name?: string | null
           institution_id?: string | null
           status?: string
@@ -72,7 +72,7 @@ export type Database = {
           id: string
           user_id: string
           bank_connection_id: string
-          plaid_account_id: string
+          external_account_id: string
           name: string | null
           official_name: string | null
           type: string | null
@@ -85,7 +85,7 @@ export type Database = {
           id?: string
           user_id: string
           bank_connection_id: string
-          plaid_account_id: string
+          external_account_id: string
           name?: string | null
           official_name?: string | null
           type?: string | null
@@ -98,7 +98,7 @@ export type Database = {
           id?: string
           user_id?: string
           bank_connection_id?: string
-          plaid_account_id?: string
+          external_account_id?: string
           name?: string | null
           official_name?: string | null
           type?: string | null
@@ -113,7 +113,7 @@ export type Database = {
           id: string
           user_id: string
           account_id: string
-          plaid_transaction_id: string | null
+          external_transaction_id: string | null
           date: string
           description: string
           amount: number
@@ -132,7 +132,7 @@ export type Database = {
           id?: string
           user_id: string
           account_id: string
-          plaid_transaction_id?: string | null
+          external_transaction_id?: string | null
           date: string
           description: string
           amount: number
@@ -151,7 +151,7 @@ export type Database = {
           id?: string
           user_id?: string
           account_id?: string
-          plaid_transaction_id?: string | null
+          external_transaction_id?: string | null
           date?: string
           description?: string
           amount?: number
