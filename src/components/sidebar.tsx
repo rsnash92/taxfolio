@@ -18,6 +18,7 @@ import {
 import {
   LogOut,
   LayoutDashboard,
+  ArrowLeftRight,
   Calendar,
   LucideIcon,
   Settings,
@@ -42,6 +43,12 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Making Tax Digital",
     href: "/mtd",
     icon: Calendar,
+  },
+  {
+    // TODO: Future /transactions page with full filtering, search, pagination
+    title: "Transactions",
+    href: "/dashboard#transactions",
+    icon: ArrowLeftRight,
   },
   {
     title: "Referrals",
