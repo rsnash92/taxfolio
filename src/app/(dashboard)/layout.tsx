@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header"
 import { AskButton } from "@/components/ask-taxfolio"
 import { InactivityModal } from "@/components/InactivityModal"
 import { getSubscription } from "@/lib/subscription"
+import { TrialBanner } from "@/components/billing/trial-banner"
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +51,9 @@ export default async function DashboardLayout({
                 <Suspense fallback={null}>
                   <PageHeader />
                 </Suspense>
+                {subscription.isTrial && subscription.daysLeftInTrial !== null && (
+                  <TrialBanner daysLeft={subscription.daysLeftInTrial} />
+                )}
                 {children}
               </div>
             </div>

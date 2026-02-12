@@ -1,6 +1,5 @@
 "use client"
 
-import { Sparkles } from "lucide-react"
 import Link from "next/link"
 
 interface TrialBannerProps {
@@ -9,17 +8,19 @@ interface TrialBannerProps {
 
 export function TrialBanner({ daysLeft }: TrialBannerProps) {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-[#00e3ec] px-4 py-1.5 flex items-center justify-center gap-2">
-      <Sparkles className="h-3.5 w-3.5 text-black" />
-      <span className="text-xs font-medium text-black">
-        {daysLeft} day{daysLeft === 1 ? "" : "s"} left in trial
+    <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-2 flex items-center justify-between text-sm mb-4">
+      <span className="text-gray-600">
+        Free trial{" "}
+        <span className="text-gray-500">·</span>{" "}
+        <span className="font-medium text-gray-900">
+          {daysLeft} day{daysLeft === 1 ? "" : "s"} remaining
+        </span>
       </span>
-      <span className="text-black/60">•</span>
       <Link
         href="/settings/billing"
-        className="text-xs font-semibold text-black underline hover:no-underline"
+        className="text-xs font-medium text-[#00c4d4] hover:text-[#00a8b8] transition-colors"
       >
-        Upgrade early for 10% off
+        View plans &rarr;
       </Link>
     </div>
   )

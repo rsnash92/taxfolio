@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AiNudgeBanner } from '@/components/dashboard/AiNudgeBanner';
+import { OnboardingStepper } from '@/components/dashboard/OnboardingStepper';
 import { MtdQuarterCards } from '@/components/dashboard/MtdQuarterCards';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { YearToDateSummary } from '@/components/dashboard/YearToDateSummary';
@@ -80,7 +81,11 @@ function DashboardInner({ userName, data, taxYear }: DashboardContentProps) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left column — main content */}
         <div className="flex-1 space-y-6 min-w-0">
-          <AiNudgeBanner nudge={data.nudge} />
+          {!data.hasBankConnection ? (
+            <OnboardingStepper />
+          ) : (
+            <AiNudgeBanner nudge={data.nudge} />
+          )}
           <MtdQuarterCards hasHmrcConnection={data.hasHmrcConnection} taxYear={taxYear} />
           <RecentTransactions
             transactions={data.recentTransactions}

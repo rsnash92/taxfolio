@@ -19,7 +19,7 @@ interface MtdQuarterCardsProps {
 interface Quarter {
   id: string;
   period: string;
-  status: 'submitted' | 'review' | 'upcoming' | 'open';
+  status: 'submitted' | 'review' | 'upcoming' | 'open' | 'not_started';
   income?: number;
   expenses?: number;
   tax?: number;
@@ -86,7 +86,7 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getStatusBadge(status: Quarter['status']) {
+function getStatusBadge(status: Quarter['status'], daysLeft?: number) {
   switch (status) {
     case 'submitted':
       return (
@@ -96,9 +96,29 @@ function getStatusBadge(status: Quarter['status']) {
       );
     case 'review':
     case 'open':
+      if (daysLeft !== undefined && daysLeft <= 0) {
+        return (
+          <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50">
+            Overdue
+          </Badge>
+        );
+      }
       return (
         <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50">
           Ready for review
+        </Badge>
+      );
+    case 'not_started':
+      if (daysLeft !== undefined && daysLeft <= 0) {
+        return (
+          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-50">
+            Overdue
+          </Badge>
+        );
+      }
+      return (
+        <Badge className="bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-50">
+          Not started
         </Badge>
       );
     case 'upcoming':
@@ -187,6 +207,18 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
           const total = qd?.total || 0;
           const pending = qd?.pending || 0;
           const confirmed = qd?.confirmed || 0;
+
+          // No transactions at all — not started
+          if (total === 0) {
+            return {
+              id: `Q${idx + 1}`,
+              period: formatPeriodLabel(q.start, q.end),
+              status: 'not_started' as const,
+              dueDate: new Date(q.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+              daysLeft,
+            };
+          }
+
           const { totalTaxDue } = calculateEstimatedTax(income, expenses);
           const progress = total > 0 ? Math.round((confirmed / total) * 100) : 0;
 
@@ -198,7 +230,7 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
             expenses,
             tax: totalTaxDue,
             dueDate: q.deadline,
-            daysLeft: Math.max(0, daysLeft),
+            daysLeft,
             progress,
             unreviewed: pending,
           };
@@ -317,12 +349,12 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
               <CardContent className="px-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-900">{q.id}</span>
-                  {getStatusBadge(q.status)}
+                  {getStatusBadge(q.status, q.daysLeft)}
                 </div>
 
                 <p className="text-xs text-gray-500">{q.period}</p>
 
-                {q.status !== 'upcoming' ? (
+                {q.status === 'submitted' || q.status === 'review' ? (
                   <>
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs">
@@ -354,7 +386,11 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
                       <div className="pt-1">
                         <div className="flex justify-between text-[10px] text-gray-500 mb-1">
                           <span>{q.unreviewed} to review</span>
-                          <span>{q.daysLeft} days left</span>
+                          {q.daysLeft !== undefined && q.daysLeft > 0 ? (
+                            <span>{q.daysLeft} days left</span>
+                          ) : (
+                            <span className="text-red-500 font-medium">Overdue</span>
+                          )}
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
