@@ -23,12 +23,26 @@ function formatTxDate(dateStr: string): string {
 export function RecentTransactions({ transactions, hasBankConnection }: RecentTransactionsProps) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ synced?: number; errors?: string[] } | null>(null);
 
   const handleSync = async () => {
     setSyncing(true);
+    setSyncResult(null);
     try {
-      await fetch('/api/truelayer/sync', { method: 'POST' });
-      router.refresh();
+      const res = await fetch('/api/truelayer/sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setSyncResult({ errors: [data.error || 'Sync failed'] });
+      } else if (data.errors?.length > 0) {
+        setSyncResult({ synced: data.synced, errors: data.errors });
+      } else {
+        setSyncResult({ synced: data.synced });
+        if (data.synced > 0) {
+          router.refresh();
+        }
+      }
+    } catch {
+      setSyncResult({ errors: ['Network error — please try again'] });
     } finally {
       setSyncing(false);
     }
@@ -75,6 +89,17 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {syncing ? 'Syncing...' : 'Sync Now'}
             </button>
+            {syncResult && (
+              <div className="mt-3 text-xs">
+                {syncResult.errors?.length ? (
+                  <p className="text-red-500">{syncResult.errors[0]}</p>
+                ) : syncResult.synced === 0 ? (
+                  <p className="text-gray-400">No new transactions found.</p>
+                ) : (
+                  <p className="text-green-600">Synced {syncResult.synced} transactions.</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

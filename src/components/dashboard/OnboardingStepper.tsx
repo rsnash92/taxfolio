@@ -80,7 +80,7 @@ export function OnboardingStepper() {
         className="bg-[#00e3ec] text-black hover:bg-[#00c4d4] font-semibold"
         asChild
       >
-        <Link href="/api/truelayer/auth">Connect Bank</Link>
+        <Link href="/api/truelayer/auth/authorize">Connect Bank</Link>
       </Button>
     </motion.div>
   );
