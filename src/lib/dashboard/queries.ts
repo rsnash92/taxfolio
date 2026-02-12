@@ -46,9 +46,9 @@ function getPreviousTaxYear(taxYear: string): string {
  * Fetch all dashboard data for a user in a single call.
  * Runs server-side only (imports server Supabase client).
  */
-export async function getDashboardData(userId: string): Promise<DashboardData> {
+export async function getDashboardData(userId: string, taxYearOverride?: string): Promise<DashboardData> {
   const supabase = await createClient()
-  const taxYear = getCurrentTaxYear()
+  const taxYear = taxYearOverride || getCurrentTaxYear()
   const prevTaxYear = getPreviousTaxYear(taxYear)
 
   // Run queries in parallel

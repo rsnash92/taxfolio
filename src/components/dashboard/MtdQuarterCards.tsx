@@ -13,6 +13,7 @@ import Link from 'next/link';
 
 interface MtdQuarterCardsProps {
   hasHmrcConnection: boolean;
+  taxYear?: string;
 }
 
 interface Quarter {
@@ -65,8 +66,7 @@ function getCurrentTaxYear(): string {
   return `${year - 1}-${year.toString().slice(-2)}`;
 }
 
-function getTaxYearDisplay(): string {
-  const ty = getCurrentTaxYear();
+function getTaxYearDisplay(ty: string): string {
   const startYear = parseInt(ty.split('-')[0]);
   return `${startYear}/${startYear + 1 - 2000}`;
 }
@@ -110,10 +110,10 @@ function getStatusBadge(status: Quarter['status']) {
   }
 }
 
-export function MtdQuarterCards({ hasHmrcConnection }: MtdQuarterCardsProps) {
+export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: MtdQuarterCardsProps) {
   const [quarters, setQuarters] = useState<Quarter[]>([]);
   const [loading, setLoading] = useState(hasHmrcConnection);
-  const taxYear = getCurrentTaxYear();
+  const taxYear = taxYearProp || getCurrentTaxYear();
 
   useEffect(() => {
     if (!hasHmrcConnection) return;
@@ -232,7 +232,7 @@ export function MtdQuarterCards({ hasHmrcConnection }: MtdQuarterCardsProps) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900">MTD Quarters</h2>
-          <span className="text-xs text-gray-500">{getTaxYearDisplay()} Tax Year</span>
+          <span className="text-xs text-gray-500">{getTaxYearDisplay(taxYear)} Tax Year</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
@@ -277,7 +277,7 @@ export function MtdQuarterCards({ hasHmrcConnection }: MtdQuarterCardsProps) {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900">MTD Quarters</h2>
-          <span className="text-xs text-gray-500">{getTaxYearDisplay()} Tax Year</span>
+          <span className="text-xs text-gray-500">{getTaxYearDisplay(taxYear)} Tax Year</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
@@ -298,7 +298,7 @@ export function MtdQuarterCards({ hasHmrcConnection }: MtdQuarterCardsProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-gray-900">MTD Quarters</h2>
-        <span className="text-xs text-gray-500">{getTaxYearDisplay()} Tax Year</span>
+        <span className="text-xs text-gray-500">{getTaxYearDisplay(taxYear)} Tax Year</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">

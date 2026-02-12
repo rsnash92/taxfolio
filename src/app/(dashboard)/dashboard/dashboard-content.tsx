@@ -13,6 +13,7 @@ import type { DashboardData } from '@/types/dashboard';
 interface DashboardContentProps {
   userName: string;
   data: DashboardData;
+  taxYear?: string;
 }
 
 function getGreeting(): string {
@@ -34,7 +35,7 @@ function getTaxYearDisplay(): string {
   return `${year - 1}/${year - 2000}`;
 }
 
-function DashboardInner({ userName, data }: DashboardContentProps) {
+function DashboardInner({ userName, data, taxYear }: DashboardContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -80,7 +81,7 @@ function DashboardInner({ userName, data }: DashboardContentProps) {
         {/* Left column — main content */}
         <div className="flex-1 space-y-6 min-w-0">
           <AiNudgeBanner nudge={data.nudge} />
-          <MtdQuarterCards hasHmrcConnection={data.hasHmrcConnection} />
+          <MtdQuarterCards hasHmrcConnection={data.hasHmrcConnection} taxYear={taxYear} />
           <RecentTransactions
             transactions={data.recentTransactions}
             hasBankConnection={data.hasBankConnection}
@@ -98,7 +99,7 @@ function DashboardInner({ userName, data }: DashboardContentProps) {
             nudge={data.nudge}
             ytdSummary={data.ytdSummary}
           />
-          <UpcomingDeadlines hasHmrcConnection={data.hasHmrcConnection} />
+          <UpcomingDeadlines hasHmrcConnection={data.hasHmrcConnection} taxYear={taxYear} />
         </div>
       </div>
     </div>

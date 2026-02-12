@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 interface UpcomingDeadlinesProps {
   hasHmrcConnection: boolean;
+  taxYear?: string;
 }
 
 interface Deadline {
@@ -65,7 +66,7 @@ function getCurrentTaxYear(): string {
   return `${year - 1}-${year.toString().slice(-2)}`;
 }
 
-export function UpcomingDeadlines({ hasHmrcConnection }: UpcomingDeadlinesProps) {
+export function UpcomingDeadlines({ hasHmrcConnection, taxYear: taxYearProp }: UpcomingDeadlinesProps) {
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [loading, setLoading] = useState(hasHmrcConnection);
 
@@ -75,7 +76,7 @@ export function UpcomingDeadlines({ hasHmrcConnection }: UpcomingDeadlinesProps)
     const fetchDeadlines = async () => {
       setLoading(true);
       try {
-        const taxYear = getCurrentTaxYear();
+        const taxYear = taxYearProp || getCurrentTaxYear();
         const res = await fetch(`/api/mtd/obligations?taxYear=${taxYear}`);
         if (!res.ok) throw new Error('Failed to fetch');
 
@@ -124,7 +125,7 @@ export function UpcomingDeadlines({ hasHmrcConnection }: UpcomingDeadlinesProps)
     };
 
     fetchDeadlines();
-  }, [hasHmrcConnection]);
+  }, [hasHmrcConnection, taxYearProp]);
 
   if (!hasHmrcConnection) {
     return (

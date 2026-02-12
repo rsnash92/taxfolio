@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       expiresAt: Date.now() + (tokens.expires_in || 3600) * 1000,
     });
 
-    const { data: bankConn } = await supabase
+    const { data: bankConn, error: bankError } = await supabase
       .from('bank_connections')
       .upsert(
         {
@@ -82,15 +82,19 @@ export async function GET(request: NextRequest) {
           status: 'active',
           last_synced_at: new Date().toISOString(),
         },
-        { onConflict: 'user_id' },
+        { onConflict: 'plaid_item_id' },
       )
       .select('id')
       .single();
 
+    if (bankError) {
+      console.error('[TrueLayer Callback] Bank connection upsert error:', bankError);
+    }
+
     // Persist accounts to Supabase
     if (bankConn) {
       for (const a of accounts) {
-        await supabase.from('accounts').upsert(
+        const { error: acctError } = await supabase.from('accounts').upsert(
           {
             user_id: user.id,
             bank_connection_id: bankConn.id,
@@ -101,6 +105,9 @@ export async function GET(request: NextRequest) {
           },
           { onConflict: 'plaid_account_id' },
         );
+        if (acctError) {
+          console.error('[TrueLayer Callback] Account upsert error:', acctError);
+        }
       }
     }
 
