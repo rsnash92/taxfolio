@@ -111,15 +111,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Determine redirect: dashboard if came from dashboard, otherwise MTD wizard
+    // Determine redirect based on context cookie
     const wizardContext = request.cookies.get('mtd-wizard-context')?.value;
-    const redirectUrl = wizardContext
-      ? `${APP_URL}/mtd/quarterly?bank_connected=true`
-      : `${APP_URL}/dashboard?bank_connected=true`;
+    const onboardingContext = request.cookies.get('onboarding-context')?.value;
+    let redirectUrl: string;
+    if (onboardingContext === 'bank') {
+      redirectUrl = `${APP_URL}/onboarding?bank_connected=true`;
+    } else if (wizardContext) {
+      redirectUrl = `${APP_URL}/mtd/quarterly?bank_connected=true`;
+    } else {
+      redirectUrl = `${APP_URL}/dashboard?bank_connected=true`;
+    }
 
-    // Clear state cookie and redirect
+    // Clear state and context cookies, then redirect
     const response = NextResponse.redirect(redirectUrl);
     response.cookies.delete('truelayer_oauth_state');
+    if (onboardingContext) {
+      response.cookies.delete('onboarding-context');
+    }
 
     // Store bank connection data in cookie
     response.cookies.set(

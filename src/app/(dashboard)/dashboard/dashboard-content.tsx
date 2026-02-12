@@ -2,19 +2,22 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { AiNudgeBanner } from '@/components/dashboard/AiNudgeBanner';
-import { OnboardingStepper } from '@/components/dashboard/OnboardingStepper';
 import { MtdQuarterCards } from '@/components/dashboard/MtdQuarterCards';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { YearToDateSummary } from '@/components/dashboard/YearToDateSummary';
 import { AiInsightsPanel } from '@/components/dashboard/AiInsightsPanel';
 import { UpcomingDeadlines } from '@/components/dashboard/UpcomingDeadlines';
+import { ShieldCheck, Building2 } from 'lucide-react';
 import type { DashboardData } from '@/types/dashboard';
 
 interface DashboardContentProps {
   userName: string;
   data: DashboardData;
   taxYear?: string;
+  hmrcSkipped?: boolean;
+  bankSkipped?: boolean;
 }
 
 function getGreeting(): string {
@@ -36,7 +39,41 @@ function getTaxYearDisplay(): string {
   return `${year - 1}/${year - 2000}`;
 }
 
-function DashboardInner({ userName, data, taxYear }: DashboardContentProps) {
+function SetupBanner({ hmrcSkipped, bankSkipped, hasHmrcConnection, hasBankConnection }: {
+  hmrcSkipped?: boolean;
+  bankSkipped?: boolean;
+  hasHmrcConnection: boolean;
+  hasBankConnection: boolean;
+}) {
+  const items: { label: string; href: string; icon: React.ReactNode }[] = [];
+  if (hmrcSkipped && !hasHmrcConnection) {
+    items.push({ label: 'Connect HMRC', href: '/api/mtd/auth/authorize', icon: <ShieldCheck className="h-4 w-4" /> });
+  }
+  if (bankSkipped && !hasBankConnection) {
+    items.push({ label: 'Connect Bank', href: '/api/truelayer/auth/authorize', icon: <Building2 className="h-4 w-4" /> });
+  }
+  if (items.length === 0) return null;
+
+  return (
+    <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between">
+      <span className="text-sm text-amber-800">Complete your setup</span>
+      <div className="flex items-center gap-3">
+        {items.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors"
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DashboardInner({ userName, data, taxYear, hmrcSkipped, bankSkipped }: DashboardContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -81,11 +118,13 @@ function DashboardInner({ userName, data, taxYear }: DashboardContentProps) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left column — main content */}
         <div className="flex-1 space-y-6 min-w-0">
-          {!data.hasBankConnection ? (
-            <OnboardingStepper />
-          ) : (
-            <AiNudgeBanner nudge={data.nudge} />
-          )}
+          <SetupBanner
+            hmrcSkipped={hmrcSkipped}
+            bankSkipped={bankSkipped}
+            hasHmrcConnection={data.hasHmrcConnection}
+            hasBankConnection={data.hasBankConnection}
+          />
+          <AiNudgeBanner nudge={data.nudge} />
           <MtdQuarterCards hasHmrcConnection={data.hasHmrcConnection} taxYear={taxYear} />
           <RecentTransactions
             transactions={data.recentTransactions}

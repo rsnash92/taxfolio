@@ -106,8 +106,20 @@ export async function GET(request: NextRequest) {
 
     console.log('[MTD Callback] Tokens stored successfully for user:', userId);
 
-    // Redirect to MTD dashboard with success
-    return NextResponse.redirect(`${APP_URL}/mtd?connected=true`);
+    // Determine redirect based on onboarding context
+    const onboardingContext = request.cookies.get('onboarding-context')?.value;
+    let redirectUrl: string;
+    if (onboardingContext === 'hmrc') {
+      redirectUrl = `${APP_URL}/onboarding?hmrc_connected=true`;
+    } else {
+      redirectUrl = `${APP_URL}/mtd?connected=true`;
+    }
+
+    const response = NextResponse.redirect(redirectUrl);
+    if (onboardingContext) {
+      response.cookies.delete('onboarding-context');
+    }
+    return response;
   } catch (error) {
     console.error('MTD callback error:', error);
     const errorMessage =

@@ -61,6 +61,7 @@ export async function updateSession(request: NextRequest) {
     '/mileage',
     '/home-office',
     '/mtd',
+    '/onboarding',
   ]
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
@@ -84,6 +85,25 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Check onboarding completion for authenticated users on protected routes
+  // (skip for /onboarding itself and /api routes)
+  const isOnboardingRoute = request.nextUrl.pathname.startsWith('/onboarding')
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+
+  if (isProtectedRoute && user && !isOnboardingRoute && !isApiRoute) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('dashboard_onboarding_completed')
+      .eq('id', user.id)
+      .single()
+
+    if (userData && !userData.dashboard_onboarding_completed) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Redirect logged-in users away from auth pages
   const authRoutes = ['/login', '/signup']
   const isAuthRoute = authRoutes.some(route =>
@@ -100,8 +120,15 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // Check onboarding completion
+    const { data: userData } = await supabase
+      .from('users')
+      .select('dashboard_onboarding_completed')
+      .eq('id', user.id)
+      .single()
+
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = userData?.dashboard_onboarding_completed ? '/dashboard' : '/onboarding'
     return NextResponse.redirect(url)
   }
 

@@ -23,7 +23,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const userName =
     user.user_metadata?.full_name || user.email?.split('@')[0] || 'there'
 
-  const data = await getDashboardData(user.id, taxYear)
+  const [data, { data: userData }] = await Promise.all([
+    getDashboardData(user.id, taxYear),
+    supabase
+      .from('users')
+      .select('dashboard_onboarding_data')
+      .eq('id', user.id)
+      .single(),
+  ])
 
-  return <DashboardContent userName={userName} data={data} taxYear={taxYear} />
+  const onboardingData = userData?.dashboard_onboarding_data as {
+    hmrcSkipped?: boolean
+    bankSkipped?: boolean
+  } | null
+
+  return (
+    <DashboardContent
+      userName={userName}
+      data={data}
+      taxYear={taxYear}
+      hmrcSkipped={onboardingData?.hmrcSkipped}
+      bankSkipped={onboardingData?.bankSkipped}
+    />
+  )
 }
