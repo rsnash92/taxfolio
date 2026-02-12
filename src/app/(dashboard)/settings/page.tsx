@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { User, Shield, Bell, ChevronRight, FileText, Building2, LayoutGrid } from "lucide-react"
+import { User, Shield, Bell, ChevronRight, FileText, Building2, LayoutGrid, Landmark, RefreshCw, Unlink, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
@@ -20,8 +20,41 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [showProperties, setShowProperties] = useState<boolean | null>(null)
   const [userType, setUserType] = useState<string>("")
+  const [bankConnection, setBankConnection] = useState<{
+    id: string
+    bank_name: string
+    last_synced_at: string | null
+    accounts: { account_id: string; display_name: string; account_type: string }[]
+  } | null>(null)
+  const [bankLoading, setBankLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const loadBankConnection = async () => {
+    setBankLoading(true)
+    try {
+      const res = await fetch("/api/truelayer/connections")
+      const data = await res.json()
+      if (data.connected && data.connections?.length > 0) {
+        const conn = data.connections[0]
+        setBankConnection({
+          id: conn.id,
+          bank_name: conn.bank_name,
+          last_synced_at: conn.last_synced_at,
+          accounts: conn.accounts || [],
+        })
+      } else {
+        setBankConnection(null)
+      }
+    } catch {
+      setBankConnection(null)
+    } finally {
+      setBankLoading(false)
+    }
+  }
 
   useEffect(() => {
     async function loadUser() {
@@ -46,7 +79,18 @@ export default function SettingsPage() {
       }
     }
     loadUser()
+    loadBankConnection()
   }, [supabase])
+
+  // Handle ?bank_connected=true from OAuth redirect
+  useEffect(() => {
+    if (searchParams.get("bank_connected") === "true") {
+      toast.success("Bank connected successfully")
+      loadBankConnection()
+      // Clean URL
+      window.history.replaceState({}, "", "/settings")
+    }
+  }, [searchParams])
 
   const handleUpdateProfile = async () => {
     setLoading(true)
@@ -65,6 +109,53 @@ export default function SettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSyncBank = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch("/api/truelayer/sync", { method: "POST" })
+      const data = await res.json()
+      if (data.error) {
+        toast.error(data.error)
+      } else {
+        toast.success(`Synced ${data.synced} transactions`)
+        if (data.errors?.length > 0) {
+          toast.warning(data.errors[0])
+        }
+        loadBankConnection()
+      }
+    } catch {
+      toast.error("Sync failed")
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleDisconnectBank = async () => {
+    if (!bankConnection) return
+    setDisconnecting(true)
+    try {
+      const res = await fetch(`/api/truelayer/connections/${bankConnection.id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setBankConnection(null)
+        toast.success("Bank disconnected")
+      } else {
+        toast.error(data.error || "Failed to disconnect")
+      }
+    } catch {
+      toast.error("Failed to disconnect")
+    } finally {
+      setDisconnecting(false)
+    }
+  }
+
+  const handleConnectBank = () => {
+    document.cookie = "settings-context=bank; path=/; max-age=600"
+    window.location.href = "/api/truelayer/auth/authorize"
   }
 
   const handleToggleProperties = async (checked: boolean) => {
@@ -187,6 +278,93 @@ export default function SettingsPage() {
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </Link>
+        </CardContent>
+      </Card>
+
+      {/* Bank Connection */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Bank Connection</CardTitle>
+              <CardDescription>Open Banking via TrueLayer</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {bankLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading...
+            </div>
+          ) : bankConnection ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{bankConnection.bank_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {bankConnection.accounts.length} account{bankConnection.accounts.length !== 1 ? "s" : ""} linked
+                    {bankConnection.last_synced_at && (
+                      <> &middot; Last synced {new Date(bankConnection.last_synced_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
+                    )}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                  Connected
+                </Badge>
+              </div>
+
+              {bankConnection.accounts.length > 0 && (
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <ul className="space-y-2">
+                    {bankConnection.accounts.map((acct) => (
+                      <li key={acct.account_id} className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-gray-700">{acct.display_name}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{acct.account_type.toLowerCase()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncBank}
+                  disabled={syncing}
+                >
+                  {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <RefreshCw className="h-4 w-4 mr-1.5" />}
+                  {syncing ? "Syncing..." : "Sync Now"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnectBank}
+                  disabled={disconnecting}
+                  className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                >
+                  {disconnecting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Unlink className="h-4 w-4 mr-1.5" />}
+                  {disconnecting ? "Disconnecting..." : "Disconnect"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">No bank connected</p>
+                <p className="text-sm text-muted-foreground">
+                  Link your bank account to import transactions automatically
+                </p>
+              </div>
+              <Button variant="outline" onClick={handleConnectBank}>
+                Connect Bank
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

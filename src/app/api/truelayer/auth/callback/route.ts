@@ -114,8 +114,11 @@ export async function GET(request: NextRequest) {
     // Determine redirect based on context cookie
     const wizardContext = request.cookies.get('mtd-wizard-context')?.value;
     const onboardingContext = request.cookies.get('onboarding-context')?.value;
+    const settingsContext = request.cookies.get('settings-context')?.value;
     let redirectUrl: string;
-    if (onboardingContext === 'bank') {
+    if (settingsContext === 'bank') {
+      redirectUrl = `${APP_URL}/settings?bank_connected=true`;
+    } else if (onboardingContext === 'bank') {
       redirectUrl = `${APP_URL}/onboarding?bank_connected=true`;
     } else if (wizardContext) {
       redirectUrl = `${APP_URL}/mtd/quarterly?bank_connected=true`;
@@ -128,6 +131,9 @@ export async function GET(request: NextRequest) {
     response.cookies.delete('truelayer_oauth_state');
     if (onboardingContext) {
       response.cookies.delete('onboarding-context');
+    }
+    if (settingsContext) {
+      response.cookies.delete('settings-context');
     }
 
     // Store bank connection data in cookie
