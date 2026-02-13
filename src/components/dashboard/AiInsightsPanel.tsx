@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { EmptyState } from './EmptyState';
 import { Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
 import type { NudgeData, YtdSummaryData } from '@/types/dashboard';
 
 interface AiInsightsPanelProps {
@@ -17,6 +18,7 @@ interface Insight {
   icon: string;
   text: string;
   action: string;
+  href: string;
   type: 'warning' | 'opportunity' | 'info';
 }
 
@@ -40,6 +42,7 @@ function generateInsights(nudge: NudgeData | null, ytd: YtdSummaryData): Insight
       icon: '⚠️',
       text: `You have ${nudge.uncategorisedCount} uncategorised transaction${nudge.uncategorisedCount !== 1 ? 's' : ''} — review them to keep your records accurate`,
       action: 'Review now',
+      href: '/transactions',
       type: 'warning',
     });
   }
@@ -55,6 +58,7 @@ function generateInsights(nudge: NudgeData | null, ytd: YtdSummaryData): Insight
       icon: '📊',
       text: `Year-to-date tax estimate: ${formatCurrency(ytd.estimatedTax)}${yoyText}`,
       action: 'See breakdown',
+      href: '/insights',
       type: 'info',
     });
   }
@@ -65,6 +69,7 @@ function generateInsights(nudge: NudgeData | null, ytd: YtdSummaryData): Insight
       icon: '🎯',
       text: 'Your expense-to-income ratio is below 15% — are you claiming all allowable business expenses?',
       action: 'Review expenses',
+      href: '/insights',
       type: 'opportunity',
     });
   }
@@ -125,22 +130,23 @@ export function AiInsightsPanel({ hasBankConnection, nudge, ytdSummary }: AiInsi
 
       <div className="space-y-2.5">
         {insights.map((insight, i) => (
-          <Card
-            key={i}
-            className={`py-3 border-l-4 ${getBorderColor(insight.type)} cursor-pointer hover:shadow-md transition-shadow`}
-          >
-            <CardContent className="px-4 py-0">
-              <div className="flex gap-2.5 items-start">
-                <span className="text-sm shrink-0">{insight.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-700 leading-relaxed">{insight.text}</p>
-                  <button className="text-xs font-semibold text-[#00c4d4] mt-1.5 hover:text-[#00e3ec] transition-colors">
-                    {insight.action} &rarr;
-                  </button>
+          <Link key={i} href={insight.href}>
+            <Card
+              className={`py-3 border-l-4 ${getBorderColor(insight.type)} cursor-pointer hover:shadow-md transition-shadow`}
+            >
+              <CardContent className="px-4 py-0">
+                <div className="flex gap-2.5 items-start">
+                  <span className="text-sm shrink-0">{insight.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-700 leading-relaxed">{insight.text}</p>
+                    <span className="text-xs font-semibold text-[#00c4d4] mt-1.5 hover:text-[#00e3ec] transition-colors inline-block">
+                      {insight.action} &rarr;
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </motion.div>

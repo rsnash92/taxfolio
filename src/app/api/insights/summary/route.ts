@@ -172,8 +172,9 @@ export async function GET(request: NextRequest) {
 
   // --- Anomalies ---
   const anomalies: { type: string; description: string; transactionId?: string; amount?: number }[] = []
+  const seenTxIds = new Set<string>()
 
-  // Large transactions (> 3x category average)
+  // Large transactions (> 3x category average) — both income and expense
   const catAverages: Record<string, { total: number; count: number }> = {}
   for (const tx of transactions) {
     if (tx.review_status !== 'confirmed' || !tx.category) continue
@@ -185,23 +186,31 @@ export async function GET(request: NextRequest) {
 
   for (const tx of transactions) {
     if (tx.review_status !== 'confirmed' || !tx.category) continue
+    if (seenTxIds.has(tx.id)) continue
     const avg = catAverages[tx.category.code]
     if (!avg || avg.count < 3) continue
     const mean = avg.total / avg.count
     const amt = Math.abs(tx.amount)
     if (amt > mean * 3 && amt > 50) {
+      const isIncome = tx.category.type === 'income'
+      const verb = isIncome ? 'from' : 'to'
+      const suffix = isIncome
+        ? ' — is this actually sales income, or a refund/miscategorisation?'
+        : ''
       anomalies.push({
-        type: 'large_transaction',
-        description: `£${amt.toFixed(2)} to ${tx.merchant_name || tx.description} is ${Math.round(amt / mean)}x your average ${getCategoryLabel(tx.category.code)} transaction`,
+        type: isIncome ? 'unusual_income' : 'large_transaction',
+        description: `£${amt.toFixed(2)} ${verb} ${tx.merchant_name || tx.description} is ${Math.round(amt / mean)}x your average ${getCategoryLabel(tx.category.code)} transaction${suffix}`,
         transactionId: tx.id,
         amount: amt,
       })
+      seenTxIds.add(tx.id)
     }
   }
 
   // Uncategorised high-value
   for (const tx of transactions) {
     if (tx.review_status === 'confirmed') continue
+    if (seenTxIds.has(tx.id)) continue
     const amt = Math.abs(tx.amount)
     if (amt > 100) {
       anomalies.push({
@@ -210,12 +219,21 @@ export async function GET(request: NextRequest) {
         transactionId: tx.id,
         amount: amt,
       })
+      seenTxIds.add(tx.id)
     }
   }
 
+  // Deduplicate by description (e.g. multiple identical transactions from same merchant)
+  const seenDescriptions = new Set<string>()
+  const dedupedAnomalies = anomalies.filter((a) => {
+    if (seenDescriptions.has(a.description)) return false
+    seenDescriptions.add(a.description)
+    return true
+  })
+
   // Limit anomalies
-  anomalies.sort((a, b) => (b.amount || 0) - (a.amount || 0))
-  const topAnomalies = anomalies.slice(0, 5)
+  dedupedAnomalies.sort((a, b) => (b.amount || 0) - (a.amount || 0))
+  const topAnomalies = dedupedAnomalies.slice(0, 5)
 
   // --- MTD Readiness ---
   // Current quarter
