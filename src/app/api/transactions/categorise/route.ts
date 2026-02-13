@@ -24,14 +24,16 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { transaction_ids, stream } = body
 
-  // Fetch transactions to categorise
+  // Fetch all uncategorised transactions for this user.
+  // We avoid .in() with large ID lists as PostgREST has URL length limits.
+  // If specific IDs are provided (small batch), filter by them.
   let query = supabase
     .from('transactions')
     .select('id, description, amount, date, merchant_name')
     .eq('user_id', user.id)
     .is('ai_suggested_category_id', null)
 
-  if (transaction_ids && Array.isArray(transaction_ids) && transaction_ids.length > 0) {
+  if (transaction_ids && Array.isArray(transaction_ids) && transaction_ids.length > 0 && transaction_ids.length <= 100) {
     query = query.in('id', transaction_ids)
   }
 

@@ -34,7 +34,7 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { getCategoryLabel, CATEGORY_LABELS } from '@/lib/category-labels'
 import {
-  Sparkles,
+  Brain,
   CheckCircle2,
   Search,
   ChevronLeft,
@@ -208,11 +208,7 @@ export default function TransactionsPage() {
   const uncategorisedCount = transactions.filter((tx) => !tx.ai_suggested_category_id).length
 
   const handleCategorise = async () => {
-    const uncategorisedIds = transactions
-      .filter((tx) => !tx.ai_suggested_category_id)
-      .map((tx) => tx.id)
-
-    if (uncategorisedIds.length === 0) {
+    if (uncategorisedCount === 0) {
       toast.info('All transactions are already categorised')
       return
     }
@@ -222,10 +218,12 @@ export default function TransactionsPage() {
     setCategoriseStatus('Starting AI categorisation...')
 
     try {
+      // Don't send IDs — server fetches all uncategorised for the user.
+      // Sending 1000+ IDs hits PostgREST URL length limits.
       const res = await fetch('/api/transactions/categorise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transaction_ids: uncategorisedIds, stream: true }),
+        body: JSON.stringify({ stream: true }),
       })
 
       if (!res.ok) {
@@ -557,7 +555,7 @@ export default function TransactionsPage() {
           disabled={isCategorising || uncategorisedCount === 0}
           className="bg-[#00e3ec] hover:bg-[#00c4d4] text-black"
         >
-          <Sparkles className="h-4 w-4 mr-2" />
+          <Brain className="h-4 w-4 mr-2" />
           {isCategorising ? 'Categorising...' : `Categorise${uncategorisedCount > 0 ? ` (${uncategorisedCount})` : ''}`}
         </Button>
 
