@@ -41,6 +41,9 @@ import {
   ChevronRight,
   Loader2,
   ArrowUpDown,
+  X,
+  Lightbulb,
+  CircleCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -91,6 +94,16 @@ export default function TransactionsPage() {
 
   // Confirm all dialog
   const [showConfirmAll, setShowConfirmAll] = useState(false)
+
+  // Guidance banner
+  const [bannerDismissed, setBannerDismissed] = useState(true) // default true to avoid flash
+  useEffect(() => {
+    setBannerDismissed(localStorage.getItem('txBannerDismissed') === '1')
+  }, [])
+  const dismissBanner = () => {
+    setBannerDismissed(true)
+    localStorage.setItem('txBannerDismissed', '1')
+  }
 
   const fetchTransactions = useCallback(async () => {
     const { data, error } = await supabase
@@ -460,10 +473,58 @@ export default function TransactionsPage() {
     <div className="p-8 space-y-6">
       <h1 className="text-2xl font-semibold text-gray-900">Transactions</h1>
 
+      {/* Guidance Banner */}
+      {!bannerDismissed && !loading && transactions.length > 0 && (() => {
+        const allConfirmed = stats.needsReviewCount === 0 && uncategorisedCount === 0
+        const hasAiSuggestions = pendingConfirmations.length > 0
+        const nothingCategorised = uncategorisedCount === transactions.length
+
+        if (allConfirmed) {
+          return (
+            <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+              <CircleCheck className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+              <div className="flex-1 text-sm text-green-800">
+                <p className="font-medium">All transactions categorised</p>
+                <p className="text-green-600 mt-0.5">These totals will feed into your quarterly MTD submission.</p>
+              </div>
+              <button onClick={dismissBanner} className="text-green-400 hover:text-green-600"><X className="h-4 w-4" /></button>
+            </div>
+          )
+        }
+
+        if (hasAiSuggestions) {
+          return (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <Lightbulb className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="flex-1 text-sm text-amber-800">
+                <p className="font-medium">AI has categorised your transactions — {stats.needsReviewCount} need your input</p>
+                <p className="text-amber-600 mt-0.5">Review the amber items below, then hit <strong>Confirm All</strong> to lock in the rest. How you categorise these determines your tax — business expenses reduce what you owe.</p>
+              </div>
+              <button onClick={dismissBanner} className="text-amber-400 hover:text-amber-600"><X className="h-4 w-4" /></button>
+            </div>
+          )
+        }
+
+        if (nothingCategorised) {
+          return (
+            <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+              <Brain className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+              <div className="flex-1 text-sm text-blue-800">
+                <p className="font-medium">Categorise your transactions to calculate your tax</p>
+                <p className="text-blue-600 mt-0.5">TaxFolio AI can automatically sort these as business or personal and assign HMRC categories for your tax return. Hit <strong>Categorise</strong> to get started.</p>
+              </div>
+              <button onClick={dismissBanner} className="text-blue-400 hover:text-blue-600"><X className="h-4 w-4" /></button>
+            </div>
+          )
+        }
+
+        return null
+      })()}
+
       {/* Stat Cards — clickable to filter */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'all' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'all' ? 'border-[#00e3ec] shadow-sm' : ''}`}
           onClick={() => setFilter('all')}
         >
           <CardContent className="p-4">
@@ -472,7 +533,7 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'business' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'business' ? 'border-[#00e3ec] shadow-sm' : ''}`}
           onClick={() => setFilter('business')}
         >
           <CardContent className="p-4">
@@ -482,7 +543,7 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'personal' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'personal' ? 'border-[#00e3ec] shadow-sm' : ''}`}
           onClick={() => setFilter('personal')}
         >
           <CardContent className="p-4">
@@ -492,7 +553,7 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
         <Card
-          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'needs_review' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'needs_review' ? 'border-[#00e3ec] shadow-sm' : ''}`}
           onClick={() => setFilter('needs_review')}
         >
           <CardContent className="p-4">
@@ -635,6 +696,11 @@ export default function TransactionsPage() {
                           onClick={() => setEditingTransaction(tx)}
                         >
                           {getCategoryLabel(confirmedCat.code)}
+                          {tx.ai_confidence !== null && (
+                            <span className="ml-1 text-green-400 text-[10px]">
+                              {Math.round(tx.ai_confidence * 100)}%
+                            </span>
+                          )}
                         </Badge>
                       ) : suggestedCat ? (
                         <Badge
