@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 
 /**
  * PATCH /api/truelayer/accounts/[id]
- * Toggle account visibility (is_visible) for sync selection
+ * Toggle account sync selection. When deselecting (is_visible: false),
+ * also deletes all transactions from that account.
  */
 export async function PATCH(
   request: NextRequest,
@@ -26,6 +27,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'is_visible must be a boolean' }, { status: 400 })
   }
 
+  // Update account visibility
   const { error } = await supabase
     .from('accounts')
     .update({ is_visible })
@@ -36,5 +38,22 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true })
+  let deletedCount = 0
+
+  // When deselecting, delete all transactions from this account
+  if (!is_visible) {
+    const { count, error: delError } = await supabase
+      .from('transactions')
+      .delete({ count: 'exact' })
+      .eq('account_id', id)
+      .eq('user_id', user.id)
+
+    if (delError) {
+      console.error('[Accounts PATCH] Transaction delete error:', delError)
+    } else {
+      deletedCount = count ?? 0
+    }
+  }
+
+  return NextResponse.json({ ok: true, deleted_transactions: deletedCount })
 }

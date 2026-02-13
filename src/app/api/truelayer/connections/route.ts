@@ -39,6 +39,21 @@ export async function GET(request: NextRequest) {
         dbAccounts = withVisible;
       }
 
+      // Get transaction counts per account
+      const txCountMap = new Map<string, number>();
+      if (dbAccounts && dbAccounts.length > 0) {
+        const accountIds = dbAccounts.map((a) => a.id);
+        const { data: txCounts } = await supabase
+          .from('transactions')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .in('account_id', accountIds);
+
+        for (const row of txCounts || []) {
+          txCountMap.set(row.account_id, (txCountMap.get(row.account_id) || 0) + 1);
+        }
+      }
+
       return NextResponse.json({
         connections: [
           {
@@ -56,6 +71,7 @@ export async function GET(request: NextRequest) {
               display_name: a.name || 'Account',
               currency: 'GBP',
               is_visible: a.is_visible ?? true,
+              transaction_count: txCountMap.get(a.id) || 0,
             })),
           },
         ],

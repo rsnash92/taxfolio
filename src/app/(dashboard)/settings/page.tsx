@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { User, Shield, Bell, ChevronRight, FileText, Building2, LayoutGrid, Landmark, RefreshCw, Unlink, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -24,11 +25,12 @@ export default function SettingsPage() {
     id: string
     bank_name: string
     last_synced_at: string | null
-    accounts: { id: string; account_id: string; display_name: string; account_type: string; is_visible: boolean }[]
+    accounts: { id: string; account_id: string; display_name: string; account_type: string; is_visible: boolean; transaction_count: number }[]
   } | null>(null)
   const [bankLoading, setBankLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [pendingDeselect, setPendingDeselect] = useState<{ id: string; display_name: string; transaction_count: number } | null>(null)
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -153,24 +155,39 @@ export default function SettingsPage() {
     }
   }
 
-  const handleToggleAccount = async (accountId: string, currentVisible: boolean) => {
+  const handleToggleAccount = (accountId: string, currentVisible: boolean) => {
     if (!bankConnection) return
+
+    // If deselecting an account with transactions, show confirmation first
+    if (currentVisible) {
+      const acct = bankConnection.accounts.find((a) => a.id === accountId)
+      if (acct && acct.transaction_count > 0) {
+        setPendingDeselect({ id: acct.id, display_name: acct.display_name, transaction_count: acct.transaction_count })
+        return
+      }
+    }
+
+    executeToggle(accountId, currentVisible)
+  }
+
+  const executeToggle = async (accountId: string, currentVisible: boolean) => {
+    if (!bankConnection) return
+    const newVisible = !currentVisible
     // Optimistic update
     setBankConnection({
       ...bankConnection,
       accounts: bankConnection.accounts.map((a) =>
-        a.id === accountId ? { ...a, is_visible: !currentVisible } : a
+        a.id === accountId ? { ...a, is_visible: newVisible, transaction_count: newVisible ? a.transaction_count : 0 } : a
       ),
     })
     try {
       const res = await fetch(`/api/truelayer/accounts/${accountId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_visible: !currentVisible }),
+        body: JSON.stringify({ is_visible: newVisible }),
       })
       const data = await res.json()
       if (!data.ok) {
-        // Revert on failure
         setBankConnection({
           ...bankConnection,
           accounts: bankConnection.accounts.map((a) =>
@@ -178,6 +195,8 @@ export default function SettingsPage() {
           ),
         })
         toast.error("Failed to update account")
+      } else if (!newVisible && data.deleted_transactions > 0) {
+        toast.success(`Removed ${data.deleted_transactions} transactions`)
       }
     } catch {
       setBankConnection({
@@ -188,6 +207,12 @@ export default function SettingsPage() {
       })
       toast.error("Failed to update account")
     }
+  }
+
+  const confirmDeselect = () => {
+    if (!pendingDeselect) return
+    executeToggle(pendingDeselect.id, true)
+    setPendingDeselect(null)
   }
 
   const handleConnectBank = () => {
@@ -365,7 +390,12 @@ export default function SettingsPage() {
                             checked={acct.is_visible}
                             onCheckedChange={() => handleToggleAccount(acct.id, acct.is_visible)}
                           />
-                          <span className={acct.is_visible ? "font-medium text-gray-700" : "font-medium text-gray-400"}>{acct.display_name}</span>
+                          <div>
+                            <span className={acct.is_visible ? "font-medium text-gray-700" : "font-medium text-gray-400"}>{acct.display_name}</span>
+                            {acct.transaction_count > 0 && (
+                              <span className="ml-2 text-xs text-muted-foreground">({acct.transaction_count} txns)</span>
+                            )}
+                          </div>
                         </div>
                         <span className="text-xs text-muted-foreground capitalize">{acct.account_type.toLowerCase()}</span>
                       </li>
@@ -556,6 +586,24 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmation dialog for deselecting accounts with transactions */}
+      <AlertDialog open={!!pendingDeselect} onOpenChange={() => setPendingDeselect(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {pendingDeselect?.transaction_count} transaction{pendingDeselect?.transaction_count !== 1 ? "s" : ""} from <strong>{pendingDeselect?.display_name}</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeselect} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
