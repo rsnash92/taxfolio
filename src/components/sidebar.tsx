@@ -26,6 +26,7 @@ import {
   Users,
   CreditCard,
   FileText,
+  Lightbulb,
 } from "lucide-react"
 
 const navItems: { title: string; href: string; icon: LucideIcon }[] = [
@@ -48,6 +49,11 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     title: "Transactions",
     href: "/transactions",
     icon: ArrowLeftRight,
+  },
+  {
+    title: "AI Insights",
+    href: "/insights",
+    icon: Lightbulb,
   },
   {
     title: "Referrals",
