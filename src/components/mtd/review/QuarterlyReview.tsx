@@ -19,6 +19,7 @@ interface QuarterlyReviewProps {
   businessType: string
   periodStart: string
   periodEnd: string
+  dueDate?: string
 }
 
 function deriveTaxYear(periodStart: string): string {
@@ -52,6 +53,7 @@ export function QuarterlyReview({
   businessType,
   periodStart,
   periodEnd,
+  dueDate,
 }: QuarterlyReviewProps) {
   const [data, setData] = useState<AggregateResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -179,6 +181,7 @@ export function QuarterlyReview({
           taxYear={taxYear}
           periodStart={periodStart}
           periodEnd={periodEnd}
+          dueDate={dueDate}
         />
         <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {error || 'Failed to load transaction data'}
@@ -187,19 +190,16 @@ export function QuarterlyReview({
     )
   }
 
-  // Show success state (from DB on reload, or from just-completed submission)
-  const showSuccess = submissionResult || data.previousSubmission
-  if (showSuccess) {
-    const successData = submissionResult || data.previousSubmission!
+  // Show success state only for a just-completed submission (client state).
+  // If there's a previous submission from DB, show the review page with resubmission badge instead.
+  if (submissionResult) {
     const totalAdjustments = Object.values(adjustments).reduce((s, v) => s + v, 0)
     const cumulativeExpenses = data.totals.cumulativeExpenses + totalAdjustments
 
     return (
       <SubmissionSuccess
-        correlationId={
-          submissionResult?.correlationId || data.previousSubmission?.correlationId
-        }
-        submittedAt={successData.submittedAt}
+        correlationId={submissionResult.correlationId}
+        submittedAt={submissionResult.submittedAt}
         cumulativeIncome={data.totals.cumulativeIncome}
         cumulativeExpenses={cumulativeExpenses}
         netProfit={data.totals.cumulativeIncome - cumulativeExpenses}
@@ -219,6 +219,7 @@ export function QuarterlyReview({
         taxYear={taxYear}
         periodStart={periodStart}
         periodEnd={periodEnd}
+        dueDate={dueDate}
         previousSubmission={data.previousSubmission}
       />
 

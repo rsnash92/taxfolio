@@ -8,6 +8,7 @@ interface ReviewPageProps {
     businessType?: string
     periodStart?: string
     periodEnd?: string
+    dueDate?: string
   }>
 }
 
@@ -18,7 +19,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   if (!user) redirect('/login')
 
   const params = await searchParams
-  const { businessId, businessType, periodStart, periodEnd } = params
+  const { businessId, businessType, periodStart, periodEnd, dueDate } = params
 
   if (!businessId || !businessType || !periodStart || !periodEnd) {
     redirect('/mtd/quarterly')
@@ -30,6 +31,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
       businessType={businessType}
       periodStart={periodStart}
       periodEnd={periodEnd}
+      dueDate={dueDate}
     />
   )
 }

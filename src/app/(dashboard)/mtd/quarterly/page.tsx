@@ -78,6 +78,7 @@ export default function QuarterlySubmissionsPage() {
         businessType: obligation.businessType,
         periodStart: obligation.periodStartDate,
         periodEnd: obligation.periodEndDate,
+        dueDate: obligation.dueDate,
       });
       router.push(`/mtd/review?${params}`);
       return;

@@ -78,7 +78,7 @@ export function SubmitDeclaration({
           <Button
             onClick={handleSubmitClick}
             disabled={!confirmed || submitting}
-            className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold"
+            className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-semibold disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#00e3ec]"
           >
             {submitting ? (
               <>

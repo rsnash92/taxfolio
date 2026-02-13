@@ -90,7 +90,14 @@ function ExpenseRow({
           {formatCurrency(thisQuarterAmount)}
         </td>
         <td className="py-2.5 text-right font-mono text-sm text-gray-900">
-          {formatCurrency(cumulativeAmount)}
+          {adjustment ? (
+            <span>
+              <span className="text-gray-400 line-through text-xs mr-1">{formatCurrency(cumulativeAmount)}</span>
+              {formatCurrency(cumulativeAmount + adjustment)}
+            </span>
+          ) : (
+            formatCurrency(cumulativeAmount)
+          )}
         </td>
         <td className="py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
           <input
@@ -98,8 +105,8 @@ function ExpenseRow({
             step="0.01"
             value={adjustment || ''}
             onChange={(e) => onAdjustmentChange(parseFloat(e.target.value) || 0)}
-            placeholder="0.00"
-            className="w-24 text-right text-sm font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#00e3ec] focus:border-[#00e3ec]"
+            placeholder="+/- adj"
+            className="w-24 text-right text-sm font-mono border border-gray-200 rounded px-2 py-1.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#00e3ec] focus:border-[#00e3ec]"
           />
         </td>
       </tr>
