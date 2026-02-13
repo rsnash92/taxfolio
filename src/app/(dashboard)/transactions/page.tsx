@@ -294,14 +294,14 @@ export default function TransactionsPage() {
   }, [pendingConfirmations])
 
   const handleConfirmAll = async () => {
-    const ids = pendingConfirmations.map((tx) => tx.id)
-    if (ids.length === 0) return
+    if (pendingConfirmations.length === 0) return
 
     try {
+      // No IDs needed — server confirms all pending AI suggestions for the user
       const res = await fetch('/api/transactions/bulk', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm_all', transaction_ids: ids }),
+        body: JSON.stringify({ action: 'confirm_all' }),
       })
 
       const data = await res.json()
