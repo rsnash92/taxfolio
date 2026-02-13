@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS referral_codes (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Referral tracking
-CREATE TABLE IF NOT EXISTS referrals (
+-- User-to-user referral tracking (separate from partner referrals)
+CREATE TABLE IF NOT EXISTS user_referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id UUID REFERENCES auth.users(id) NOT NULL,
   referred_id UUID REFERENCES auth.users(id),
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS referral_balance_transactions (
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('credit', 'payout', 'adjustment')),
-  referral_id UUID REFERENCES referrals(id),
+  referral_id UUID REFERENCES user_referrals(id),
   payout_id UUID,
   description TEXT,
   balance_after DECIMAL(10,2) NOT NULL,
@@ -86,17 +86,17 @@ CREATE TABLE IF NOT EXISTS referral_payouts (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_referral_codes_user ON referral_codes(user_id);
 CREATE INDEX IF NOT EXISTS idx_referral_codes_code ON referral_codes(code);
-CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
-CREATE INDEX IF NOT EXISTS idx_referrals_referred ON referrals(referred_id);
-CREATE INDEX IF NOT EXISTS idx_referrals_code ON referrals(referral_code);
-CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status);
+CREATE INDEX IF NOT EXISTS idx_user_referrals_referrer ON user_referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_user_referrals_referred ON user_referrals(referred_id);
+CREATE INDEX IF NOT EXISTS idx_user_referrals_code ON user_referrals(referral_code);
+CREATE INDEX IF NOT EXISTS idx_user_referrals_status ON user_referrals(status);
 CREATE INDEX IF NOT EXISTS idx_balance_transactions_user ON referral_balance_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_payouts_user ON referral_payouts(user_id);
 CREATE INDEX IF NOT EXISTS idx_payouts_status ON referral_payouts(status);
 
 -- RLS Policies
 ALTER TABLE referral_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_balance_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_payouts ENABLE ROW LEVEL SECURITY;
 
@@ -107,9 +107,9 @@ CREATE POLICY "Users can read own referral code"
   USING (auth.uid() = user_id);
 
 -- Users can read referrals they made
-DROP POLICY IF EXISTS "Users can read own referrals" ON referrals;
-CREATE POLICY "Users can read own referrals"
-  ON referrals FOR SELECT
+DROP POLICY IF EXISTS "Users can read own user referrals" ON user_referrals;
+CREATE POLICY "Users can read own user referrals"
+  ON user_referrals FOR SELECT
   USING (auth.uid() = referrer_id);
 
 -- Users can read their balance transactions
@@ -204,12 +204,12 @@ BEGIN
   END IF;
 
   -- Check if user was already referred
-  IF EXISTS (SELECT 1 FROM referrals WHERE referred_id = p_referred_user_id) THEN
+  IF EXISTS (SELECT 1 FROM user_referrals WHERE referred_id = p_referred_user_id) THEN
     RETURN jsonb_build_object('success', false, 'error', 'Already referred');
   END IF;
 
   -- Create referral record
-  INSERT INTO referrals (
+  INSERT INTO user_referrals (
     referrer_id,
     referred_id,
     referred_email,
@@ -246,13 +246,13 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_referral referrals%ROWTYPE;
+  v_referral user_referrals%ROWTYPE;
   v_reward_amount DECIMAL;
   v_current_balance DECIMAL;
 BEGIN
   -- Find pending referral for this user
   SELECT * INTO v_referral
-  FROM referrals
+  FROM user_referrals
   WHERE referred_id = p_referred_user_id
     AND reward_status = 'pending'
   LIMIT 1;
@@ -273,7 +273,7 @@ BEGIN
   END IF;
 
   -- Update referral
-  UPDATE referrals
+  UPDATE user_referrals
   SET
     status = 'paid',
     paid_at = now(),
@@ -358,11 +358,11 @@ BEGIN
 
   -- Get referral counts
   SELECT COUNT(*) INTO v_referral_count
-  FROM referrals
+  FROM user_referrals
   WHERE referrer_id = p_user_id;
 
   SELECT COUNT(*) INTO v_converted_count
-  FROM referrals
+  FROM user_referrals
   WHERE referrer_id = p_user_id AND status = 'paid';
 
   RETURN jsonb_build_object(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { trackSignup, deleteContact } from '@/lib/loops'
+import { sendAdminNewUserNotification } from '@/lib/loops/transactional'
 
 /**
  * Supabase Auth Webhook
@@ -78,6 +79,17 @@ export async function POST(request: NextRequest) {
           firstName,
           lastName,
           signupSource: 'organic',
+        })
+
+        // Notify admin of new signup
+        await sendAdminNewUserNotification({
+          userEmail: record.email,
+          userName: metadata.full_name || `${firstName} ${lastName}`.trim() || undefined,
+          signupTime: new Date().toLocaleString('en-GB', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: 'Europe/London',
+          }),
         })
 
         break

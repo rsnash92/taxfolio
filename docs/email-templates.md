@@ -504,6 +504,35 @@ The TaxFolio Team
 
 ---
 
+## 14. Admin - New User Signup
+
+**Template ID variable:** `LOOPS_ADMIN_NEW_USER_ID`
+
+**Subject:** New TaxFolio signup: {{userEmail}}
+
+**Data Variables:**
+- `userEmail` - New user's email
+- `userName` - User's name (if provided)
+- `signupTime` - When they signed up (UK time)
+- `authProvider` - How they signed up (Email, Google, etc.)
+- `adminDashboardUrl` - https://app.taxfolio.io/admin/users
+
+**Body:**
+
+```
+New user signup on TaxFolio!
+
+Email: {{userEmail}}
+Name: {{userName}}
+Time: {{signupTime}}
+Auth: {{authProvider}}
+
+View all users:
+{{adminDashboardUrl}}
+```
+
+---
+
 ## Notes for Loops Setup
 
 ### Creating Templates in Loops

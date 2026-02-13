@@ -27,6 +27,8 @@ const TRANSACTIONAL_IDS = {
   HMRC_SUBMISSION_SUCCESS: process.env.LOOPS_HMRC_SUBMISSION_SUCCESS_ID || '',
   HMRC_SUBMISSION_FAILED: process.env.LOOPS_HMRC_SUBMISSION_FAILED_ID || '',
   TAX_DEADLINE_REMINDER: process.env.LOOPS_TAX_DEADLINE_REMINDER_ID || '',
+  // Admin notifications
+  ADMIN_NEW_USER: process.env.LOOPS_ADMIN_NEW_USER_ID || '',
 }
 
 /**
@@ -382,6 +384,39 @@ export async function sendTaxDeadlineReminderEmail(
       daysUntilDeadline: data.daysUntilDeadline.toString(),
       taxYear: data.taxYear,
       dashboardUrl: 'https://app.taxfolio.io/dashboard',
+    },
+  })
+}
+
+// =============================================================================
+// Admin Notifications
+// =============================================================================
+
+const ADMIN_EMAIL = 'admin@taxfolio.io'
+
+/**
+ * Send admin notification for new user signup
+ */
+export async function sendAdminNewUserNotification(data: {
+  userEmail: string
+  userName?: string
+  signupTime: string
+  authProvider?: string
+}): Promise<void> {
+  if (!TRANSACTIONAL_IDS.ADMIN_NEW_USER) {
+    console.warn('[loops] Admin new user email ID not configured')
+    return
+  }
+
+  await sendTransactionalEmail({
+    email: ADMIN_EMAIL,
+    transactionalId: TRANSACTIONAL_IDS.ADMIN_NEW_USER,
+    dataVariables: {
+      userEmail: data.userEmail,
+      userName: data.userName || 'Not provided',
+      signupTime: data.signupTime,
+      authProvider: data.authProvider || 'Email',
+      adminDashboardUrl: 'https://app.taxfolio.io/admin/users',
     },
   })
 }
