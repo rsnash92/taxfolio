@@ -21,6 +21,22 @@ export interface AggregatedBucket {
   transactionsByHmrcField: Record<string, TransactionSummary[]>
 }
 
+export interface AdjustmentSummary {
+  id: string
+  hmrcField: string
+  amount: number
+  description: string
+  adjustmentType: string
+  createdAt: string
+}
+
+export interface FieldBreakdown {
+  transactionTotal: number
+  adjustmentTotal: number
+  combinedTotal: number
+  adjustments: AdjustmentSummary[]
+}
+
 export interface AggregateResponse {
   thisQuarter: AggregatedBucket
   cumulative: AggregatedBucket
@@ -41,6 +57,7 @@ export interface AggregateResponse {
     data: Record<string, unknown>
   } | null
   turnover: number
+  adjustmentsByField: Record<string, FieldBreakdown>
 }
 
 function createEmptyBucket(): AggregatedBucket {
@@ -219,6 +236,59 @@ export async function GET(request: NextRequest) {
         }
       : null
 
+    // Fetch manual adjustments for this business + tax year
+    const businessId = searchParams.get('businessId') || searchParams.get('businessType') || ''
+    const { data: rawAdjustments } = await supabase
+      .from('manual_adjustments')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tax_year', taxYear)
+
+    // Build adjustmentsByField: per HMRC field, show transaction total + adjustment total + combined
+    const adjustmentsByField: Record<string, FieldBreakdown> = {}
+
+    // Collect all HMRC fields from both transactions and adjustments
+    const allFields = new Set<string>([
+      ...Object.keys(cumulative.expenses),
+      'turnover',
+      ...(cumulative.income.other > 0 ? ['other'] : []),
+    ])
+
+    for (const adj of rawAdjustments || []) {
+      allFields.add(adj.hmrc_field)
+    }
+
+    for (const field of allFields) {
+      let txTotal: number
+      if (field === 'turnover') {
+        txTotal = cumulative.income.turnover
+      } else if (field === 'other' && !cumulative.expenses['other']) {
+        txTotal = cumulative.income.other
+      } else {
+        txTotal = cumulative.expenses[field] || 0
+      }
+
+      const fieldAdjustments = (rawAdjustments || [])
+        .filter((a) => a.hmrc_field === field)
+        .map((a) => ({
+          id: a.id,
+          hmrcField: a.hmrc_field,
+          amount: parseFloat(a.amount),
+          description: a.description,
+          adjustmentType: a.adjustment_type,
+          createdAt: a.created_at,
+        }))
+
+      const adjTotal = fieldAdjustments.reduce((s, a) => s + a.amount, 0)
+
+      adjustmentsByField[field] = {
+        transactionTotal: txTotal,
+        adjustmentTotal: adjTotal,
+        combinedTotal: txTotal + adjTotal,
+        adjustments: fieldAdjustments,
+      }
+    }
+
     // Round all monetary values to 2 decimal places
     const round = (n: number) => Math.round(n * 100) / 100
 
@@ -233,14 +303,27 @@ export async function GET(request: NextRequest) {
       cumulative.expenses[key] = round(cumulative.expenses[key])
     }
 
+    // Round adjustment breakdowns
+    for (const field of Object.keys(adjustmentsByField)) {
+      const fb = adjustmentsByField[field]
+      fb.transactionTotal = round(fb.transactionTotal)
+      fb.adjustmentTotal = round(fb.adjustmentTotal)
+      fb.combinedTotal = round(fb.combinedTotal)
+    }
+
+    // Recalculate totals including adjustments
+    const totalAdjExpenses = Object.entries(adjustmentsByField)
+      .filter(([field]) => field !== 'turnover')
+      .reduce((s, [, fb]) => s + fb.adjustmentTotal, 0)
+
     const response: AggregateResponse = {
       thisQuarter,
       cumulative,
       totals: {
         thisQuarterIncome: round(thisQuarterIncome),
-        thisQuarterExpenses: round(thisQuarterExpenses),
+        thisQuarterExpenses: round(thisQuarterExpenses + totalAdjExpenses),
         cumulativeIncome: round(cumulativeIncome),
-        cumulativeExpenses: round(cumulativeExpenses),
+        cumulativeExpenses: round(cumulativeExpenses + totalAdjExpenses),
       },
       warnings: {
         uncategorisedCount,
@@ -249,6 +332,7 @@ export async function GET(request: NextRequest) {
       },
       previousSubmission,
       turnover: round(cumulative.income.turnover),
+      adjustmentsByField,
     }
 
     return NextResponse.json(response)

@@ -1,6 +1,8 @@
 import type { ClientDeviceInfo, FraudPreventionHeaders } from '@/types/mtd';
 
-const TAXFOLIO_VERSION = '1.0.0';
+// Version is injected at build time via next.config.js from package.json.
+// Falls back to '0.0.0' during SSR/build if env var is not yet available.
+const TAXFOLIO_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0';
 
 /**
  * Generate a unique device ID (stored in localStorage for consistency)
@@ -147,7 +149,11 @@ export function addServerSideFraudHeaders(
   // X-Forwarded-Port is the server port (443), not the client's source port.
   // HMRC allows omission when running over a web application.
 
-  // Vendor (server) public IP — extracted from X-Vercel-Ip or env var
+  // Vendor (server) public IP — extracted from X-Vercel-Ip or env var.
+  // PRODUCTION REQUIREMENT: Set the VENDOR_PUBLIC_IP environment variable in Vercel
+  // to a stable egress IP (e.g. from a NAT gateway or static IP service).
+  // On Vercel serverless, x-vercel-ip is the edge node IP which changes per request;
+  // HMRC expects a consistent vendor IP for production approval.
   const serverIp = headers.get('x-vercel-ip')
     || process.env.VENDOR_PUBLIC_IP
     || clientIp  // fallback: use the edge node IP visible to the client

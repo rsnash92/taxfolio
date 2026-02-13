@@ -344,10 +344,10 @@ export class MtdApiService {
     businessId: string,
     taxYear: TaxYear,
     data: UkPropertyPeriodData
-  ): Promise<void> {
+  ): Promise<{ correlationId?: string }> {
     const apiVersion = getApiVersion(taxYear, 'property');
     const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
-    await this.request<void>(
+    return this.request<{ correlationId?: string }>(
       'PUT',
       `/individuals/business/property/uk/${nino}/${businessId}/cumulative/${taxYear}`,
       apiVersion,

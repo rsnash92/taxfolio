@@ -1,7 +1,13 @@
+const { version } = require('./package.json');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Empty turbopack config to use Turbopack (Next.js 16 default)
   turbopack: {},
+
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
 
   async headers() {
     return [

@@ -110,12 +110,13 @@ export default function MTDPage() {
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Compatible Software Required</h3>
               <p className="text-gray-600 text-sm">
-                You&apos;ll need to use HMRC-recognised software to keep digital records and submit
+                You&apos;ll need to use MTD-compatible software to keep digital records and submit
                 your quarterly updates. Spreadsheets alone won&apos;t be accepted.
               </p>
               <div className="bg-[#00e3ec]/10 border border-[#00e3ec]/20 rounded-lg p-4">
                 <p className="text-sm text-[#00a8b0] font-medium">
-                  Taxfolio is HMRC-recognised software and will be fully MTD-compatible when quarterly submissions go live in April 2026.
+                  Taxfolio is MTD-compatible software for quarterly submissions.
+                  HMRC does not endorse or approve any software developer or product.
                 </p>
               </div>
             </div>
@@ -277,6 +278,96 @@ export default function MTDPage() {
                 Continue your tax return
               </Button>
             </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Software Limitations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-[#00e3ec]" />
+            What Taxfolio supports
+          </CardTitle>
+          <CardDescription>
+            Taxfolio currently supports the following MTD ITSA features
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-gray-900">Supported</h4>
+              <ul className="text-sm text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  Self-employment (sole trader) quarterly submissions
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  UK property income quarterly submissions
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  Digital record keeping via Open Banking
+                </li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-gray-900">Not yet supported</h4>
+              <ul className="text-sm text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  End of Period Statement (EOPS)
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  Final Declaration (crystallisation)
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  Foreign property income
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  Partnership income
+                </li>
+              </ul>
+            </div>
+            <p className="text-xs text-gray-500">
+              If you need features not listed above, you can find other MTD-compatible software on the{" "}
+              <a
+                href="https://www.gov.uk/guidance/find-software-thats-compatible-with-making-tax-digital-for-income-tax"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#00c4d4] hover:underline"
+              >
+                HMRC software directory
+              </a>.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* HMRC Personal Tax Account */}
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">HMRC Personal Tax Account</h3>
+              <p className="text-gray-600 text-sm">
+                View your full tax position, manage your details, and check submissions directly with HMRC.
+              </p>
+            </div>
+            <a
+              href="https://www.gov.uk/personal-tax-account"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="whitespace-nowrap">
+                <Landmark className="h-4 w-4 mr-2" />
+                Go to HMRC
+              </Button>
+            </a>
           </div>
         </CardContent>
       </Card>

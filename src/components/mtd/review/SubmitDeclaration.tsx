@@ -19,7 +19,6 @@ import { formatCurrency } from '@/lib/utils'
 interface SubmitDeclarationProps {
   cumulativeIncome: number
   cumulativeExpenses: number
-  adjustments: Record<string, number>
   submitting: boolean
   error: string | null
   onSubmit: () => void
@@ -28,7 +27,6 @@ interface SubmitDeclarationProps {
 export function SubmitDeclaration({
   cumulativeIncome,
   cumulativeExpenses,
-  adjustments,
   submitting,
   error,
   onSubmit,
@@ -36,9 +34,7 @@ export function SubmitDeclaration({
   const [confirmed, setConfirmed] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const totalAdjustments = Object.values(adjustments).reduce((s, v) => s + v, 0)
-  const adjustedExpenses = cumulativeExpenses + totalAdjustments
-  const netProfit = cumulativeIncome - adjustedExpenses
+  const netProfit = cumulativeIncome - cumulativeExpenses
 
   const handleSubmitClick = () => {
     setDialogOpen(true)
@@ -108,14 +104,8 @@ export function SubmitDeclaration({
                   </div>
                   <div className="flex justify-between">
                     <span>Total Expenses</span>
-                    <span className="font-mono font-medium">({formatCurrency(adjustedExpenses)})</span>
+                    <span className="font-mono font-medium">({formatCurrency(cumulativeExpenses)})</span>
                   </div>
-                  {totalAdjustments !== 0 && (
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Including adjustments</span>
-                      <span className="font-mono">{totalAdjustments > 0 ? '+' : ''}{formatCurrency(totalAdjustments)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between border-t pt-1.5 font-semibold">
                     <span>Net Profit</span>
                     <span className={`font-mono ${netProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>

@@ -168,25 +168,28 @@ export async function PUT(request: NextRequest) {
     }
 
     const apiService = await getAuthenticatedService(supabase, user.id, request);
-    await apiService.createAmendUkPropertyCumulative(
+    const result = await apiService.createAmendUkPropertyCumulative(
       userProfile.nino,
       businessId,
       taxYear,
       data
     );
 
-    // Store submission record
+    const submittedAt = new Date().toISOString();
+    const correlationId = result.correlationId;
+
+    // Store submission record with correlation ID
     await supabase.from('mtd_submissions').insert({
       user_id: user.id,
       business_id: businessId,
       business_type: 'uk-property',
       tax_year: taxYear,
       submission_type: 'cumulative',
-      data: data,
-      submitted_at: new Date().toISOString(),
+      data: { ...data, correlationId },
+      submitted_at: submittedAt,
     });
 
-    return NextResponse.json({ success: true, submittedAt: new Date().toISOString() });
+    return NextResponse.json({ success: true, submittedAt, correlationId });
   } catch (error) {
     console.error('Property cumulative PUT error:', error);
 

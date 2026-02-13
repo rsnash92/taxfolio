@@ -61,7 +61,6 @@ export function QuarterlyReview({
   const [error, setError] = useState<string | null>(null)
 
   // Submission state
-  const [adjustments, setAdjustments] = useState<Record<string, number>>({})
   const [consolidated, setConsolidated] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -73,39 +72,35 @@ export function QuarterlyReview({
   const taxYear = deriveTaxYear(periodStart)
   const quarterNumber = getQuarterNumber(periodStart)
 
-  // Warn on navigate-away with unsaved adjustments
-  useEffect(() => {
-    const hasAdjustments = Object.values(adjustments).some((v) => v !== 0)
-    if (!hasAdjustments) return
-
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [adjustments])
-
-  // Fetch aggregate data
-  useEffect(() => {
+  // Fetch aggregate data (includes adjustments from DB)
+  const fetchData = useCallback(async () => {
     const params = new URLSearchParams({
       businessType,
+      businessId,
       periodStart,
       periodEnd,
       taxYear,
     })
-    fetch(`/api/mtd/aggregate?${params}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to load data')
-        return res.json()
-      })
-      .then((d: AggregateResponse) => setData(d))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [businessType, periodStart, periodEnd, taxYear])
+    try {
+      const res = await fetch(`/api/mtd/aggregate?${params}`)
+      if (!res.ok) throw new Error('Failed to load data')
+      const d: AggregateResponse = await res.json()
+      setData(d)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }, [businessType, businessId, periodStart, periodEnd, taxYear])
 
-  const handleAdjustmentChange = useCallback((field: string, value: number) => {
-    setAdjustments((prev) => ({ ...prev, [field]: value }))
-  }, [])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Re-fetch when adjustments change (called from ExpenseSection after add/edit/delete)
+  const handleAdjustmentChange = useCallback(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleSubmit = useCallback(async () => {
     if (!data) return
@@ -113,7 +108,8 @@ export function QuarterlyReview({
     setSubmitError(null)
 
     try {
-      // Build SelfEmploymentPeriodData from cumulative totals + adjustments
+      // Build SelfEmploymentPeriodData from cumulative totals
+      // Adjustments are already included in data.adjustmentsByField from the aggregate API
       const incomes = {
         turnover: data.cumulative.income.turnover,
         other: data.cumulative.income.other || undefined,
@@ -121,15 +117,18 @@ export function QuarterlyReview({
 
       let expenses: SelfEmploymentExpenses
       if (consolidated) {
+        // Sum all cumulative expenses + all adjustment totals
         const baseTotal = Object.values(data.cumulative.expenses).reduce((s, v) => s + v, 0)
-        const adj = adjustments['consolidatedExpenses'] || 0
-        expenses = { consolidatedExpenses: Math.round((baseTotal + adj) * 100) / 100 }
+        const adjTotal = Object.entries(data.adjustmentsByField)
+          .filter(([field]) => field !== 'turnover')
+          .reduce((s, [, fb]) => s + fb.adjustmentTotal, 0)
+        expenses = { consolidatedExpenses: Math.round((baseTotal + adjTotal) * 100) / 100 }
       } else {
         expenses = {} as SelfEmploymentExpenses
         for (const cat of SELF_EMPLOYMENT_EXPENSE_CATEGORIES) {
           const base = data.cumulative.expenses[cat.key] || 0
-          const adj = adjustments[cat.key] || 0
-          const total = Math.round((base + adj) * 100) / 100
+          const adjTotal = data.adjustmentsByField[cat.key]?.adjustmentTotal || 0
+          const total = Math.round((base + adjTotal) * 100) / 100
           if (total > 0) {
             (expenses as Record<string, number>)[cat.key] = total
           }
@@ -139,6 +138,18 @@ export function QuarterlyReview({
       const submissionData: SelfEmploymentPeriodData = {
         incomes: incomes.turnover > 0 || (incomes.other && incomes.other > 0) ? incomes : undefined,
         expenses: Object.keys(expenses).length > 0 ? expenses : undefined,
+      }
+
+      // Build adjustment breakdown for the submission record
+      const adjustmentBreakdown: Record<string, { amount: number; description: string; type: string }[]> = {}
+      for (const [field, fb] of Object.entries(data.adjustmentsByField)) {
+        if (fb.adjustments.length > 0) {
+          adjustmentBreakdown[field] = fb.adjustments.map((a) => ({
+            amount: a.amount,
+            description: a.description,
+            type: a.adjustmentType,
+          }))
+        }
       }
 
       const fraudHeaders = buildClientRequestHeaders()
@@ -153,6 +164,7 @@ export function QuarterlyReview({
             periodEndDate: periodEnd,
           },
           data: submissionData,
+          adjustmentBreakdown,
         }),
       })
 
@@ -171,7 +183,7 @@ export function QuarterlyReview({
     } finally {
       setSubmitting(false)
     }
-  }, [data, consolidated, adjustments, businessId, taxYear, periodStart, periodEnd])
+  }, [data, consolidated, businessId, taxYear, periodStart, periodEnd])
 
   if (loading) return <LoadingSkeleton />
 
@@ -193,26 +205,19 @@ export function QuarterlyReview({
   }
 
   // Show success state only for a just-completed submission (client state).
-  // If there's a previous submission from DB, show the review page with resubmission badge instead.
   if (submissionResult) {
-    const totalAdjustments = Object.values(adjustments).reduce((s, v) => s + v, 0)
-    const cumulativeExpenses = data.totals.cumulativeExpenses + totalAdjustments
-
     return (
       <SubmissionSuccess
         correlationId={submissionResult.correlationId}
         submittedAt={submissionResult.submittedAt}
         cumulativeIncome={data.totals.cumulativeIncome}
-        cumulativeExpenses={cumulativeExpenses}
-        netProfit={data.totals.cumulativeIncome - cumulativeExpenses}
+        cumulativeExpenses={data.totals.cumulativeExpenses}
+        netProfit={data.totals.cumulativeIncome - data.totals.cumulativeExpenses}
         quarterNumber={quarterNumber}
         taxYear={taxYear}
       />
     )
   }
-
-  const totalAdjustments = Object.values(adjustments).reduce((s, v) => s + v, 0)
-  const cumulativeExpensesWithAdj = data.totals.cumulativeExpenses + totalAdjustments
 
   return (
     <div className="space-y-6 pb-12">
@@ -235,23 +240,25 @@ export function QuarterlyReview({
       <ExpenseSection
         thisQuarter={data.thisQuarter}
         cumulative={data.cumulative}
-        adjustments={adjustments}
-        onAdjustmentChange={handleAdjustmentChange}
+        adjustmentsByField={data.adjustmentsByField}
         consolidated={consolidated}
         onConsolidatedChange={setConsolidated}
         showConsolidatedOption={data.turnover < 90000}
+        businessId={businessId}
+        taxYear={taxYear}
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        onAdjustmentChange={handleAdjustmentChange}
       />
 
       <NetSummary
         cumulativeIncome={data.totals.cumulativeIncome}
         cumulativeExpenses={data.totals.cumulativeExpenses}
-        adjustments={adjustments}
       />
 
       <SubmitDeclaration
         cumulativeIncome={data.totals.cumulativeIncome}
-        cumulativeExpenses={cumulativeExpensesWithAdj}
-        adjustments={adjustments}
+        cumulativeExpenses={data.totals.cumulativeExpenses}
         submitting={submitting}
         error={submitError}
         onSubmit={handleSubmit}
