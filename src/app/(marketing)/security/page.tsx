@@ -44,7 +44,26 @@ export default function SecurityPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold text-white mb-4">4. Infrastructure</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">4. AI Data Processing</h2>
+        <p className="text-zinc-300 mb-4">
+          TaxFolio uses Anthropic&apos;s Claude AI to suggest tax categories for your transactions.
+          We take the following measures to protect your data during AI processing:
+        </p>
+        <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
+          <li>Only transaction descriptions, amounts, and dates are sent to Anthropic — no account numbers, names, or directly identifying information</li>
+          <li>All API calls to Anthropic use TLS encryption in transit</li>
+          <li>We use Anthropic&apos;s zero data retention API — your data is not stored by Anthropic after processing and is not used to train their models</li>
+          <li>AI outputs are suggestions only and require your explicit confirmation before use</li>
+        </ul>
+        <p className="text-zinc-300 mb-4">
+          HMRC does not endorse or approve any software developer or product. TaxFolio is not
+          acting on behalf of HMRC. For more details on how we handle your data, see our{" "}
+          <a href="/privacy" className="text-[#00e3ec] hover:underline">Privacy Policy</a>.
+        </p>
+      </section>
+
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-white mb-4">5. Infrastructure</h2>
         <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
           <li>Hosted on Vercel with automatic DDoS protection</li>
           <li>Database hosted on Supabase (AWS eu-west-2, London) with Row Level Security (RLS)</li>
@@ -54,7 +73,7 @@ export default function SecurityPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold text-white mb-4">5. Vulnerability Disclosure</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">6. Vulnerability Disclosure</h2>
         <p className="text-zinc-300 mb-4">
           If you believe you have found a security vulnerability in TaxFolio, we encourage
           responsible disclosure. Please report it to us so we can address it promptly.
@@ -80,7 +99,7 @@ export default function SecurityPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold text-white mb-4">6. Contact</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">7. Contact</h2>
         <p className="text-zinc-300 mb-4">
           For security concerns:{" "}
           <a href="mailto:security@taxfolio.uk" className="text-[#00e3ec] hover:underline">

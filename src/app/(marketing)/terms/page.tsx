@@ -139,15 +139,20 @@ export default function TermsOfServicePage() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold text-white mb-4">9. AI-Generated Content</h2>
         <p className="text-zinc-300 mb-4">
-          TaxFolio uses artificial intelligence to categorise transactions and generate tax-related insights. You acknowledge that:
+          TaxFolio uses generative artificial intelligence (Anthropic&apos;s Claude) to categorise transactions and generate tax-related insights. You acknowledge that:
         </p>
-        <ul className="list-disc list-inside text-zinc-300 space-y-2">
-          <li>AI categorisations are suggestions and may not always be accurate</li>
-          <li>You are responsible for reviewing and verifying all categorisations</li>
-          <li>AI-generated content does not constitute tax advice</li>
-          <li>You should consult a qualified professional for tax advice</li>
+        <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
+          <li>AI categorisations are <strong>suggestions only</strong> and may not always be accurate — AI can produce incorrect or made-up information (&quot;hallucinations&quot;)</li>
+          <li>You are responsible for reviewing and verifying all AI-suggested categorisations before they are used in any HMRC submission</li>
+          <li>AI-generated content does not constitute tax, legal, or financial advice</li>
+          <li>You should consult a qualified tax professional for advice specific to your circumstances, particularly for complex tax situations</li>
           <li>We continuously work to improve accuracy but cannot guarantee error-free results</li>
+          <li>It is your responsibility to ensure that your tax returns and HMRC submissions are accurate, regardless of AI involvement</li>
         </ul>
+        <p className="text-zinc-300 mb-4">
+          For details on what data is processed by AI and how, see Section 5.2 of our{" "}
+          <a href="/privacy" className="text-[#00e3ec] hover:underline">Privacy Policy</a>.
+        </p>
       </section>
 
       <section className="mb-10">

@@ -87,7 +87,7 @@ export default function AlternateHomePage() {
             {/* HMRC Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full mb-6">
               <Building2 className="w-4 h-4 text-[#00e3ec]" />
-              <span className="text-sm font-medium text-gray-700">HMRC Recognised Software</span>
+              <span className="text-sm font-medium text-gray-700">MTD Compatible Software</span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-gray-900 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-kanit), sans-serif' }}>
@@ -303,7 +303,7 @@ export default function AlternateHomePage() {
         <div className="container mx-auto px-6 lg:px-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Building2, title: "HMRC Recognised", desc: "MTD compatible software" },
+              { icon: Building2, title: "MTD Compatible", desc: "Works with HMRC APIs" },
               { icon: Shield, title: "FCA Authorised", desc: "Bank connections via TrueLayer" },
               { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
               { icon: Smartphone, title: "Works Everywhere", desc: "Phone, tablet & desktop" },
@@ -359,8 +359,8 @@ export default function AlternateHomePage() {
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: 1, title: "Connect Bank", desc: "Securely link your business account in seconds via Open Banking." },
-              { step: 2, title: "AI Categorises", desc: "Our AI sorts every transaction into the right tax categories automatically." },
-              { step: 3, title: "Review & Done", desc: "Confirm the AI's suggestions and see your tax position instantly." },
+              { step: 2, title: "AI Suggests", desc: "AI suggests a tax category for each transaction. You always have the final say." },
+              { step: 3, title: "Review & Submit", desc: "Review AI suggestions, confirm or correct them, and see your tax position clearly." },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="w-12 h-12 rounded-full bg-[#00e3ec] text-white font-bold text-xl flex items-center justify-center mx-auto mb-4">
@@ -393,7 +393,7 @@ export default function AlternateHomePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
-              { icon: Cpu, title: "AI Categorisation", desc: "Claude AI understands context. 'AMZN MKTP' → office supplies or personal? AI knows the difference." },
+              { icon: Cpu, title: "AI Categorisation", desc: "AI suggests tax categories for each transaction. You review and confirm before anything is submitted." },
               { icon: Landmark, title: "Bank Connection", desc: "Connect via Open Banking. Transactions sync automatically. All major UK banks supported." },
               { icon: Smartphone, title: "Mobile First", desc: "Review transactions on your phone. Swipe to confirm. Do your taxes while commuting." },
               { icon: Calendar, title: "Real-time Tax", desc: "See your estimated tax bill update as you confirm transactions. No more January surprises." },
@@ -682,7 +682,7 @@ export default function AlternateHomePage() {
               },
               {
                 q: "How does AI categorisation work?",
-                a: "Our AI analyses your transaction descriptions and suggests the most likely tax category. It learns from your corrections and gets more accurate over time.",
+                a: "Our AI (powered by Anthropic's Claude) analyses your transaction descriptions and suggests the most likely tax category. These are suggestions only — you review and confirm each one before it's used. AI categorisation does not constitute tax advice. For complex situations, we recommend consulting a qualified accountant.",
               },
               {
                 q: "Is there a free trial?",
@@ -801,8 +801,9 @@ export default function AlternateHomePage() {
               © {new Date().getFullYear()} TAXFOLIO LTD. All rights reserved. Company registered in England & Wales (16482604).
             </p>
             <p className="text-gray-600 text-xs text-center">
-              Bank connections provided by TrueLayer, authorised by the FCA. TaxFolio is not a financial advisor or accountant.
-              Please consult a qualified accountant or tax advisor for complex tax matters.
+              Bank connections provided by TrueLayer, authorised by the FCA. AI categorisation powered by Anthropic.
+              TaxFolio is not a financial advisor or accountant and is not endorsed or approved by HMRC.
+              AI-generated suggestions should be reviewed before use. Please consult a qualified accountant or tax advisor for complex tax matters.
             </p>
           </div>
         </div>

@@ -165,7 +165,7 @@ export default async function ReferralLandingPage({
             Trusted by thousands of self-employed individuals and landlords across the UK
           </p>
           <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
-            <span>✓ HMRC recognised</span>
+            <span>✓ MTD compatible</span>
             <span>✓ Bank-level security</span>
             <span>✓ UK-based support</span>
           </div>

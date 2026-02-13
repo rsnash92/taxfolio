@@ -120,19 +120,31 @@ export default function PrivacyPolicyPage() {
           <li><strong>TrueLayer Ltd.</strong> - Open Banking connectivity (processes bank connection data)</li>
           <li><strong>Stripe Inc.</strong> - Payment processing (processes payment data)</li>
           <li><strong>Supabase Inc.</strong> - Database and authentication services</li>
-          <li><strong>Anthropic</strong> - AI processing for transaction categorisation (anonymised data only)</li>
+          <li><strong>Anthropic</strong> - AI processing for transaction categorisation (see Section 5.2 below)</li>
           <li><strong>Vercel Inc.</strong> - Hosting and infrastructure</li>
         </ul>
         <p className="text-zinc-300 mb-4">
           All service providers are bound by data processing agreements and are required to protect your data in accordance with GDPR requirements.
         </p>
 
-        <h3 className="text-lg font-medium text-white mb-3 mt-6">5.2 Legal Requirements</h3>
+        <h3 className="text-lg font-medium text-white mb-3 mt-6">5.2 AI Processing and Anthropic</h3>
+        <p className="text-zinc-300 mb-4">
+          TaxFolio uses generative AI (Anthropic&apos;s Claude) to suggest tax categories for your bank transactions and to generate financial insights. Here is how your data is processed:
+        </p>
+        <ul className="list-disc list-inside text-zinc-300 space-y-2 mb-4">
+          <li><strong>What data is sent to Anthropic:</strong> Transaction descriptions, amounts, dates, and merchant names. We do not send your name, bank account numbers, or other directly identifying information.</li>
+          <li><strong>How it is processed:</strong> Anthropic&apos;s AI model analyses transaction data to suggest the most likely HMRC tax category (e.g., office costs, travel expenses, turnover). Results are returned to TaxFolio and presented as suggestions for your review.</li>
+          <li><strong>Data retention by Anthropic:</strong> We use Anthropic&apos;s API with zero data retention — your transaction data is not stored by Anthropic after processing and is not used to train their models.</li>
+          <li><strong>Limitations:</strong> AI categorisations are suggestions only and may contain errors. You are responsible for reviewing and confirming all categorisations before they are used in any HMRC submission.</li>
+          <li><strong>Your control:</strong> You can override any AI suggestion at any time. No data is submitted to HMRC without your explicit confirmation.</li>
+        </ul>
+
+        <h3 className="text-lg font-medium text-white mb-3 mt-6">5.3 Legal Requirements</h3>
         <p className="text-zinc-300 mb-4">
           We may disclose your information if required by law, court order, or government request, or if we believe disclosure is necessary to protect our rights, your safety, or the safety of others.
         </p>
 
-        <h3 className="text-lg font-medium text-white mb-3 mt-6">5.3 Business Transfers</h3>
+        <h3 className="text-lg font-medium text-white mb-3 mt-6">5.4 Business Transfers</h3>
         <p className="text-zinc-300">
           In the event of a merger, acquisition, or sale of assets, your data may be transferred to the acquiring entity. We will notify you of any such change and your choices regarding your data.
         </p>

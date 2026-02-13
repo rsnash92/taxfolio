@@ -39,6 +39,7 @@ export function collectDeviceInfo(): ClientDeviceInfo {
       timezone: 'UTC+00:00',
       userAgent: 'TaxFolio Server',
       plugins: [],
+      doNotTrack: false,
       deviceId: 'server-side',
     };
   }
@@ -74,6 +75,7 @@ export function collectDeviceInfo(): ClientDeviceInfo {
     timezone,
     userAgent: navigator.userAgent,
     plugins,
+    doNotTrack: navigator.doNotTrack === '1',
     deviceId: getOrCreateDeviceId(),
   };
 }
@@ -109,6 +111,7 @@ export function buildFraudPreventionHeaders(
     'Gov-Client-Browser-Plugins': pluginsFormatted || '',
     'Gov-Client-Screens': screenInfo,
     'Gov-Client-Browser-JS-User-Agent': deviceInfo.userAgent,
+    'Gov-Client-Browser-Do-Not-Track': deviceInfo.doNotTrack ? 'true' : 'false',
     'Gov-Vendor-Version': `TaxFolio=${TAXFOLIO_VERSION}`,
     'Gov-Vendor-Product-Name': 'TaxFolio',
   };
@@ -178,6 +181,7 @@ export function validateFraudHeaders(
     'Gov-Client-Window-Size',
     'Gov-Client-Screens',
     'Gov-Client-Browser-JS-User-Agent',
+    'Gov-Client-Browser-Do-Not-Track',
     'Gov-Vendor-Version',
     'Gov-Vendor-Product-Name',
     'Gov-Client-User-IDs',
@@ -242,6 +246,7 @@ export function extractFraudHeadersFromRequest(
     'Gov-Client-Browser-Plugins',
     'Gov-Client-Screens',
     'Gov-Client-Browser-JS-User-Agent',
+    'Gov-Client-Browser-Do-Not-Track',
     'Gov-Vendor-Version',
     'Gov-Vendor-Product-Name',
     'Gov-Vendor-License-IDs',

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Info } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { TaxSummaryCard } from './TaxSummaryCard'
@@ -146,6 +146,16 @@ export function InsightsPage() {
         <p className="text-sm text-gray-500 mt-1">
           Smart analysis of your business finances — updated as your transactions sync.
           <span className="text-gray-400 ml-2">Tax Year {data.taxYear.replace('-', '/')}</span>
+        </p>
+      </div>
+
+      {/* AI Disclaimer */}
+      <div className="flex items-start gap-2.5 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+        <Info className="h-4 w-4 mt-0.5 shrink-0" />
+        <p>
+          These insights are generated using AI and your categorised transaction data. They are estimates
+          only and do not constitute tax advice. Please verify figures before submitting to HMRC and
+          consult a qualified accountant for complex tax matters.
         </p>
       </div>
 

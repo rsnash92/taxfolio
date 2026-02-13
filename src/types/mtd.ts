@@ -354,6 +354,7 @@ export interface FraudPreventionHeaders {
   'Gov-Client-Browser-Plugins': string;
   'Gov-Client-Screens': string;
   'Gov-Client-Browser-JS-User-Agent': string;
+  'Gov-Client-Browser-Do-Not-Track': string;
   'Gov-Vendor-Version': string;
   'Gov-Vendor-Product-Name': string;
   // Server-side headers (added by API routes from request context)
@@ -378,6 +379,7 @@ export interface ClientDeviceInfo {
   timezone: string;
   userAgent: string;
   plugins: string[];
+  doNotTrack: boolean;
   deviceId?: string;
 }
 

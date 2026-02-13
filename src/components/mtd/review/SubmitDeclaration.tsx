@@ -63,9 +63,11 @@ export function SubmitDeclaration({
               className="mt-0.5 rounded border-gray-300 text-[#00e3ec] focus:ring-[#00e3ec]"
             />
             <span className="text-sm text-gray-700">
-              I confirm that the information I have provided is correct and complete to the best
-              of my knowledge and belief. I understand that I may have to pay financial penalties
-              and face prosecution if I give false information.
+              I confirm that I have reviewed the figures below, including any AI-suggested
+              categorisations, and that the information is correct and complete to the best
+              of my knowledge and belief. I understand that I am responsible for the accuracy
+              of this submission and may have to pay financial penalties and face prosecution
+              if I give false information.
             </span>
           </label>
 
@@ -123,6 +125,8 @@ export function SubmitDeclaration({
                 </div>
                 <p className="text-xs text-gray-500">
                   This submission is cumulative — it includes all data from the start of the tax year to the end of this quarter.
+                  These figures are based on your bank transactions and AI-suggested categorisations.
+                  It is your responsibility to ensure the figures are accurate before submitting to HMRC.
                 </p>
               </div>
             </AlertDialogDescription>

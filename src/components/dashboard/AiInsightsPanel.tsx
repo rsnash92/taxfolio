@@ -149,6 +149,9 @@ export function AiInsightsPanel({ hasBankConnection, nudge, ytdSummary }: AiInsi
           </Link>
         ))}
       </div>
+      <p className="text-[10px] text-gray-400 mt-2">
+        AI-generated estimates based on your categorised transactions. Not tax advice.
+      </p>
     </motion.div>
   );
 }

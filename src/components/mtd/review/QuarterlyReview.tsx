@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getQuarterNumber } from '@/lib/mtd/quarters'
+import { buildClientRequestHeaders } from '@/lib/mtd/fraud-headers'
 import type { AggregateResponse } from '@/app/api/mtd/aggregate/route'
 import type { SelfEmploymentPeriodData, SelfEmploymentExpenses } from '@/types/mtd'
 import { ReviewHeader } from './ReviewHeader'
@@ -140,9 +141,10 @@ export function QuarterlyReview({
         expenses: Object.keys(expenses).length > 0 ? expenses : undefined,
       }
 
+      const fraudHeaders = buildClientRequestHeaders()
       const res = await fetch('/api/mtd/self-employment/cumulative', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...fraudHeaders },
         body: JSON.stringify({
           businessId,
           taxYear,
