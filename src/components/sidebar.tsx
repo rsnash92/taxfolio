@@ -45,9 +45,8 @@ const navItems: { title: string; href: string; icon: LucideIcon }[] = [
     icon: Calendar,
   },
   {
-    // TODO: Future /transactions page with full filtering, search, pagination
     title: "Transactions",
-    href: "/dashboard#transactions",
+    href: "/transactions",
     icon: ArrowLeftRight,
   },
   {

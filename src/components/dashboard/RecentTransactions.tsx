@@ -128,7 +128,7 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
               <RefreshCw className="h-4 w-4" />
             )}
           </button>
-          <Link href="/dashboard" className="text-xs font-medium text-[#00c4d4] hover:text-[#00e3ec] transition-colors">
+          <Link href="/transactions" className="text-xs font-medium text-[#00c4d4] hover:text-[#00e3ec] transition-colors">
             View all &rarr;
           </Link>
         </div>
@@ -153,10 +153,18 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
                   <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                     {tx.category}
                   </span>
+                ) : tx.ai_suggested_category ? (
+                  <Link href="/transactions">
+                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
+                      AI: {tx.ai_suggested_category}
+                    </span>
+                  </Link>
                 ) : (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
-                    ✦ Categorise
-                  </span>
+                  <Link href="/transactions">
+                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
+                      Categorise
+                    </span>
+                  </Link>
                 )}
               </div>
 

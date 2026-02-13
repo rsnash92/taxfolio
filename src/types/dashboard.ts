@@ -22,6 +22,7 @@ export interface RecentTransactionData {
   amount: number
   type: 'income' | 'expense'
   category: string | null
+  ai_suggested_category: string | null
   status: 'auto' | 'needs_review'
   date: string // YYYY-MM-DD
 }

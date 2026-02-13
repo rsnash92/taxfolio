@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { getTransactions, refreshAccessToken } from '@/lib/truelayer/client'
-import { getMtdCategory } from '@/lib/mtd/category-mapping'
 import { getCurrentTaxYear, getTaxYearDates } from '@/lib/mtd/quarters'
+import { categoriseTransactions } from '@/lib/ai/categorise'
 
 interface TokenBlob {
   accessToken: string
@@ -93,17 +93,7 @@ export async function syncTransactions(
     return { synced: 0, skipped: 0, errors: ['No selected accounts to sync'] }
   }
 
-  // 5. Load categories for mapping
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('id, code')
-
-  const categoryByCode = new Map<string, string>()
-  for (const cat of categories || []) {
-    categoryByCode.set(cat.code, cat.id)
-  }
-
-  // 6. Build date range chunks (max 89 days each to stay within TrueLayer limits)
+  // 5. Build date range chunks (max 89 days each to stay within TrueLayer limits)
   const taxYear = getCurrentTaxYear()
   const { start: fromDate, end: taxYearEnd } = getTaxYearDates(taxYear)
   const today = new Date().toISOString().split('T')[0]
@@ -113,6 +103,7 @@ export async function syncTransactions(
   let synced = 0
   let skipped = 0
   const errors: string[] = []
+  const newTransactionIds: string[] = []
 
   for (const account of accounts) {
     try {
@@ -153,15 +144,11 @@ export async function syncTransactions(
         const description = tx.description || tx.merchant_name || 'Transaction'
         const amount = isIncome ? Math.abs(tx.amount) : -Math.abs(tx.amount)
 
-        // Auto-categorise via keyword matching
-        const mtdCategoryCode = getMtdCategory(description, 'self-employment')
-        const categoryId = mtdCategoryCode ? categoryByCode.get(mtdCategoryCode) : undefined
-
         // Compute tax year from transaction date
         const txDate = tx.timestamp.split('T')[0]
         const txTaxYear = computeTaxYear(txDate)
 
-        const { error: insertError } = await supabase.from('transactions').insert({
+        const { data: inserted, error: insertError } = await supabase.from('transactions').insert({
           user_id: userId,
           account_id: account.id,
           external_transaction_id: externalId,
@@ -170,16 +157,15 @@ export async function syncTransactions(
           amount,
           currency: tx.currency || 'GBP',
           merchant_name: tx.merchant_name || null,
-          ai_suggested_category_id: categoryId || null,
-          ai_confidence: categoryId ? 0.8 : null,
           review_status: 'pending',
           tax_year: txTaxYear,
-        })
+        }).select('id').single()
 
         if (insertError) {
           errors.push(`Insert error for ${externalId}: ${insertError.message}`)
         } else {
           synced++
+          if (inserted) newTransactionIds.push(inserted.id)
         }
       }
     } catch (err) {
@@ -193,6 +179,21 @@ export async function syncTransactions(
     .from('bank_connections')
     .update({ last_synced_at: new Date().toISOString() })
     .eq('id', connection.id)
+
+  // Auto-categorise newly imported transactions via AI
+  if (newTransactionIds.length > 0) {
+    try {
+      console.log('[sync] Auto-categorising', newTransactionIds.length, 'new transactions')
+      const catResult = await categoriseTransactions(newTransactionIds, supabase)
+      console.log('[sync] AI categorised', catResult.categorised, 'transactions')
+      if (catResult.errors.length > 0) {
+        errors.push(...catResult.errors.map((e) => `AI categorise: ${e}`))
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'AI categorisation failed'
+      errors.push(msg)
+    }
+  }
 
   return { synced, skipped, errors }
 }
