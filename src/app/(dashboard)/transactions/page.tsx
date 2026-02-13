@@ -460,29 +460,41 @@ export default function TransactionsPage() {
     <div className="p-8 space-y-6">
       <h1 className="text-2xl font-semibold text-gray-900">Transactions</h1>
 
-      {/* Stat Cards */}
+      {/* Stat Cards — clickable to filter */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'all' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          onClick={() => setFilter('all')}
+        >
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Total</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'business' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          onClick={() => setFilter('business')}
+        >
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Business</p>
             <p className="text-2xl font-bold text-[#00c4d4]">{stats.businessCount}</p>
             <p className="text-xs text-gray-400">{formatCurrency(stats.businessAmount)}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'personal' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          onClick={() => setFilter('personal')}
+        >
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Personal</p>
             <p className="text-2xl font-bold text-gray-400">{stats.personalCount}</p>
             <p className="text-xs text-gray-400">{formatCurrency(stats.personalAmount)}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:shadow-md ${filter === 'needs_review' ? 'ring-2 ring-[#00e3ec]' : ''}`}
+          onClick={() => setFilter('needs_review')}
+        >
           <CardContent className="p-4">
             <p className="text-sm text-gray-500">Needs Review</p>
             <p className="text-2xl font-bold text-amber-500">{stats.needsReviewCount}</p>
