@@ -178,7 +178,7 @@ export async function PUT(request: NextRequest) {
       ? await apiService.getOrCreateSandboxBusinessId(userProfile.nino)
       : businessId;
 
-    await apiService.createAmendSelfEmploymentCumulative(
+    const result = await apiService.createAmendSelfEmploymentCumulative(
       userProfile.nino,
       resolvedBusinessId,
       taxYear,
@@ -186,18 +186,23 @@ export async function PUT(request: NextRequest) {
       periodDates
     );
 
-    // Store submission record
+    const submittedAt = new Date().toISOString();
+    const correlationId = result.correlationId;
+
+    // Store submission record with correlation ID
     await supabase.from('mtd_submissions').insert({
       user_id: user.id,
       business_id: businessId,
       business_type: 'self-employment',
       tax_year: taxYear,
       submission_type: 'cumulative',
-      data: data,
-      submitted_at: new Date().toISOString(),
+      period_start: periodDates?.periodStartDate,
+      period_end: periodDates?.periodEndDate,
+      data: { ...data, correlationId },
+      submitted_at: submittedAt,
     });
 
-    return NextResponse.json({ success: true, submittedAt: new Date().toISOString() });
+    return NextResponse.json({ success: true, submittedAt, correlationId });
   } catch (error) {
     console.error('SE cumulative PUT error:', error);
 

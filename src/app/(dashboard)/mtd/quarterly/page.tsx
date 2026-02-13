@@ -71,10 +71,21 @@ export default function QuarterlySubmissionsPage() {
   };
 
   const handleSelectObligation = useCallback(async (obligation: ObligationWithDisplayStatus) => {
-    // TODO: Fetch transactions from Open Banking for the period
+    // Self-employment obligations use the dedicated review page
+    if (obligation.businessType === 'self-employment') {
+      const params = new URLSearchParams({
+        businessId: obligation.businessId,
+        businessType: obligation.businessType,
+        periodStart: obligation.periodStartDate,
+        periodEnd: obligation.periodEndDate,
+      });
+      router.push(`/mtd/review?${params}`);
+      return;
+    }
+    // Property obligations still use the wizard
     setWizardTransactions([]);
     setSelectedObligation(obligation);
-  }, []);
+  }, [router]);
 
   const handleCloseWizard = useCallback(() => {
     setSelectedObligation(null);

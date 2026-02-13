@@ -95,8 +95,11 @@ export class MtdApiService {
     const response = await fetch(url, options);
 
     // Handle 204 No Content (success with no body, e.g. cumulative PUT)
+    // Extract correlation ID from response headers for audit trail
     if (response.status === 204) {
-      return {} as T;
+      return {
+        correlationId: response.headers.get('X-CorrelationId') || undefined,
+      } as T;
     }
 
     // Handle non-JSON responses
@@ -213,7 +216,7 @@ export class MtdApiService {
     taxYear: TaxYear,
     data: SelfEmploymentPeriodData,
     periodDates?: PeriodDates
-  ): Promise<void> {
+  ): Promise<{ correlationId?: string }> {
     const apiVersion = getApiVersion(taxYear, 'self-employment');
     const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
 
@@ -236,7 +239,7 @@ export class MtdApiService {
       hmrcBody.periodExpenses = data.expenses;
     }
 
-    await this.request<void>(
+    return this.request<{ correlationId?: string }>(
       'PUT',
       `/individuals/business/self-employment/${nino}/${businessId}/cumulative/${taxYear}`,
       apiVersion,

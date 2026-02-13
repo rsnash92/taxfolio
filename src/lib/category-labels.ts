@@ -61,6 +61,29 @@ export const HMRC_TO_CATEGORY_CODE: Record<string, string> = {
   otherExpenses: 'expense_other',
 }
 
+/** Reverse mapping: taxfolio category codes → HMRC API field names for SE submissions */
+export const CATEGORY_CODE_TO_HMRC_EXPENSE: Record<string, string> = {
+  expense_cogs: 'costOfGoods',
+  expense_wages: 'staffCosts',
+  expense_subcontractor: 'constructionIndustryScheme',
+  expense_premises: 'premisesRunningCosts',
+  expense_repairs: 'maintenanceCosts',
+  expense_motor: 'travelCosts',
+  expense_travel: 'travelCosts',
+  expense_advertising: 'advertisingCosts',
+  expense_professional: 'professionalFees',
+  expense_finance: 'financialCharges',
+  expense_phone: 'adminCosts',
+  expense_office: 'adminCosts',
+  expense_other: 'other',
+}
+
+/** Reverse mapping: taxfolio category codes → HMRC income field names */
+export const CATEGORY_CODE_TO_HMRC_INCOME: Record<string, string> = {
+  income_sales: 'turnover',
+  income_other: 'other',
+}
+
 export function getCategoryLabel(code: string): string {
   return CATEGORY_LABELS[code] || code
 }
