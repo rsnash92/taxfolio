@@ -240,12 +240,22 @@ export async function GET(request: NextRequest) {
     (categorisationScore * 70) + (hmrcConnected ? 15 : 0) + (bankConnected ? 15 : 0)
   )
 
+  const personalAllowance = 12570
+  const taxableAfterAllowance = Math.max(0, taxBreakdown.taxableProfit - personalAllowance)
+
   return NextResponse.json({
     taxYear,
     tax: {
       totalIncome: Math.round(totalIncome * 100) / 100,
       totalExpenses: Math.round(totalExpenses * 100) / 100,
-      ...taxBreakdown,
+      taxableProfit: taxBreakdown.taxableProfit,
+      personalAllowance,
+      taxableAfterAllowance,
+      incomeTax: taxBreakdown.incomeTax,
+      class2NIC: taxBreakdown.class2NI,
+      class4NIC: taxBreakdown.class4NI,
+      totalTaxDue: taxBreakdown.totalTaxDue,
+      effectiveRate: taxBreakdown.effectiveTaxRate,
       prevYearTax: prevTaxBreakdown?.totalTaxDue ?? null,
       prevYearIncome: prevIncome > 0 ? Math.round(prevIncome * 100) / 100 : null,
     },
