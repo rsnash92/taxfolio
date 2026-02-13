@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import type { NudgeData } from '@/types/dashboard';
 
 interface AiNudgeBannerProps {
@@ -52,12 +52,12 @@ export function AiNudgeBanner({ nudge }: AiNudgeBannerProps) {
               </p>
             </div>
 
-            <Button
-              size="sm"
-              className="shrink-0 bg-[#00e3ec] text-black hover:bg-[#00c4d4] font-semibold hidden sm:inline-flex"
+            <Link
+              href="/transactions"
+              className="shrink-0 inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#00e3ec] text-black hover:bg-[#00c4d4] transition-colors hidden sm:inline-flex"
             >
               Review now
-            </Button>
+            </Link>
 
             <button
               onClick={handleDismiss}

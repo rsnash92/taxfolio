@@ -28,6 +28,7 @@ interface Quarter {
   daysLeft?: number;
   progress?: number;
   unreviewed?: number;
+  totalTransactions?: number;
 }
 
 interface QuarterApiData {
@@ -86,7 +87,7 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getStatusBadge(status: Quarter['status'], daysLeft?: number) {
+function getStatusBadge(status: Quarter['status'], daysLeft?: number, isMostUrgentOverdue?: boolean) {
   switch (status) {
     case 'submitted':
       return (
@@ -97,9 +98,16 @@ function getStatusBadge(status: Quarter['status'], daysLeft?: number) {
     case 'review':
     case 'open':
       if (daysLeft !== undefined && daysLeft <= 0) {
+        if (isMostUrgentOverdue) {
+          return (
+            <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50">
+              Overdue
+            </Badge>
+          );
+        }
         return (
-          <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50">
-            Overdue
+          <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50">
+            Not submitted
           </Badge>
         );
       }
@@ -110,9 +118,16 @@ function getStatusBadge(status: Quarter['status'], daysLeft?: number) {
       );
     case 'not_started':
       if (daysLeft !== undefined && daysLeft <= 0) {
+        if (isMostUrgentOverdue) {
+          return (
+            <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-50">
+              Overdue
+            </Badge>
+          );
+        }
         return (
-          <Badge className="bg-red-50 text-red-600 border-red-200 hover:bg-red-50">
-            Overdue
+          <Badge className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-50">
+            Not submitted
           </Badge>
         );
       }
@@ -233,6 +248,7 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
             daysLeft,
             progress,
             unreviewed: pending,
+            totalTransactions: total,
           };
         });
 
@@ -326,6 +342,15 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
     );
   }
 
+  // Find the most urgent overdue quarter (most recently passed deadline)
+  // Only that one gets red "Overdue"; others get amber "Not submitted"
+  const overdueQuarters = quarters.filter(
+    (q) => q.status !== 'submitted' && q.status !== 'upcoming' && q.daysLeft !== undefined && q.daysLeft <= 0
+  );
+  const mostUrgentOverdueId = overdueQuarters.length > 0
+    ? overdueQuarters.reduce((best, q) => (q.daysLeft! > best.daysLeft! ? q : best)).id
+    : null;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -349,7 +374,7 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
               <CardContent className="px-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-900">{q.id}</span>
-                  {getStatusBadge(q.status, q.daysLeft)}
+                  {getStatusBadge(q.status, q.daysLeft, q.id === mostUrgentOverdueId)}
                 </div>
 
                 <p className="text-xs text-gray-500">{q.period}</p>
@@ -372,13 +397,17 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
                       <div className="h-px bg-gray-100 my-1" />
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-500">Est. Tax</span>
-                        <span
-                          className={`font-semibold font-mono ${
-                            q.status === 'submitted' ? 'text-green-600' : 'text-amber-600'
-                          }`}
-                        >
-                          {formatCurrency(q.tax ?? 0)}
-                        </span>
+                        {q.status === 'review' && (q.income ?? 0) === 0 && (q.expenses ?? 0) === 0 && (q.totalTransactions ?? 0) > 0 ? (
+                          <span className="text-xs text-gray-400 italic">Categorise to estimate</span>
+                        ) : (
+                          <span
+                            className={`font-semibold font-mono ${
+                              q.status === 'submitted' ? 'text-green-600' : 'text-amber-600'
+                            }`}
+                          >
+                            {formatCurrency(q.tax ?? 0)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -388,8 +417,10 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
                           <span>{q.unreviewed} to review</span>
                           {q.daysLeft !== undefined && q.daysLeft > 0 ? (
                             <span>{q.daysLeft} days left</span>
-                          ) : (
+                          ) : q.id === mostUrgentOverdueId ? (
                             <span className="text-red-500 font-medium">Overdue</span>
+                          ) : (
+                            <span className="text-amber-500 font-medium">Past due</span>
                           )}
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">

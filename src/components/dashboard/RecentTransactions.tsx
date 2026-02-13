@@ -6,9 +6,10 @@ import { formatCurrency } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { EmptyState } from './EmptyState';
-import { Building2, RefreshCw, Loader2 } from 'lucide-react';
+import { Building2, RefreshCw, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import type { RecentTransactionData } from '@/types/dashboard';
+import { getCategoryLabel } from '@/lib/category-labels';
 
 interface RecentTransactionsProps {
   transactions: RecentTransactionData[];
@@ -24,6 +25,8 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced?: number; errors?: string[] } | null>(null);
+
+  const needsReviewCount = transactions.filter((tx) => tx.status === 'needs_review').length;
 
   const handleSync = async () => {
     setSyncing(true);
@@ -128,9 +131,18 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
               <RefreshCw className="h-4 w-4" />
             )}
           </button>
-          <Link href="/transactions" className="text-xs font-medium text-[#00c4d4] hover:text-[#00e3ec] transition-colors">
-            View all &rarr;
-          </Link>
+          {needsReviewCount > 0 ? (
+            <Link
+              href="/transactions"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#00e3ec] text-black hover:bg-[#00c4d4] transition-colors"
+            >
+              {needsReviewCount} to review <ArrowRight className="h-3 w-3" />
+            </Link>
+          ) : (
+            <Link href="/transactions" className="text-xs font-medium text-[#00c4d4] hover:text-[#00e3ec] transition-colors">
+              View all &rarr;
+            </Link>
+          )}
         </div>
       </div>
 
@@ -149,15 +161,27 @@ export function RecentTransactions({ transactions, hasBankConnection }: RecentTr
               </div>
 
               <div className="flex-1 text-center">
-                {tx.status === 'auto' && tx.category ? (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                    {tx.category}
-                  </span>
-                ) : tx.ai_suggested_category ? (
-                  <Link href="/transactions">
-                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
-                      AI: {tx.ai_suggested_category}
+                {tx.status === 'auto' && tx.category_code ? (
+                  tx.category_code === 'personal' || tx.category_code === 'transfer' ? (
+                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-200">
+                      {getCategoryLabel(tx.category_code)}
                     </span>
+                  ) : (
+                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                      {getCategoryLabel(tx.category_code)}
+                    </span>
+                  )
+                ) : tx.ai_suggested_category_code ? (
+                  <Link href="/transactions">
+                    {tx.ai_suggested_category_code === 'personal' || tx.ai_suggested_category_code === 'transfer' ? (
+                      <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-400 border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                        {getCategoryLabel(tx.ai_suggested_category_code)}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors">
+                        AI: {getCategoryLabel(tx.ai_suggested_category_code)}
+                      </span>
+                    )}
                   </Link>
                 ) : (
                   <Link href="/transactions">

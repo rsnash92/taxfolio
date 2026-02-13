@@ -22,8 +22,8 @@ interface RecentRow {
   review_status: string
   category_id: string | null
   ai_suggested_category_id: string | null
-  category: { name: string; type: string } | null
-  ai_suggested_category: { name: string; type: string } | null
+  category: { name: string; type: string; code: string } | null
+  ai_suggested_category: { name: string; type: string; code: string } | null
 }
 
 function getCurrentTaxYear(): string {
@@ -76,7 +76,7 @@ export async function getDashboardData(userId: string, taxYearOverride?: string)
     // Recent transactions (latest 8)
     supabase
       .from('transactions')
-      .select('id, date, description, amount, merchant_name, review_status, category_id, ai_suggested_category_id, category:categories!transactions_category_id_fkey(name, type), ai_suggested_category:categories!transactions_ai_suggested_category_id_fkey(name, type)')
+      .select('id, date, description, amount, merchant_name, review_status, category_id, ai_suggested_category_id, category:categories!transactions_category_id_fkey(name, type, code), ai_suggested_category:categories!transactions_ai_suggested_category_id_fkey(name, type, code)')
       .order('date', { ascending: false })
       .limit(8),
 
@@ -193,7 +193,9 @@ function mapRecentTransactions(rows: RecentRow[]): RecentTransactionData[] {
       amount: Math.abs(tx.amount),
       type: isIncome ? 'income' : 'expense',
       category: tx.category?.name || null,
+      category_code: tx.category?.code || null,
       ai_suggested_category: tx.ai_suggested_category?.name || null,
+      ai_suggested_category_code: tx.ai_suggested_category?.code || null,
       status: hasCategory || (hasSuggestedCategory && tx.review_status === 'confirmed')
         ? 'auto'
         : 'needs_review',
