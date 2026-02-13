@@ -10,6 +10,7 @@ import { Lock, Loader2 } from 'lucide-react';
 import { getAllQuarters } from '@/lib/mtd-utils';
 import { calculateEstimatedTax } from '@/lib/tax/calculator';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface MtdQuarterCardsProps {
   hasHmrcConnection: boolean;
@@ -29,6 +30,8 @@ interface Quarter {
   progress?: number;
   unreviewed?: number;
   totalTransactions?: number;
+  periodStart?: string;
+  periodEnd?: string;
 }
 
 interface QuarterApiData {
@@ -53,6 +56,8 @@ interface ObligationDetail {
 }
 
 interface BusinessObligation {
+  typeOfBusiness?: string;
+  businessId?: string;
   obligationDetails: ObligationDetail[];
 }
 
@@ -146,8 +151,10 @@ function getStatusBadge(status: Quarter['status'], daysLeft?: number, isMostUrge
 }
 
 export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: MtdQuarterCardsProps) {
+  const router = useRouter();
   const [quarters, setQuarters] = useState<Quarter[]>([]);
   const [loading, setLoading] = useState(hasHmrcConnection);
+  const [seBusinessId, setSeBusinessId] = useState<string | null>(null);
   const taxYear = taxYearProp || getCurrentTaxYear();
 
   useEffect(() => {
@@ -168,9 +175,15 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
 
         if (obligationsRes.ok) {
           const data = await obligationsRes.json();
-          obligationDetails = (data.obligations || []).flatMap(
+          const businesses = data.obligations || [];
+          obligationDetails = businesses.flatMap(
             (b: BusinessObligation) => b.obligationDetails || []
           );
+          // Extract SE businessId for review page navigation
+          const seBusiness = businesses.find(
+            (b: BusinessObligation) => b.typeOfBusiness === 'self-employment'
+          );
+          if (seBusiness?.businessId) setSeBusinessId(seBusiness.businessId);
         }
 
         if (quartersRes.ok) {
@@ -204,6 +217,8 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
                 ? new Date(qd.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                 : undefined,
               dueDate: q.deadline,
+              periodStart: q.start,
+              periodEnd: q.end,
             };
           }
 
@@ -213,6 +228,8 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
               period: formatPeriodLabel(q.start, q.end),
               status: 'upcoming' as const,
               dueDate: new Date(q.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+              periodStart: q.start,
+              periodEnd: q.end,
             };
           }
 
@@ -231,6 +248,8 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
               status: 'not_started' as const,
               dueDate: new Date(q.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
               daysLeft,
+              periodStart: q.start,
+              periodEnd: q.end,
             };
           }
 
@@ -249,6 +268,8 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
             progress,
             unreviewed: pending,
             totalTransactions: total,
+            periodStart: q.start,
+            periodEnd: q.end,
           };
         });
 
@@ -368,8 +389,19 @@ export function MtdQuarterCards({ hasHmrcConnection, taxYear: taxYearProp }: Mtd
           >
             <Card
               className={`py-4 transition-all hover:shadow-md ${
-                q.status === 'review' ? 'cursor-pointer ring-1 ring-amber-200' : ''
-              }`}
+                q.status === 'upcoming' ? 'opacity-60' : 'cursor-pointer'
+              } ${q.status === 'review' ? 'ring-1 ring-amber-200' : ''}`}
+              onClick={() => {
+                if (q.status === 'upcoming' || !seBusinessId || !q.periodStart || !q.periodEnd) return;
+                const params = new URLSearchParams({
+                  businessId: seBusinessId,
+                  businessType: 'self-employment',
+                  periodStart: q.periodStart,
+                  periodEnd: q.periodEnd,
+                  ...(q.dueDate ? { dueDate: q.dueDate } : {}),
+                });
+                router.push(`/mtd/review?${params}`);
+              }}
             >
               <CardContent className="px-4 space-y-3">
                 <div className="flex items-center justify-between">
