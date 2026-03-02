@@ -287,12 +287,10 @@ export function getApiVersion(
   apiType: 'self-employment' | 'property'
 ): string {
   // For 2025-26 onwards, use the latest API versions with cumulative support.
-  // NOTE: HMRC docs indicate v7.0 may be required for 2025-26 onwards.
-  // Currently using v5.0 which is subscribed in our Developer Hub app and
-  // working in sandbox. If production rejects v5.0 for 2025-26 tax years,
-  // bump this to '7.0' and update the Developer Hub subscription.
+  // SE Business API v5.0 (cumulative), Property Business API v6.0 (cumulative).
+  // These must match our Developer Hub subscriptions.
   if (usesCumulativePeriodSummaries(taxYear)) {
-    return '5.0';
+    return apiType === 'property' ? '6.0' : '5.0';
   }
   // For earlier years, use older API versions
   return apiType === 'self-employment' ? '4.0' : '4.0';

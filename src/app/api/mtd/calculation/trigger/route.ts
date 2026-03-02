@@ -78,10 +78,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taxYear, finalDeclaration } = body as {
+    const { taxYear, calculationType, finalDeclaration } = body as {
       taxYear: TaxYear;
-      finalDeclaration?: boolean;
+      calculationType?: 'in-year' | 'intent-to-finalise' | 'intent-to-amend';
+      finalDeclaration?: boolean; // legacy — mapped to calculationType below
     };
+
+    // Map legacy finalDeclaration boolean to v8.0 calculationType
+    const calcType = calculationType
+      || (finalDeclaration ? 'intent-to-finalise' : 'in-year');
 
     if (!taxYear) {
       return NextResponse.json(
@@ -100,14 +105,14 @@ export async function POST(request: NextRequest) {
     const result = await apiService.triggerCalculation(
       userProfile.nino,
       taxYear,
-      finalDeclaration
+      calcType
     );
 
     return NextResponse.json({
       success: true,
       calculationId: result.calculationId,
       taxYear,
-      finalDeclaration: finalDeclaration || false,
+      calculationType: calcType,
     });
   } catch (error) {
     console.error('Calculation trigger error:', error);

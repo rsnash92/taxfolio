@@ -145,9 +145,11 @@ export function addServerSideFraudHeaders(
     result['Gov-Client-Public-IP-Timestamp'] = new Date().toISOString();
   }
 
-  // Client public port — not available via HTTP headers in web apps.
-  // X-Forwarded-Port is the server port (443), not the client's source port.
-  // HMRC allows omission when running over a web application.
+  // Client public port — HMRC requires this header.
+  // In web apps, the true client source port is not available.
+  // Use X-Forwarded-Port (server-side port, typically 443) as best available value.
+  const publicPort = headers.get('x-forwarded-port') || '443';
+  result['Gov-Client-Public-Port'] = publicPort;
 
   // Vendor (server) public IP — extracted from X-Vercel-Ip or env var.
   // PRODUCTION REQUIREMENT: Set the VENDOR_PUBLIC_IP environment variable in Vercel

@@ -30,7 +30,7 @@ const HMRC_ENVIRONMENT = process.env.HMRC_ENVIRONMENT || 'sandbox';
 // API versions
 const OBLIGATIONS_API_VERSION = '3.0';
 const BUSINESS_DETAILS_API_VERSION = '2.0';
-const CALCULATIONS_API_VERSION = '5.0';
+const CALCULATIONS_API_VERSION = '8.0';
 const SA_ACCOUNTS_API_VERSION = '4.0';
 const INDIVIDUAL_DETAILS_API_VERSION = '2.0';
 const BISS_API_VERSION = '3.0';
@@ -338,20 +338,38 @@ export class MtdApiService {
 
   /**
    * Create or amend UK property cumulative period summary (TY 2025-26 onwards)
+   * HMRC v6.0 requires body wrapped in { ukProperty: { income, expenses } }
+   * with optional top-level fromDate/toDate (omit for annual/latent businesses).
    */
   async createAmendUkPropertyCumulative(
     nino: string,
     businessId: string,
     taxYear: TaxYear,
-    data: UkPropertyPeriodData
+    data: UkPropertyPeriodData,
+    periodDates?: { fromDate: string; toDate: string }
   ): Promise<{ correlationId?: string }> {
     const apiVersion = getApiVersion(taxYear, 'property');
     const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
+
+    // Wrap in HMRC v6.0 envelope: { ukProperty: { income, expenses } }
+    const hmrcBody: Record<string, unknown> = {
+      ukProperty: {
+        income: data.income,
+        expenses: data.expenses,
+      },
+    };
+
+    // Only include dates for quarterly (non-annual, non-latent) businesses
+    if (periodDates) {
+      hmrcBody.fromDate = periodDates.fromDate;
+      hmrcBody.toDate = periodDates.toDate;
+    }
+
     return this.request<{ correlationId?: string }>(
       'PUT',
       `/individuals/business/property/uk/${nino}/${businessId}/cumulative/${taxYear}`,
       apiVersion,
-      data,
+      hmrcBody,
       testScenario
     );
   }
@@ -444,38 +462,34 @@ export class MtdApiService {
   // ============ TAX CALCULATIONS ============
 
   /**
-   * Trigger a tax calculation
+   * Trigger a tax calculation (v8.0 path)
+   * calculationType: 'in-year' | 'intent-to-finalise' | 'intent-to-amend'
+   * v8.0 uses path parameter for type (no request body) and does not support STATEFUL scenario.
    */
   async triggerCalculation(
     nino: string,
     taxYear: TaxYear,
-    finalDeclaration = false
+    calculationType: 'in-year' | 'intent-to-finalise' | 'intent-to-amend' = 'in-year'
   ): Promise<{ calculationId: string }> {
-    const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
     return this.request<{ calculationId: string }>(
       'POST',
-      `/individuals/calculations/self-assessment/${nino}/${taxYear}`,
-      CALCULATIONS_API_VERSION,
-      { finalDeclaration },
-      testScenario
+      `/individuals/calculations/${nino}/self-assessment/${taxYear}/trigger/${calculationType}`,
+      CALCULATIONS_API_VERSION
     );
   }
 
   /**
-   * Get tax calculation result
+   * Get tax calculation result (v8.0 path)
    */
   async getCalculation(
     nino: string,
     taxYear: TaxYear,
     calculationId: string
   ): Promise<TaxCalculationResult> {
-    const testScenario = HMRC_ENVIRONMENT === 'sandbox' ? 'STATEFUL' : undefined;
     return this.request<TaxCalculationResult>(
       'GET',
-      `/individuals/calculations/self-assessment/${nino}/${taxYear}/${calculationId}`,
-      CALCULATIONS_API_VERSION,
-      undefined,
-      testScenario
+      `/individuals/calculations/${nino}/self-assessment/${taxYear}/${calculationId}`,
+      CALCULATIONS_API_VERSION
     );
   }
 
@@ -658,18 +672,18 @@ export class MtdApiService {
     const created = await this.createTestBusiness(nino, {
       typeOfBusiness: 'self-employment',
       tradingName: 'TaxFolio Test Business',
-      firstAccountingPeriodStartDate: '2023-04-06',
-      firstAccountingPeriodEndDate: '2024-04-05',
+      firstAccountingPeriodStartDate: '2025-04-06',
+      firstAccountingPeriodEndDate: '2026-04-05',
       accountingType: 'CASH',
       commencementDate: '2020-01-01',
       businessAddressLineOne: '1 Test Street',
       businessAddressPostcode: 'AB1 2CD',
       businessAddressCountryCode: 'GB',
       latencyDetails: {
-        latencyEndDate: '2025-04-05',
-        taxYear1: '2023-24',
+        latencyEndDate: '2026-04-05',
+        taxYear1: '2025-26',
         latencyIndicator1: 'Q',
-        taxYear2: '2024-25',
+        taxYear2: '2026-27',
         latencyIndicator2: 'Q',
       },
     });
