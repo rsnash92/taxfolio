@@ -57,6 +57,8 @@ interface ClientDetailProps {
   emails: {
     id: string
     subject: string
+    body_html: string | null
+    template_type: string | null
     status: string
     sent_at: string | null
     created_at: string
@@ -103,6 +105,7 @@ export function ClientDetail({
   role,
 }: ClientDetailProps) {
   const [showCompose, setShowCompose] = useState(false)
+  const [composeInitial, setComposeInitial] = useState<{ subject: string; body: string } | null>(null)
   const [showEdit, setShowEdit] = useState(false)
   const [editData, setEditData] = useState({
     name: client.name,
@@ -195,7 +198,10 @@ export function ClientDetail({
           variant="outline"
           size="sm"
           disabled={!clientData.email}
-          onClick={() => setShowCompose(true)}
+          onClick={() => {
+            setComposeInitial(null)
+            setShowCompose(true)
+          }}
         >
           <Mail className="h-4 w-4 mr-1" />
           Email
@@ -271,9 +277,12 @@ export function ClientDetail({
       {/* Compose Email */}
       {showCompose && (
         <ComposeEmail
+          key={composeInitial?.subject || "new"}
           clientId={clientData.id}
           clientName={clientData.name}
           clientEmail={clientData.email}
+          initialSubject={composeInitial?.subject}
+          initialBody={composeInitial?.body}
           onClose={() => setShowCompose(false)}
           onSent={() => setShowCompose(false)}
         />
@@ -393,6 +402,25 @@ export function ClientDetail({
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-sm">{email.subject}</p>
                     <div className="flex items-center gap-2">
+                      {(email.status === "draft" || email.status === "failed") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const plainBody = email.body_html
+                              ? email.body_html
+                                  .replace(/<br\s*\/?>/gi, "\n")
+                                  .replace(/<\/p>\s*<p>/gi, "\n\n")
+                                  .replace(/<[^>]+>/g, "")
+                              : ""
+                            setComposeInitial({ subject: email.subject, body: plainBody })
+                            setShowCompose(true)
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit & resend
+                        </Button>
+                      )}
                       <Badge variant={email.status === "sent" ? "default" : "secondary"}>
                         {email.status}
                       </Badge>

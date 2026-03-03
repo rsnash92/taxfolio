@@ -13,14 +13,16 @@ interface ComposeEmailProps {
   clientId: string
   clientName: string
   clientEmail: string | null
+  initialSubject?: string
+  initialBody?: string
   onSent?: () => void
   onClose?: () => void
 }
 
-export function ComposeEmail({ clientId, clientName, clientEmail, onSent, onClose }: ComposeEmailProps) {
+export function ComposeEmail({ clientId, clientName, clientEmail, initialSubject, initialBody, onSent, onClose }: ComposeEmailProps) {
   const [templateType, setTemplateType] = useState("")
-  const [subject, setSubject] = useState("")
-  const [body, setBody] = useState("")
+  const [subject, setSubject] = useState(initialSubject || "")
+  const [body, setBody] = useState(initialBody || "")
   const [isDrafting, setIsDrafting] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState("")
