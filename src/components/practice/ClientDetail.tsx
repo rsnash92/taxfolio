@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -117,6 +118,46 @@ export function ClientDetail({
   const [isSaving, setIsSaving] = useState(false)
   const [editError, setEditError] = useState("")
   const [clientData, setClientData] = useState(client)
+  const [transitionLoading, setTransitionLoading] = useState<string | null>(null)
+  const [transitionError, setTransitionError] = useState("")
+  const router = useRouter()
+
+  async function handleStageChange(
+    mode: "mtd" | "sa100",
+    toStage: string,
+    taxYear: string,
+    quarter?: number,
+    businessId?: string | null,
+  ) {
+    const loadingKey = mode === "mtd" ? `mtd-${quarter}-${businessId}-${toStage}` : `sa100-${taxYear}-${toStage}`
+    setTransitionLoading(loadingKey)
+    setTransitionError("")
+
+    try {
+      const body: Record<string, unknown> = { mode, taxYear, toStage }
+      if (mode === "mtd") {
+        body.quarter = quarter
+        if (businessId) body.businessId = businessId
+      }
+
+      const res = await fetch(`/api/practice/clients/${clientData.id}/stage`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to update stage")
+      }
+
+      router.refresh()
+    } catch (err) {
+      setTransitionError(err instanceof Error ? err.message : "Failed to update stage")
+    } finally {
+      setTransitionLoading(null)
+    }
+  }
 
   async function handleSaveEdit() {
     if (!editData.name.trim()) {
@@ -288,6 +329,11 @@ export function ClientDetail({
         />
       )}
 
+      {/* Transition error */}
+      {transitionError && (
+        <p className="text-sm text-destructive">{transitionError}</p>
+      )}
+
       {/* Tabs */}
       <Tabs defaultValue="mtd">
         <TabsList>
@@ -332,12 +378,22 @@ export function ClientDetail({
                     {q.hmrc_correlation_id && <span>Ref: {q.hmrc_correlation_id}</span>}
                   </div>
                   {getAvailableTransitions(role as Role, q.stage).length > 0 && (
-                    <div className="flex gap-2 mt-2">
-                      {getAvailableTransitions(role as Role, q.stage).map((toStage) => (
-                        <Button key={toStage} size="sm" variant="outline">
-                          {STAGE_LABELS[toStage]}
-                        </Button>
-                      ))}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {getAvailableTransitions(role as Role, q.stage).map((toStage) => {
+                        const key = `mtd-${q.quarter}-${q.business_id}-${toStage}`
+                        return (
+                          <Button
+                            key={toStage}
+                            size="sm"
+                            variant="outline"
+                            disabled={!!transitionLoading}
+                            onClick={() => handleStageChange("mtd", toStage, q.tax_year, q.quarter, q.business_id)}
+                          >
+                            {transitionLoading === key && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                            {STAGE_LABELS[toStage]}
+                          </Button>
+                        )
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -381,6 +437,25 @@ export function ClientDetail({
                       <span className="text-sm text-muted-foreground">Ref: {sa.hmrc_ref}</span>
                     )}
                   </div>
+                  {getAvailableTransitions(role as Role, sa.stage).length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {getAvailableTransitions(role as Role, sa.stage).map((toStage) => {
+                        const key = `sa100-${sa.tax_year}-${toStage}`
+                        return (
+                          <Button
+                            key={toStage}
+                            size="sm"
+                            variant="outline"
+                            disabled={!!transitionLoading}
+                            onClick={() => handleStageChange("sa100", toStage, sa.tax_year)}
+                          >
+                            {transitionLoading === key && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                            {STAGE_LABELS[toStage]}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))
