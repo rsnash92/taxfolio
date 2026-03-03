@@ -165,10 +165,15 @@ export async function GET(request: NextRequest) {
         stages: pipelineInfo?.stages || [],
       }
 
-      // Place in the matching column (or skip if not_started/failed)
-      const columnStage = (stages as string[]).includes(clientStage)
-        ? clientStage
-        : null
+      // Place in the matching column
+      // not_started → first column (awaiting_data), failed → skip
+      let columnStage: string | null = null
+      if ((stages as string[]).includes(clientStage)) {
+        columnStage = clientStage
+      } else if (clientStage === 'not_started') {
+        columnStage = stages[0] // awaiting_data
+      }
+      // failed clients are excluded from columns (shown via filter)
 
       if (columnStage) {
         columns[columnStage].push(pipelineClient)
