@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ClientCard } from "./ClientCard"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PipelineClient {
@@ -26,6 +27,9 @@ interface PipelineColumnProps {
   userId: string
   mode: string
   onStageChange: (clientId: string, toStage: string, businessId?: string, notes?: string) => void
+  selectMode?: boolean
+  selectedIds?: Set<string>
+  onToggleSelect?: (clientId: string) => void
 }
 
 const PAGE_SIZE = 10
@@ -39,16 +43,45 @@ export function PipelineColumn({
   userId,
   mode,
   onStageChange,
+  selectMode,
+  selectedIds,
+  onToggleSelect,
 }: PipelineColumnProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const visibleClients = clients.slice(0, visibleCount)
   const hasMore = clients.length > visibleCount
 
+  const allSelected = selectMode && clients.length > 0 && clients.every(c => selectedIds?.has(c.id))
+  const someSelected = selectMode && clients.some(c => selectedIds?.has(c.id))
+
+  function handleSelectAll() {
+    if (!onToggleSelect) return
+    if (allSelected) {
+      // Deselect all in this column
+      clients.forEach(c => {
+        if (selectedIds?.has(c.id)) onToggleSelect(c.id)
+      })
+    } else {
+      // Select all in this column
+      clients.forEach(c => {
+        if (!selectedIds?.has(c.id)) onToggleSelect(c.id)
+      })
+    }
+  }
+
   return (
     <div className="flex flex-col rounded-lg border bg-muted/30 min-h-[400px]">
       {/* Column Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50 rounded-t-lg">
-        <h3 className="text-sm font-medium">{label}</h3>
+        <div className="flex items-center gap-2">
+          {selectMode && (
+            <Checkbox
+              checked={allSelected ? true : someSelected ? "indeterminate" : false}
+              onCheckedChange={handleSelectAll}
+            />
+          )}
+          <h3 className="text-sm font-medium">{label}</h3>
+        </div>
         <span className="text-xs text-muted-foreground bg-background rounded-full px-2 py-0.5">
           {clients.length}
         </span>
@@ -75,6 +108,9 @@ export function PipelineColumn({
               userId={userId}
               mode={mode}
               onStageChange={onStageChange}
+              selectMode={selectMode}
+              isSelected={selectedIds?.has(client.id)}
+              onToggleSelect={onToggleSelect}
             />
           ))
         )}

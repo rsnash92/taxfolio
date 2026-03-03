@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MoreHorizontal, ArrowRight, Mail, FileText, ExternalLink } from "lucide-react"
 import { getAvailableTransitions } from "@/lib/practice/permissions"
 import type { Role } from "@/lib/practice/permissions"
@@ -32,6 +33,9 @@ interface ClientCardProps {
   userId: string
   mode: string
   onStageChange: (clientId: string, toStage: string, businessId?: string, notes?: string) => void
+  selectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (clientId: string) => void
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -58,13 +62,25 @@ const BUSINESS_TYPE_LABELS: Record<string, string> = {
   "foreign-property": "Foreign",
 }
 
-export function ClientCard({ client, role, mode, onStageChange }: ClientCardProps) {
+export function ClientCard({ client, role, mode, onStageChange, selectMode, isSelected, onToggleSelect }: ClientCardProps) {
   const availableTransitions = getAvailableTransitions(role as Role, client.stage)
 
   return (
-    <div className="rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className={`rounded-md border bg-card p-3 shadow-sm hover:shadow-md transition-shadow ${selectMode && isSelected ? "ring-2 ring-primary" : ""}`}
+      onClick={selectMode ? () => onToggleSelect?.(client.id) : undefined}
+      role={selectMode ? "button" : undefined}
+    >
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
+        {selectMode && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.(client.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-0.5 mr-1"
+          />
+        )}
         <Link
           href={`/practice/clients/${client.id}`}
           className="flex-1 min-w-0"
