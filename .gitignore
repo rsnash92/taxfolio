@@ -45,3 +45,9 @@ next-env.d.ts
 # public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
+
+# supabase CLI temp files
+supabase/.temp/
+
+# test credentials (contains tokens and passwords)
+scripts/agent-test-credentials.json

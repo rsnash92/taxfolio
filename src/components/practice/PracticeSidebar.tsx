@@ -5,7 +5,6 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
-import { User } from "@supabase/supabase-js"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,69 +17,53 @@ import {
 import {
   LogOut,
   LayoutDashboard,
-  ArrowLeftRight,
-  ArrowRight,
-  Calendar,
-  LucideIcon,
-  Settings,
-  Sparkles,
   Users,
+  Settings,
   CreditCard,
-  FileText,
-  Lightbulb,
+  UserPlus,
+  ArrowLeft,
+  LucideIcon,
 } from "lucide-react"
 
-const navItems: { title: string; href: string; icon: LucideIcon }[] = [
+interface PracticeSidebarProps {
+  user: { id: string; email?: string; user_metadata?: { full_name?: string } }
+  practiceName: string
+  role: string
+  className?: string
+}
+
+const navItems: { title: string; href: string; icon: LucideIcon; roles?: string[] }[] = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
+    title: "Pipeline",
+    href: "/practice",
     icon: LayoutDashboard,
   },
   {
-    title: "Personal Tax",
-    href: "/personal-tax",
-    icon: FileText,
-  },
-  {
-    title: "Making Tax Digital",
-    href: "/mtd",
-    icon: Calendar,
-  },
-  {
-    title: "Transactions",
-    href: "/transactions",
-    icon: ArrowLeftRight,
-  },
-  {
-    title: "AI Insights",
-    href: "/insights",
-    icon: Lightbulb,
-  },
-  {
-    title: "Referrals",
-    href: "/referrals",
+    title: "Clients",
+    href: "/practice/clients",
     icon: Users,
   },
   {
-    title: "Billing",
-    href: "/settings/billing",
-    icon: CreditCard,
+    title: "Team",
+    href: "/practice/settings/team",
+    icon: UserPlus,
+    roles: ["owner", "manager"],
   },
   {
     title: "Settings",
-    href: "/settings",
+    href: "/practice/settings",
     icon: Settings,
+    roles: ["owner"],
+  },
+  {
+    title: "Billing",
+    href: "/practice/settings/billing",
+    icon: CreditCard,
+    roles: ["owner"],
   },
 ]
 
-interface SidebarProps {
-  user: User
-  className?: string
-  isTrial?: boolean
-  isPracticeMember?: boolean
-}
-
-export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarProps) {
+export function PracticeSidebar({ user, practiceName, role, className }: PracticeSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -100,6 +83,10 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
   const userName = user.user_metadata?.full_name || "User"
   const userEmail = user.email || ""
 
+  const visibleItems = navItems.filter(
+    item => !item.roles || item.roles.includes(role)
+  )
+
   return (
     <aside
       className={cn(
@@ -107,9 +94,9 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
         className
       )}
     >
-      {/* Logo */}
-      <div className="px-6 pt-8 pb-6">
-        <Link href="/dashboard" className="block px-5">
+      {/* Logo + Practice Name */}
+      <div className="px-6 pt-8 pb-2">
+        <Link href="/practice" className="block px-5">
           <Image
             src="/taxfolio-light.png"
             alt="Taxfolio"
@@ -119,11 +106,16 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
           />
         </Link>
       </div>
+      <div className="px-6 pb-6">
+        <p className="px-5 text-sm text-gray-400 truncate">{practiceName}</p>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 px-6">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+        {visibleItems.map((item) => {
+          const isActive = item.href === "/practice"
+            ? pathname === "/practice"
+            : pathname.startsWith(item.href)
           const Icon = item.icon
           return (
             <Link
@@ -143,34 +135,19 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
         })}
       </nav>
 
-      {/* User Section */}
+      {/* Bottom Section */}
       <div className="p-4 space-y-3">
-        {/* Switch to Practice view */}
-        {isPracticeMember && (
-          <Link href="/practice">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5"
-              size="sm"
-            >
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Practice dashboard
-            </Button>
-          </Link>
-        )}
-
-        {/* Upgrade CTA - only show during trial */}
-        {isTrial && (
-          <Link href="/settings/billing">
-            <Button
-              className="w-full bg-[#00e3ec] hover:bg-[#00c4d4] text-black font-medium"
-              size="sm"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Upgrade early for 10% off
-            </Button>
-          </Link>
-        )}
+        {/* Switch to individual view */}
+        <Link href="/dashboard">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5"
+            size="sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Individual view
+          </Button>
+        </Link>
 
         {/* User Dropdown */}
         <DropdownMenu>
@@ -189,9 +166,9 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="cursor-pointer">
+              <Link href="/practice/settings" className="cursor-pointer">
                 <Settings className="h-4 w-4 mr-2" />
-                Settings
+                Practice Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -205,6 +182,3 @@ export function Sidebar({ user, className, isTrial, isPracticeMember }: SidebarP
     </aside>
   )
 }
-
-// Export nav items for use in mobile nav
-export { navItems }

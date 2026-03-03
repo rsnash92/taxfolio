@@ -1,17 +1,12 @@
-import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Sidebar } from "@/components/sidebar"
-import { MobileNav } from "@/components/mobile-nav"
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
-import { PageHeader } from "@/components/page-header"
-import { AskButton } from "@/components/ask-taxfolio"
+import { getPracticeContext } from "@/lib/practice"
+import { PracticeSidebar } from "@/components/practice/PracticeSidebar"
+import { PracticeMobileNav } from "@/components/practice/PracticeMobileNav"
+import { PracticePageHeader } from "@/components/practice/PracticePageHeader"
 import { InactivityModal } from "@/components/InactivityModal"
-import { getSubscription } from "@/lib/subscription"
-import { TrialBanner } from "@/components/billing/trial-banner"
-import { isPracticeMember } from "@/lib/practice"
 
-export default async function DashboardLayout({
+export default async function PracticeLayout({
   children,
 }: {
   children: React.ReactNode
@@ -23,24 +18,33 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Get subscription info for trial banner and practice membership
-  const [subscription, hasPractice] = await Promise.all([
-    getSubscription(user.id),
-    isPracticeMember(supabase, user.id),
-  ])
+  const context = await getPracticeContext(supabase, user.id)
+
+  // No practice context — render children without sidebar (for setup page)
+  if (!context) {
+    return <>{children}</>
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Desktop Sidebar - hidden on mobile */}
         <div className="hidden lg:fixed lg:flex lg:w-72 lg:top-0 lg:bottom-0">
-          <Sidebar user={user} isTrial={subscription.isTrial} isPracticeMember={hasPractice} />
+          <PracticeSidebar
+            user={user}
+            practiceName={context.practice.name}
+            role={context.membership.role}
+          />
         </div>
 
         {/* Mobile Header */}
         <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
           <header className="flex h-14 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-            <MobileNav user={user} isTrial={subscription.isTrial} />
+            <PracticeMobileNav
+              user={user}
+              practiceName={context.practice.name}
+              role={context.membership.role}
+            />
           </header>
         </div>
 
@@ -52,24 +56,13 @@ export default async function DashboardLayout({
           <div className="min-h-screen">
             <div className="bg-content-area min-h-screen">
               <div className="container mx-auto py-6 px-6 md:px-10 lg:px-16">
-                <Suspense fallback={null}>
-                  <PageHeader />
-                </Suspense>
-                {subscription.isTrial && subscription.daysLeftInTrial !== null && (
-                  <TrialBanner daysLeft={subscription.daysLeftInTrial} />
-                )}
+                <PracticePageHeader />
                 {children}
               </div>
             </div>
           </div>
         </main>
       </div>
-
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
-
-      {/* Ask TaxFolio Floating Button */}
-      <AskButton />
 
       {/* Inactivity Timeout Modal */}
       <InactivityModal />

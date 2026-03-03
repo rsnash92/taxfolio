@@ -62,6 +62,7 @@ export async function updateSession(request: NextRequest) {
     '/home-office',
     '/mtd',
     '/onboarding',
+    '/practice',
   ]
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
@@ -86,11 +87,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Check onboarding completion for authenticated users on protected routes
-  // (skip for /onboarding itself and /api routes)
+  // (skip for /onboarding itself, /api routes, and /practice routes)
   const isOnboardingRoute = request.nextUrl.pathname.startsWith('/onboarding')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  const isPracticeRoute = request.nextUrl.pathname.startsWith('/practice')
 
-  if (isProtectedRoute && user && !isOnboardingRoute && !isApiRoute) {
+  if (isProtectedRoute && user && !isOnboardingRoute && !isApiRoute && !isPracticeRoute) {
     const { data: userData } = await supabase
       .from('users')
       .select('dashboard_onboarding_completed')

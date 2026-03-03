@@ -89,7 +89,8 @@ export function collectDeviceInfo(): ClientDeviceInfo {
  */
 export function buildFraudPreventionHeaders(
   deviceInfo: ClientDeviceInfo,
-  userId?: string
+  userId?: string,
+  options?: { isAgent?: boolean; agentGovGatewayUserId?: string }
 ): Partial<FraudPreventionHeaders> {
   // Format plugins for HMRC (URL encoded, comma separated)
   const pluginsFormatted = deviceInfo.plugins
@@ -105,9 +106,11 @@ export function buildFraudPreventionHeaders(
   const headers: Partial<FraudPreventionHeaders> = {
     'Gov-Client-Connection-Method': 'WEB_APP_VIA_SERVER',
     'Gov-Client-Device-ID': deviceInfo.deviceId || 'unknown',
-    'Gov-Client-User-IDs': userId
-      ? `taxfolio=${encodeURIComponent(userId)}`
-      : '',
+    'Gov-Client-User-IDs': options?.isAgent && options?.agentGovGatewayUserId
+      ? `os-gov-gateway=${encodeURIComponent(options.agentGovGatewayUserId)}`
+      : userId
+        ? `taxfolio=${encodeURIComponent(userId)}`
+        : '',
     'Gov-Client-Timezone': deviceInfo.timezone,
     'Gov-Client-Window-Size': windowSize,
     'Gov-Client-Browser-Plugins': pluginsFormatted || '',
