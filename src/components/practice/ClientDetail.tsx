@@ -6,7 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, ExternalLink, Mail } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ArrowLeft, ExternalLink, Loader2, Mail, Pencil } from "lucide-react"
 import { getAvailableTransitions } from "@/lib/practice/permissions"
 import type { Role } from "@/lib/practice/permissions"
 import { ComposeEmail } from "@/components/practice/ComposeEmail"
@@ -100,6 +103,53 @@ export function ClientDetail({
   role,
 }: ClientDetailProps) {
   const [showCompose, setShowCompose] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
+  const [editData, setEditData] = useState({
+    name: client.name,
+    email: client.email || "",
+    phone: client.phone || "",
+    reference: client.reference || "",
+    notes: client.notes || "",
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [editError, setEditError] = useState("")
+  const [clientData, setClientData] = useState(client)
+
+  async function handleSaveEdit() {
+    if (!editData.name.trim()) {
+      setEditError("Name is required")
+      return
+    }
+    setIsSaving(true)
+    setEditError("")
+
+    try {
+      const res = await fetch(`/api/practice/clients/${clientData.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editData.name.trim(),
+          email: editData.email.trim() || null,
+          phone: editData.phone.trim() || null,
+          reference: editData.reference.trim() || null,
+          notes: editData.notes.trim() || null,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to update client")
+      }
+
+      const { client: updated } = await res.json()
+      setClientData({ ...clientData, ...updated })
+      setShowEdit(false)
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Failed to update")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -112,19 +162,39 @@ export function ClientDetail({
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{client.name}</h1>
+          <h1 className="text-2xl font-bold">{clientData.name}</h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {client.reference && <span>{client.reference}</span>}
-            {client.nino_last4 && <span>**{client.nino_last4}</span>}
-            <Badge variant={client.auth_status === "authorised" ? "default" : "secondary"}>
-              {client.agent_type} agent
+            {clientData.reference && <span>{clientData.reference}</span>}
+            {clientData.nino_last4 && <span>**{clientData.nino_last4}</span>}
+            {clientData.email && <span>{clientData.email}</span>}
+            {clientData.phone && <span>{clientData.phone}</span>}
+            <Badge variant={clientData.auth_status === "authorised" ? "default" : "secondary"}>
+              {clientData.agent_type} agent
             </Badge>
           </div>
         </div>
         <Button
           variant="outline"
           size="sm"
-          disabled={!client.email}
+          onClick={() => {
+            setEditData({
+              name: clientData.name,
+              email: clientData.email || "",
+              phone: clientData.phone || "",
+              reference: clientData.reference || "",
+              notes: clientData.notes || "",
+            })
+            setShowEdit(!showEdit)
+            setEditError("")
+          }}
+        >
+          <Pencil className="h-4 w-4 mr-1" />
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!clientData.email}
           onClick={() => setShowCompose(true)}
         >
           <Mail className="h-4 w-4 mr-1" />
@@ -132,12 +202,78 @@ export function ClientDetail({
         </Button>
       </div>
 
+      {/* Edit Client */}
+      {showEdit && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Edit client details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  placeholder="client@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  placeholder="07..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-reference">Reference</Label>
+                <Input
+                  id="edit-reference"
+                  value={editData.reference}
+                  onChange={(e) => setEditData({ ...editData, reference: e.target.value })}
+                  placeholder="e.g. CM001"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Notes</Label>
+              <Textarea
+                id="edit-notes"
+                value={editData.notes}
+                onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                rows={3}
+              />
+            </div>
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowEdit(false)}>Cancel</Button>
+              <Button onClick={handleSaveEdit} disabled={isSaving}>
+                {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Save changes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Compose Email */}
       {showCompose && (
         <ComposeEmail
-          clientId={client.id}
-          clientName={client.name}
-          clientEmail={client.email}
+          clientId={clientData.id}
+          clientName={clientData.name}
+          clientEmail={clientData.email}
           onClose={() => setShowCompose(false)}
           onSent={() => setShowCompose(false)}
         />
@@ -169,7 +305,7 @@ export function ClientDetail({
                       {q.tax_year} Q{q.quarter}
                       {q.business_id && (
                         <span className="text-sm text-muted-foreground ml-2">
-                          ({client.businesses.find(b => b.businessId === q.business_id)?.tradingName || q.business_id})
+                          ({clientData.businesses.find(b => b.businessId === q.business_id)?.tradingName || q.business_id})
                         </span>
                       )}
                     </CardTitle>
@@ -223,7 +359,7 @@ export function ClientDetail({
                 <CardContent className="py-2">
                   <div className="flex items-center gap-3">
                     <a
-                      href={`${process.env.NEXT_PUBLIC_SA100_URL || 'https://assessment.taxfolio.io'}/agent/${client.id}/${sa.tax_year}`}
+                      href={`${process.env.NEXT_PUBLIC_SA100_URL || 'https://assessment.taxfolio.io'}/agent/${clientData.id}/${sa.tax_year}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
