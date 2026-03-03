@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPracticeContext } from '@/lib/practice'
 import { canSendEmail } from '@/lib/practice/permissions'
+import { sendTransactionalEmail } from '@/lib/loops'
 import type { Role } from '@/lib/practice/permissions'
+
+const LOOPS_PRACTICE_EMAIL_ID = process.env.LOOPS_PRACTICE_EMAIL_ID
 
 /**
  * POST /api/practice/emails
- * Sends an email to a client via Resend API and logs to client_emails table.
+ * Sends an email to a client via Loops and logs to client_emails table.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -70,10 +73,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create email record' }, { status: 500 })
     }
 
-    // Send via Resend
-    const resendKey = process.env.RESEND_API_KEY
-    if (!resendKey) {
-      // Mark as failed if no Resend key
+    // Send via Loops
+    if (!LOOPS_PRACTICE_EMAIL_ID) {
       await supabase
         .from('client_emails')
         .update({ status: 'failed' })
@@ -81,26 +82,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email service not configured' }, { status: 503 })
     }
 
-    const fromEmail = process.env.PRACTICE_FROM_EMAIL || 'noreply@taxfolio.io'
-    const fromName = context.practice.name
-
-    const sendResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resendKey}`,
-      },
-      body: JSON.stringify({
-        from: `${fromName} <${fromEmail}>`,
-        to: [client.email],
+    const sendResult = await sendTransactionalEmail({
+      email: client.email,
+      transactionalId: LOOPS_PRACTICE_EMAIL_ID,
+      dataVariables: {
         subject,
-        html: bodyHtml,
-      }),
+        body: bodyHtml,
+        practiceName: context.practice.name,
+        clientName: client.name,
+      },
     })
 
-    if (!sendResponse.ok) {
-      const errData = await sendResponse.text()
-      console.error('[Email Send] Resend error:', errData)
+    if (!sendResult.success) {
+      console.error('[Email Send] Loops error')
 
       await supabase
         .from('client_emails')

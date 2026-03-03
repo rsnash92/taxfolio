@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, ExternalLink, Mail } from "lucide-react"
 import { getAvailableTransitions } from "@/lib/practice/permissions"
 import type { Role } from "@/lib/practice/permissions"
+import { ComposeEmail } from "@/components/practice/ComposeEmail"
 
 interface ClientDetailProps {
   client: {
@@ -97,6 +99,8 @@ export function ClientDetail({
   auditLog,
   role,
 }: ClientDetailProps) {
+  const [showCompose, setShowCompose] = useState(false)
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -117,13 +121,27 @@ export function ClientDetail({
             </Badge>
           </div>
         </div>
-        <Link href={`mailto:${client.email}`}>
-          <Button variant="outline" size="sm" disabled={!client.email}>
-            <Mail className="h-4 w-4 mr-1" />
-            Email
-          </Button>
-        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!client.email}
+          onClick={() => setShowCompose(true)}
+        >
+          <Mail className="h-4 w-4 mr-1" />
+          Email
+        </Button>
       </div>
+
+      {/* Compose Email */}
+      {showCompose && (
+        <ComposeEmail
+          clientId={client.id}
+          clientName={client.name}
+          clientEmail={client.email}
+          onClose={() => setShowCompose(false)}
+          onSent={() => setShowCompose(false)}
+        />
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="mtd">
