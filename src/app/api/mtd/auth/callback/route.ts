@@ -81,7 +81,48 @@ export async function GET(request: NextRequest) {
     const tokens = await exchangeCode(code, REDIRECT_URI);
     console.log('[MTD Callback] Got tokens, scope:', tokens.scope, 'expiresAt:', tokens.expiresAt);
 
-    // Store tokens securely in database (using service role to bypass RLS)
+    // Practice OAuth flow — store in practice_hmrc_tokens and redirect to practice settings
+    if (stateData.type === 'practice' && stateData.practiceId) {
+      const { error: upsertError } = await supabase.from('practice_hmrc_tokens').upsert(
+        {
+          practice_id: stateData.practiceId,
+          access_token: tokens.accessToken,
+          refresh_token: tokens.refreshToken,
+          expires_at: new Date(tokens.expiresAt).toISOString(),
+          token_type: tokens.tokenType,
+          scope: tokens.scope,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'practice_id',
+        }
+      );
+
+      if (upsertError) {
+        console.error('[MTD Callback] Failed to store practice tokens:', upsertError);
+        return NextResponse.redirect(
+          `${APP_URL}/practice/settings?error=${encodeURIComponent('Failed to save HMRC connection')}`
+        );
+      }
+
+      console.log('[MTD Callback] Agent tokens stored for practice:', stateData.practiceId);
+
+      const setupContext = request.cookies.get('practice-setup')?.value;
+      let redirectUrl: string;
+      if (setupContext === 'true') {
+        redirectUrl = `${APP_URL}/practice/setup?hmrc_connected=true`;
+      } else {
+        redirectUrl = `${APP_URL}/practice/settings?hmrc_connected=true`;
+      }
+
+      const response = NextResponse.redirect(redirectUrl);
+      if (setupContext) {
+        response.cookies.delete('practice-setup');
+      }
+      return response;
+    }
+
+    // Individual OAuth flow — store in hmrc_tokens
     const { error: upsertError } = await supabase.from('hmrc_tokens').upsert(
       {
         user_id: userId,

@@ -3,8 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getAuthUrl } from '@/lib/mtd/api-service'
 import { getPracticeContext } from '@/lib/practice'
 
+// Must use the same redirect_uri registered with HMRC
+// The state parameter contains type:'practice' so the callback knows
+// to store tokens in practice_hmrc_tokens instead of hmrc_tokens
 const REDIRECT_URI =
-  process.env.NEXT_PUBLIC_APP_URL + '/api/practice/auth/hmrc/callback'
+  process.env.NEXT_PUBLIC_APP_URL + '/api/mtd/auth/callback'
 
 /**
  * GET /api/practice/auth/hmrc
