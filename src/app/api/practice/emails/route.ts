@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!sendResult.success) {
-      console.error('[Email Send] Loops error')
+      console.error('[Email Send] Loops error — is LOOPS_API_KEY set?', { email: client.email, transactionalId: LOOPS_PRACTICE_EMAIL_ID })
 
       await supabase
         .from('client_emails')
