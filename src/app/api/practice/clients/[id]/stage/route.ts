@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPracticeContext } from '@/lib/practice'
-import { canTransition, canSubmitToHMRC } from '@/lib/practice/permissions'
+import { canTransition, canSubmitToHMRC, isRejectionTransition } from '@/lib/practice/permissions'
 import type { Role } from '@/lib/practice/permissions'
 
 /**
@@ -81,6 +81,30 @@ export async function PATCH(
       )
     }
 
+    // 4-eyes enforcement: reviewer must be different from preparer
+    if (toStage === 'ready_to_submit' && fromStage === 'ready_for_review') {
+      const { data: practice } = await supabase
+        .from('practices')
+        .select('require_different_reviewer')
+        .eq('id', context.practice.id)
+        .single()
+
+      if (practice?.require_different_reviewer && record.prepared_by === user.id) {
+        return NextResponse.json(
+          { error: 'Cannot approve your own work. A different team member must review.' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Rejection requires notes explaining what needs to change
+    if (isRejectionTransition(fromStage, toStage) && !notes?.trim()) {
+      return NextResponse.json(
+        { error: 'A reason is required when requesting changes' },
+        { status: 400 }
+      )
+    }
+
     // Special handling: ready_to_submit -> submitted triggers HMRC API call
     if (toStage === 'submitted' && fromStage === 'ready_to_submit') {
       if (!canSubmitToHMRC(role)) {
@@ -108,6 +132,12 @@ export async function PATCH(
       updateData.reviewed_by = user.id
     } else if (toStage === 'submitted') {
       updateData.submitted_at = new Date().toISOString()
+    }
+
+    // On rejection: store reason in notes, clear prepared_by so preparer must re-submit
+    if (isRejectionTransition(fromStage, toStage)) {
+      updateData.notes = notes
+      updateData.prepared_by = null
     }
 
     const { error: updateError } = await supabase

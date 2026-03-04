@@ -103,6 +103,45 @@ export function canManageBilling(role: Role): boolean {
 }
 
 /**
+ * Check if a transition from ready_for_review is a rejection (moving backward).
+ */
+export function isRejectionTransition(fromStage: string, toStage: string): boolean {
+  if (fromStage !== 'ready_for_review') return false
+  return ['categorising', 'in_progress', 'awaiting_data'].includes(toStage)
+}
+
+/**
+ * Check if a transition is the approval step (ready_for_review → ready_to_submit).
+ */
+export function isApprovalTransition(fromStage: string, toStage: string): boolean {
+  return fromStage === 'ready_for_review' && toStage === 'ready_to_submit'
+}
+
+/**
+ * Check if 4-eyes principle blocks this transition.
+ * Returns true if blocked (reviewer is same as preparer).
+ */
+export function isFourEyesBlocked(
+  requireDifferentReviewer: boolean,
+  preparedBy: string | null,
+  currentUserId: string,
+  toStage: string
+): boolean {
+  if (!requireDifferentReviewer) return false
+  if (toStage !== 'ready_to_submit') return false
+  if (!preparedBy) return false
+  return preparedBy === currentUserId
+}
+
+/**
+ * Get the default rejection target stage for a given pipeline mode.
+ * MTD → categorising, SA100 → in_progress
+ */
+export function getDefaultRejectionTarget(mode: 'mtd' | 'sa100'): string {
+  return mode === 'mtd' ? 'categorising' : 'in_progress'
+}
+
+/**
  * Get available next stages for a given current stage and role.
  */
 export function getAvailableTransitions(role: Role, currentStage: string): string[] {

@@ -27,6 +27,17 @@ export default async function ClientDetailPage({
 
   if (error || !client) redirect("/practice/clients")
 
+  // Fetch team members for name resolution
+  const { data: members } = await supabase
+    .from('practice_members')
+    .select('user_id, role, users:user_id(email, raw_user_meta_data)')
+    .eq('practice_id', context.practice.id)
+
+  const teamMap: Record<string, string> = {}
+  for (const m of (members || []) as any[]) {
+    teamMap[m.user_id] = m.users?.raw_user_meta_data?.full_name || m.users?.email || 'Unknown'
+  }
+
   // Fetch related data in parallel
   const [
     { data: quarters },
@@ -68,6 +79,7 @@ export default async function ClientDetailPage({
       auditLog={auditLog || []}
       role={context.membership.role}
       practiceId={context.practice.id}
+      teamMap={teamMap}
     />
   )
 }

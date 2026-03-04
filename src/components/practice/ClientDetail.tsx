@@ -73,6 +73,7 @@ interface ClientDetailProps {
   }[]
   role: string
   practiceId: string
+  teamMap?: Record<string, string>
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -104,6 +105,7 @@ export function ClientDetail({
   emails,
   auditLog,
   role,
+  teamMap = {},
 }: ClientDetailProps) {
   const [showCompose, setShowCompose] = useState(false)
   const [composeInitial, setComposeInitial] = useState<{ subject: string; body: string } | null>(null)
@@ -377,6 +379,18 @@ export function ClientDetail({
                     {q.due_date && <span>Due: {q.due_date}</span>}
                     {q.hmrc_correlation_id && <span>Ref: {q.hmrc_correlation_id}</span>}
                   </div>
+                  {(q.prepared_by || q.reviewed_by || q.submitted_at) && (
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                      {q.prepared_by && <span>Prepared by {teamMap[q.prepared_by] || 'Unknown'}</span>}
+                      {q.reviewed_by && <span>Reviewed by {teamMap[q.reviewed_by] || 'Unknown'}</span>}
+                      {q.submitted_at && <span>Submitted {new Date(q.submitted_at).toLocaleDateString()}</span>}
+                    </div>
+                  )}
+                  {q.notes && ["categorising", "in_progress", "awaiting_data"].includes(q.stage) && (
+                    <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 p-2 text-sm text-amber-800">
+                      <span className="font-medium">Changes requested:</span> {q.notes}
+                    </div>
+                  )}
                   {getAvailableTransitions(role as Role, q.stage).length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {getAvailableTransitions(role as Role, q.stage).map((toStage) => {
@@ -437,6 +451,18 @@ export function ClientDetail({
                       <span className="text-sm text-muted-foreground">Ref: {sa.hmrc_ref}</span>
                     )}
                   </div>
+                  {(sa.prepared_by || sa.reviewed_by || sa.submitted_at) && (
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                      {sa.prepared_by && <span>Prepared by {teamMap[sa.prepared_by] || 'Unknown'}</span>}
+                      {sa.reviewed_by && <span>Reviewed by {teamMap[sa.reviewed_by] || 'Unknown'}</span>}
+                      {sa.submitted_at && <span>Submitted {new Date(sa.submitted_at).toLocaleDateString()}</span>}
+                    </div>
+                  )}
+                  {sa.notes && ["in_progress", "awaiting_data"].includes(sa.stage) && (
+                    <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 p-2 text-sm text-amber-800">
+                      <span className="font-medium">Changes requested:</span> {sa.notes}
+                    </div>
+                  )}
                   {getAvailableTransitions(role as Role, sa.stage).length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {getAvailableTransitions(role as Role, sa.stage).map((toStage) => {

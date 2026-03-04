@@ -26,6 +26,8 @@ interface PipelineClient {
   nino_last4: string | null
   stage: string
   stages: { businessId: string; stage: string; quarter?: number }[]
+  prepared_by_name: string | null
+  notes: string | null
 }
 
 interface PipelineData {
@@ -205,7 +207,14 @@ export function PipelineDashboard({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{practiceName}</h1>
-          <p className="text-muted-foreground">Client Pipeline</p>
+          <p className="text-muted-foreground">
+            Client Pipeline
+            {(data?.summary['ready_for_review'] || 0) > 0 && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5">
+                {data?.summary['ready_for_review']} awaiting review
+              </span>
+            )}
+          </p>
         </div>
         {showSelectToggle && (
           <Button

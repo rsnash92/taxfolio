@@ -15,6 +15,8 @@ interface PipelineClient {
   nino_last4: string | null
   stage: string  // worst-case stage across businesses
   stages: { businessId: string; stage: string; quarter?: number }[]
+  prepared_by_name: string | null
+  notes: string | null
 }
 
 interface PipelineResponse {
@@ -92,12 +94,12 @@ export async function GET(request: NextRequest) {
     const clientIds = clients.map(c => c.id)
 
     // Fetch pipeline records for all clients
-    let pipelineData: { client_id: string; stage: string; business_id?: string; quarter?: number }[]
+    let pipelineData: { client_id: string; stage: string; business_id?: string; quarter?: number; prepared_by?: string | null; notes?: string | null }[]
 
     if (mode === 'mtd') {
       let pipelineQuery = supabase
         .from('client_quarters')
-        .select('client_id, stage, business_id, quarter')
+        .select('client_id, stage, business_id, quarter, prepared_by, notes')
         .in('client_id', clientIds)
         .eq('tax_year', taxYear)
 
@@ -110,25 +112,44 @@ export async function GET(request: NextRequest) {
     } else {
       const { data } = await supabase
         .from('client_sa100')
-        .select('client_id, stage')
+        .select('client_id, stage, prepared_by, notes')
         .in('client_id', clientIds)
         .eq('tax_year', taxYear)
 
       pipelineData = data || []
     }
 
+    // Resolve prepared_by UUIDs to names
+    const preparedByIds = [...new Set(
+      pipelineData.filter(r => r.prepared_by).map(r => r.prepared_by as string)
+    )]
+    const nameMap = new Map<string, string>()
+    if (preparedByIds.length > 0) {
+      const { data: preparers } = await supabase
+        .from('practice_members')
+        .select('user_id, users:user_id(email, raw_user_meta_data)')
+        .eq('practice_id', practiceId)
+        .in('user_id', preparedByIds)
+      for (const m of (preparers || []) as any[]) {
+        nameMap.set(
+          m.user_id,
+          m.users?.raw_user_meta_data?.full_name || m.users?.email || 'Unknown'
+        )
+      }
+    }
+
     // Group pipeline records by client, determine worst-case stage per client
     const stages = mode === 'mtd' ? MTD_COLUMN_STAGES : SA100_COLUMN_STAGES
     const stageOrder = ['not_started', ...stages, 'failed']
 
-    const clientStages = new Map<string, { stage: string; stages: { businessId: string; stage: string; quarter?: number }[] }>()
+    const clientStages = new Map<string, { stage: string; stages: { businessId: string; stage: string; quarter?: number }[]; prepared_by: string | null; notes: string | null }>()
 
     for (const record of pipelineData) {
       const existing = clientStages.get(record.client_id)
       const recordStage = { businessId: record.business_id || '', stage: record.stage, quarter: record.quarter }
 
       if (!existing) {
-        clientStages.set(record.client_id, { stage: record.stage, stages: [recordStage] })
+        clientStages.set(record.client_id, { stage: record.stage, stages: [recordStage], prepared_by: record.prepared_by || null, notes: record.notes || null })
       } else {
         existing.stages.push(recordStage)
         // Worst-case: earliest stage in the pipeline order
@@ -136,6 +157,8 @@ export async function GET(request: NextRequest) {
         const newIdx = stageOrder.indexOf(record.stage)
         if (newIdx >= 0 && (currentIdx < 0 || newIdx < currentIdx)) {
           existing.stage = record.stage
+          existing.prepared_by = record.prepared_by || null
+          existing.notes = record.notes || null
         }
       }
     }
@@ -153,6 +176,7 @@ export async function GET(request: NextRequest) {
       const pipelineInfo = clientStages.get(client.id)
       const clientStage = pipelineInfo?.stage || 'not_started'
 
+      const preparedBy = pipelineInfo?.prepared_by || null
       const pipelineClient: PipelineClient = {
         id: client.id,
         name: client.name,
@@ -163,6 +187,8 @@ export async function GET(request: NextRequest) {
         nino_last4: client.nino_last4,
         stage: clientStage,
         stages: pipelineInfo?.stages || [],
+        prepared_by_name: preparedBy ? (nameMap.get(preparedBy) || null) : null,
+        notes: pipelineInfo?.notes || null,
       }
 
       // Place in the matching column

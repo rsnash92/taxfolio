@@ -38,6 +38,10 @@ export async function PATCH(request: NextRequest) {
       updates.branding = body.branding
     }
 
+    if (body.requireDifferentReviewer !== undefined) {
+      updates.require_different_reviewer = !!body.requireDifferentReviewer
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
     }

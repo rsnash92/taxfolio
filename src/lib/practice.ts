@@ -10,6 +10,7 @@ export interface PracticeContext {
     subscription_tier: string
     subscription_status: string
     max_clients: number
+    require_different_reviewer: boolean
   }
   membership: {
     id: string
@@ -39,7 +40,8 @@ export async function getPracticeContext(
         branding,
         subscription_tier,
         subscription_status,
-        max_clients
+        max_clients,
+        require_different_reviewer
       )
     `)
     .eq('user_id', userId)
@@ -60,6 +62,7 @@ export async function getPracticeContext(
       subscription_tier: practice.subscription_tier,
       subscription_status: practice.subscription_status,
       max_clients: practice.max_clients,
+      require_different_reviewer: practice.require_different_reviewer ?? false,
     },
     membership: {
       id: membership.id,

@@ -16,6 +16,8 @@ interface PipelineClient {
   nino_last4: string | null
   stage: string
   stages: { businessId: string; stage: string; quarter?: number }[]
+  prepared_by_name: string | null
+  notes: string | null
 }
 
 interface PipelineColumnProps {
@@ -70,7 +72,11 @@ export function PipelineColumn({
   }
 
   return (
-    <div className="flex flex-col rounded-lg border bg-muted/30 min-h-[400px]">
+    <div className={`flex flex-col rounded-lg border min-h-[400px] ${
+      stage === "ready_for_review" && clients.length > 0
+        ? "bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-800"
+        : "bg-muted/30"
+    }`}>
       {/* Column Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50 rounded-t-lg">
         <div className="flex items-center gap-2">

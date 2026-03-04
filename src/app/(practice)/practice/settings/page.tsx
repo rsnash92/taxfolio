@@ -35,6 +35,7 @@ export default async function SettingsPage() {
         hmrcExpired={hmrcExpired}
         isOwner={context.membership.role === 'owner'}
         practiceId={context.practice.id}
+        requireDifferentReviewer={context.practice.require_different_reviewer}
       />
     </div>
   )

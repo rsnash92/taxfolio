@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Link2, Loader2, Save } from "lucide-react"
 
 interface PracticeSettingsProps {
@@ -15,6 +16,7 @@ interface PracticeSettingsProps {
   hmrcExpired: boolean
   isOwner: boolean
   practiceId: string
+  requireDifferentReviewer?: boolean
 }
 
 export function PracticeSettings({
@@ -23,11 +25,13 @@ export function PracticeSettings({
   hmrcConnected,
   hmrcExpired,
   isOwner,
+  requireDifferentReviewer: initialRequireDifferentReviewer = false,
 }: PracticeSettingsProps) {
   const [name, setName] = useState(initialName)
   const [arn, setArn] = useState(initialArn || "")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [requireDifferentReviewer, setRequireDifferentReviewer] = useState(initialRequireDifferentReviewer)
 
   async function handleSave() {
     setSaving(true)
@@ -37,7 +41,7 @@ export function PracticeSettings({
       const res = await fetch("/api/practice/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), hmrcArn: arn.trim() || null }),
+        body: JSON.stringify({ name: name.trim(), hmrcArn: arn.trim() || null, requireDifferentReviewer }),
       })
 
       if (res.ok) {
@@ -88,6 +92,34 @@ export function PracticeSettings({
                 <Save className="h-4 w-4 mr-2" />
               )}
               {saved ? "Saved" : "Save changes"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Review workflow</CardTitle>
+          <CardDescription>Controls how reviews and approvals work</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Require different reviewer (4-eyes principle)</Label>
+              <p className="text-xs text-muted-foreground">
+                The person who prepared a return cannot approve it
+              </p>
+            </div>
+            <Switch
+              checked={requireDifferentReviewer}
+              onCheckedChange={setRequireDifferentReviewer}
+              disabled={!isOwner}
+            />
+          </div>
+          {isOwner && requireDifferentReviewer !== initialRequireDifferentReviewer && (
+            <Button onClick={handleSave} disabled={saving} size="sm" className="mt-3">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save
             </Button>
           )}
         </CardContent>
