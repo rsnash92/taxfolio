@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
+import { useBranding } from "@/lib/branding-context"
 import {
   Sheet,
   SheetContent,
@@ -44,6 +45,10 @@ export function PracticeMobileNav({ user, practiceName, role }: PracticeMobileNa
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { branding } = useBranding()
+
+  const logoSrc = branding.logo_url || "/taxfolio.png"
+  const isCustomLogo = !!branding.logo_url
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -76,13 +81,22 @@ export function PracticeMobileNav({ user, practiceName, role }: PracticeMobileNa
         {/* Logo + Practice Name */}
         <div className="px-6 pt-8 pb-2">
           <Link href="/practice" onClick={() => setOpen(false)} className="px-5">
-            <Image
-              src="/taxfolio.png"
-              alt="TaxFolio"
-              width={120}
-              height={28}
-              className="h-7 w-auto"
-            />
+            {isCustomLogo ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={logoSrc}
+                alt={practiceName}
+                className="h-7 w-auto max-w-[160px] object-contain"
+              />
+            ) : (
+              <Image
+                src="/taxfolio.png"
+                alt="TaxFolio"
+                width={120}
+                height={28}
+                className="h-7 w-auto"
+              />
+            )}
           </Link>
         </div>
         <div className="px-6 pb-6">
@@ -104,9 +118,13 @@ export function PracticeMobileNav({ user, practiceName, role }: PracticeMobileNa
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
                   isActive
-                    ? "border-l-2 border-[#00e3ec] bg-[#00e3ec]/10 text-foreground"
+                    ? "border-l-2 text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
+                style={isActive ? {
+                  borderColor: "var(--brand)",
+                  backgroundColor: "color-mix(in srgb, var(--brand) 10%, transparent)",
+                } : undefined}
               >
                 <Icon className="h-5 w-5" />
                 {item.title}
@@ -132,7 +150,12 @@ export function PracticeMobileNav({ user, practiceName, role }: PracticeMobileNa
           {/* User Info */}
           <div className="flex items-center gap-3 rounded-lg px-2 py-2">
             <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-[#00e3ec]/20 text-[#00e3ec]">
+              <AvatarFallback
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--brand) 20%, transparent)",
+                  color: "var(--brand)",
+                }}
+              >
                 {initials}
               </AvatarFallback>
             </Avatar>

@@ -5,6 +5,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { useBranding } from "@/lib/branding-context"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -67,6 +68,10 @@ export function PracticeSidebar({ user, practiceName, role, className }: Practic
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { branding } = useBranding()
+
+  const logoSrc = branding.logo_url || "/taxfolio-light.png"
+  const isCustomLogo = !!branding.logo_url
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -90,20 +95,30 @@ export function PracticeSidebar({ user, practiceName, role, className }: Practic
   return (
     <aside
       className={cn(
-        "flex h-screen w-72 flex-col bg-gradient-to-b from-[#0f172a] to-[#1e293b]",
+        "flex h-screen w-72 flex-col",
         className
       )}
+      style={{ background: branding.sidebar_bg || "linear-gradient(to bottom, #0f172a, #1e293b)" }}
     >
       {/* Logo + Practice Name */}
       <div className="px-6 pt-8 pb-2">
         <Link href="/practice" className="block px-5">
-          <Image
-            src="/taxfolio-light.png"
-            alt="Taxfolio"
-            width={120}
-            height={28}
-            className="h-7 w-auto"
-          />
+          {isCustomLogo ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={logoSrc}
+              alt={practiceName}
+              className="h-7 w-auto max-w-[160px] object-contain"
+            />
+          ) : (
+            <Image
+              src="/taxfolio-light.png"
+              alt="Taxfolio"
+              width={120}
+              height={28}
+              className="h-7 w-auto"
+            />
+          )}
         </Link>
       </div>
       <div className="px-6 pb-6">
@@ -124,9 +139,10 @@ export function PracticeSidebar({ user, practiceName, role, className }: Practic
               className={cn(
                 "flex items-center gap-3 rounded-xl px-5 py-3 text-base font-medium transition-colors",
                 isActive
-                  ? "border-l-2 border-[#00e3ec] bg-white/10 text-white"
+                  ? "border-l-2 bg-white/10 text-white"
                   : "text-gray-400 hover:bg-white/5 hover:text-white"
               )}
+              style={isActive ? { borderColor: "var(--brand)" } : undefined}
             >
               <Icon className="h-5 w-5" />
               {item.title}
@@ -154,7 +170,12 @@ export function PracticeSidebar({ user, practiceName, role, className }: Practic
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2 hover:bg-white/5 transition-colors">
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-[#00e3ec]/20 text-[#00e3ec]">
+                <AvatarFallback
+                  style={{
+                    backgroundColor: "color-mix(in srgb, var(--brand) 20%, transparent)",
+                    color: "var(--brand)",
+                  }}
+                >
                   {initials}
                 </AvatarFallback>
               </Avatar>

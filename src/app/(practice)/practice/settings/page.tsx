@@ -36,6 +36,8 @@ export default async function SettingsPage() {
         isOwner={context.membership.role === 'owner'}
         practiceId={context.practice.id}
         requireDifferentReviewer={context.practice.require_different_reviewer}
+        branding={context.practice.branding}
+        subscriptionTier={context.practice.subscription_tier}
       />
     </div>
   )
